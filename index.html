@@ -1,0 +1,134 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowMint | Control Your Spend. Build Your Future.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0A0A0A;
+            --text-color: #FFFFFF;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.05);
+            --card-subtle: rgba(255, 255, 255, 0.05);
+            --nav-bg: rgba(10, 10, 10, 0.8);
+            
+            /* Brand Colors - Dark (Mint focused) */
+            --brand-primary: #00FFA3;
+            --brand-secondary: #00D1FF;
+            --brand-glow: rgba(0, 255, 163, 0.3);
+        }
+
+        .light {
+            --bg-color: #F4F7F6;
+            --text-color: #1A1A1A;
+            --glass-bg: rgba(0, 0, 0, 0.03);
+            --glass-border: rgba(0, 0, 0, 0.08);
+            --card-subtle: rgba(0, 0, 0, 0.02);
+            --nav-bg: rgba(244, 247, 246, 0.8);
+            
+            /* Brand Colors - Light (Mixture of Purple and Mint) */
+            --brand-primary: #9F3FFF;
+            --brand-secondary: #00FBAA;
+            --brand-glow: rgba(159, 63, 255, 0.25);
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            overflow-x: hidden;
+        }
+
+        .glass { 
+            background: var(--glass-bg); 
+            backdrop-filter: blur(12px); 
+            border: 1px solid var(--glass-border); 
+        }
+
+        .mint-gradient { 
+            background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%); 
+        }
+
+        .text-brand { color: var(--brand-primary); }
+        .bg-brand { background-color: var(--brand-primary); }
+        
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+
+        @keyframes drift {
+            0% { transform: translateX(0px) translateY(0px); opacity: 0; }
+            50% { opacity: 0.6; }
+            100% { transform: translateX(100px) translateY(-100px); opacity: 0; }
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-200%); }
+            100% { transform: translateX(200%); }
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { filter: drop-shadow(0 0 5px var(--brand-glow)); }
+            50% { filter: drop-shadow(0 0 15px var(--brand-glow)); }
+        }
+
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .animate-pulse-glow {
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+
+        .currency-particle {
+            position: absolute;
+            pointer-events: none;
+            animation: drift 10s linear infinite;
+        }
+
+        .shimmer-bar {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shimmer-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.3) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            animation: shimmer 3s infinite linear;
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "recharts": "https://esm.sh/recharts@^3.7.0",
+    "@google/genai": "https://esm.sh/@google/genai@^1.39.0"
+  }
+}
+</script>
+</head>
+<body>
+    <div id="root"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

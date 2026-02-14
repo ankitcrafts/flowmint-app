@@ -1,0 +1,8 @@
+{
+  "name": "FlowMint - Financial Super App",
+  "description": "A premium financial super app for Gen Z & Millennials to control spending, track expenses, manage bills, and build a credit-worthy future.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
