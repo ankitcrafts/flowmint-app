@@ -30,17 +30,25 @@ FlowMint adopts a **"Cyber-Finance"** aesthetic.
 ### AI Integration (`geminiService.ts`)
 
 - **Pattern:** Stateless service functions.
-- **Instantiation:** `GoogleGenAI` client is instantiated _inside_ each function call to ensure the latest API key is used (crucial for environment variable updates).
+- **Instantiation:** `GoogleGenAI` client is instantiated _inside_ each function call to ensure the latest API key is used.
 - **Prompt Engineering:**
   - **Persona:** "Witty financial genius for Indian Millennials".
-  - **Tone:** "No cap, bet, flex" - casual but smart.
-  - **Models:** `gemini-3-flash-preview` for quick tips, `gemini-3-pro-preview` for complex planning.
+  - **Models:** `gemini-3-flash-preview` for quick tips.
 
-### Authentication (`Auth.tsx`)
+### Authentication (`Auth.tsx` & Backend)
 
-- **Current State:** Simulated authentication.
-- **Flow:** Login -> `handleLoginSuccess` -> Sets `isAuthenticated` state in `App.tsx`.
-- **Future:** Needs integration with a backend (Supabase/Firebase) for JWT handling.
+- **Frontend:** Handles Google Sign-In (getting ID token) and Mobile OTP Input.
+- **Backend (`server/index.js`):**
+  - Verifies Google ID Tokens.
+  - Checks/Creates users in Supabase `app_users` table.
+  - Issues a secure `httpOnly` JWT cookie (`access_token`).
+- **State:** `App.tsx` checks `/auth/me` on load to hydrate user session.
+
+### Service Layer (`services/`)
+
+- **`apiService.ts`:** Simulates financial data fetching (Transactions, Bills, Goals) with realistic delays.
+- **`supabase.ts`:** Client-side Supabase instance for non-auth DB reads (if needed).
+- **`geminiService.ts`:** Direct-to-API AI calls.
 
 ## 3. Common Patterns & Best Practices
 

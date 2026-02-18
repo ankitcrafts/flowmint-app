@@ -57,10 +57,13 @@
 ## 4. Technical Architecture
 
 - **Frontend:** React 19 (TypeScript) + Vite.
+- **Backend:** Node.js + Express.js (Middleware for Auth & Logic).
+- **Database:** Supabase (PostgreSQL) for user data.
 - **Styling:** Tailwind CSS v4 + Framer Motion (Animations).
-- **Mobile:** Capacitor (Android/iOS wrapper).
+- **Mobile:** Capacitor 8+ (Android/iOS wrapper).
 - **AI:** Google GenAI SDK (Gemini 1.5/2.0).
-- **State Management:** React Hooks / Context (Scalable to Zustand/Redux).
+- **State Management:** React Hooks / Context.
+- **Authentication:** Hybrid (Google OAuth + Mobile OTP) via HttpOnly Cookies.
 
 ## 5. Roadmap
 
@@ -69,13 +72,14 @@
 - [x] UI/UX Foundation (Glassmorphism, Dark/Light Mode).
 - [x] Basic Dashboard & Navigation.
 - [x] AI Integration (Gemini Service connected).
-- [x] Mock Data for demonstration.
+- [x] Mock Data for demonstration (Transactions, Loans).
 - [x] Component structure (FlowPay, FlowGoals, etc.).
+- [x] **Secure Authentication:** Google Sign-In & Mobile OTP flow implemented.
+- [x] **Backend Layer:** Express server with Supabase connection.
 
 ### Phase 2: "Addups" (Next Features)
 
 - [ ] **Real Data Integration:** Connect with Account Aggregator (AA) framework for real bank transactions.
-- [ ] **Auth Implementation:** Replace mock auth with Firebase/Supabase/Custom Auth including biometrics.
 - [ ] **Enhanced AI Chat:** Dedicated chat interface for financial queries.
 - [ ] **Gamification Engine:** Points system, badges ("Saver", "Investor"), and leaderboards.
 - [ ] **Sustainability Metrics:** API integration for real carbon footprint data per merchant category.

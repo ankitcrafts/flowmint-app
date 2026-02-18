@@ -8,11 +8,12 @@
 
 ### Core Frameworks
 
-- **Runtime:** Node.js
+- **Frontend Runtime:** Node.js (Vite environment)
+- **Backend Runtime:** Node.js (Express Server)
 - **Language:** TypeScript
 - **Build Tool:** Vite (High-performance bundler)
 - **UI Framework:** React 19
-- **Mobile Engine:** Capacitor 6+ (Web-to-Native bridge)
+- **Mobile Engine:** Capacitor 8+ (Web-to-Native bridge)
 
 ### UI & Styling
 
@@ -20,6 +21,13 @@
 - **Animations:** Framer Motion (Complex interactions and transitions)
 - **Icons:** Lucide React
 - **Charts:** Recharts (Responsive charts for financial data)
+
+### Backend & Data
+
+- **API Server:** Express.js (Handling Auth & Business Logic)
+- **Database:** Supabase (PostgreSQL)
+- **Authentication:** Custom JWT (HttpOnly Cookies) + Google OAuth + Mobile OTP (Simulated)
+- **ORM/Client:** Supabase JS Client
 
 ### AI & Services
 
@@ -34,6 +42,8 @@
 - Node.js (v18 or higher)
 - npm or pnpm
 - Android Studio (for Android build) / Xcode (for iOS build)
+- Supabase Project (URL & Keys)
+- Google Cloud Console Project (Client ID for OAuth)
 
 ### Installation
 
@@ -47,20 +57,35 @@
     npm install
     ```
 3.  **Environment Setup:**
-    Create a `.env.local` file in the root directory and add your Google Gemini API key:
+    Create a `.env.local` file in the root directory with the following keys:
+
     ```env
-    GEMINI_API_KEY=your_api_key_here
+    # App
+    VITE_API_URL=http://localhost:3000
+
+    # AI
+    GEMINI_API_KEY=your_gemini_key
+
+    # Supabase
+    VITE_SUPABASE_URL=your_supabase_url
+    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+    SUPABASE_SERVICE_ROLE_KEY=your_service_role_key (Backend only)
+
+    # Auth
+    GOOGLE_CLIENT_ID=your_google_client_id
+    JWT_SECRET=your_jwt_secret
     ```
 
-### Running Locally (Web)
+### Running Locally (Full Stack)
 
-Start the development server:
+Start the development server (This runs both the Express Backend and Vite Frontend concurrently):
 
 ```bash
 npm run dev
 ```
 
-Access the app at `http://localhost:5173`.
+- **Frontend:** `http://localhost:5173`
+- **Backend API:** `http://localhost:3000`
 
 ### Running on Mobile (Android)
 
@@ -102,8 +127,12 @@ flowmint---financial-super-app/
 │   ├── Dashboard.tsx   # Main user dashboard
 │   ├── FlowGoals.tsx   # Goals feature
 │   ├── ...
-├── services/           # Service layer
+├── services/           # Frontend Service layer
 │   ├── geminiService.ts # AI Integration logic
+│   ├── apiService.ts   # Mock Data / API calls
+│   ├── supabase.ts     # Client-side Supabase instance
+├── server/             # Backend Node.js/Express Server
+│   ├── index.js        # Server entry point (Auth & API Routes)
 ├── android/            # Native Android project files
 ├── dist/               # Production build output
 ├── public/             # Static assets
@@ -114,12 +143,15 @@ flowmint---financial-super-app/
 
 ## 5. Deployment Guide
 
-### Web (PWA/Vercel/Netlify)
+### Web (Full Stack)
 
-Since this is a Vite app, it can be deployed to any static host.
+Since the app now includes a Backend Server (`server/index.js`), it cannot be deployed to static hosts like Vercel (unless using Vercel Serverless functions, but the current setup is a long-running Node server).
 
-1.  Run `npm run build`.
-2.  Deploy the `dist` folder.
+**Recommended Hosts:** Render, Railway, Heroku, or a VPS.
+
+1.  Build the frontend: `npm run build`.
+2.  Configure the server to serve the `dist` folder static files (or host frontend separately).
+3.  Start the server: `npm run server`.
 
 ### Android Play Store
 
@@ -140,8 +172,13 @@ Since this is a Vite app, it can be deployed to any static host.
 
 ### Tailwind CSS
 
-Located in `index.css` (Tailwind v4 uses CSS-first configuration). Custom theme variables like `--brand-primary`, `--bg-color` are defined in `:root` and mapped to Tailwind utilities if needed.
+Located in `index.css` (Tailwind v4 uses CSS-first configuration). Custom theme variables like `--brand-primary`, `--bg-color` are defined in `:root`.
 
 ### Capacitor
 
 Located in `capacitor.config.ts`. Controls app ID (`appId`), app name (`appName`), and web directory (`webDir: 'dist'`).
+
+### Authentication Flow
+
+1. **Google:** Frontend gets ID Token -> Backend validates -> Checks DB -> Returns Cookie.
+2. **Mobile:** Frontend validates OTP -> Backend checks DB -> Returns Cookie.
