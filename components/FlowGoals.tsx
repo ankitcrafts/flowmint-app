@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Target, Plus, Smartphone, Plane, Bike, GraduationCap, Sparkles, ChevronRight } from 'lucide-react';
-import { getWishTrackerPlan } from '../services/geminiService';
+import { llmService } from '../services/llmService';
 
 const FlowGoals: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -9,8 +9,16 @@ const FlowGoals: React.FC = () => {
 
   const fetchPlan = async (goal: string, amount: number) => {
     setLoading(true);
-    const plan = await getWishTrackerPlan(goal, amount, 15000);
-    setAiTip(plan);
+    try {
+      const plan = await llmService.getWishPlan({
+        wishName: goal,
+        price: amount,
+        currentSavings: 15000,
+      });
+      setAiTip(`${plan.aiTip}\n\n${plan.speedUpTip}\n\nSteps:\n${plan.savingSteps.join('\n')}`);
+    } catch {
+      setAiTip('Start by automating ₹2,000 every week into your goal pot.');
+    }
     setLoading(false);
   };
 

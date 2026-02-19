@@ -1,99 +1,343 @@
-# FlowMint - Financial Super App: Product Requirements Document (PRD)
+# FlowMint — Product Requirements Document (PRD)
+
+> **Version:** 2.0 • **Last Updated:** 20 Feb 2026 • **Status:** Phase 1 MVP Complete
+
+---
 
 ## 1. Executive Summary
 
-**Product Name:** FlowMint
-**Vision:** To become the ultimate "Financial Super App" for Indian Gen-Z and Millennials, blending traditional finance with modern lifestyle, sustainability, and AI-driven insights. FlowMint makes money management cool, intuitive, and rewarding.
-**Target Audience:** Digital-native Indians (Age 18-35), financially conscious but overwhelmed by traditional banking apps.
+**Product Name:** FlowMint  
+**Tagline:** "Your money, your flow."  
+**Vision:** To become the ultimate "Financial Super App" for Indian Gen-Z and Millennials — blending traditional finance with modern lifestyle, sustainability tracking, and AI-driven advisory. FlowMint makes money management feel premium, intuitive, and rewarding.
+
+**Target Audience:** Digital-native Indians (Age 18–35) who are financially conscious but overwhelmed by traditional banking apps. They want one app that combines UPI payments, credit monitoring, expense tracking, savings goals, and intelligent financial advice.
+
+**Business Model:** Freemium — Free core features + Premium tier ("FlowMint Black") for advanced AI, lower fees, and exclusive experiences.
+
+---
 
 ## 2. Core Value Proposition
 
-- **Unified Financial View:** Dashboard aggregating spending, credit, and goals.
-- **AI-Powered Genius:** FlowMint AI (powered by Gemini) acts as a witty, culturally relevant financial advisor.
-- **Sustainability Focus:** Tracking the carbon footprint of spending, aligning financial health with planetary health.
-- **Gamified Growth:** Credit building and savings are turned into engaging challenges with rewards.
+| Pillar                     | Value                                                                                              |
+| -------------------------- | -------------------------------------------------------------------------------------------------- |
+| **Unified Financial View** | Single dashboard aggregating balance, spending, credit, bills, loans, and sustainability           |
+| **AI-Powered Advisory**    | Gemini-powered AI that speaks Gen-Z lingo and gives culturally relevant Indian financial advice    |
+| **Sustainability Focus**   | Track the environmental impact of every rupee spent — align financial health with planetary health |
+| **Gamified Growth**        | Turn credit building and savings into engaging challenges with visual progress and rewards         |
+| **Premium Experience**     | Cyber-Finance aesthetic with glassmorphism, neon accents, and fluid animations                     |
+
+---
 
 ## 3. Product Pillars & Features
 
-### 3.1. Dashboard (The Command Center)
+### 3.1. Dashboard — The Command Center
 
-- **Overview:** High-level view of Total Balance, Monthly Spend, and Credit Score.
-- **Visuals:** Glassmorphic cards, neon accents, charts powered by `recharts`.
-- **Quick Actions:** Scan & Pay, Add Money, Check Score.
-- **Sustainability:** Real-time eco-impact score based on transaction categories.
+> **Component:** `Dashboard.tsx` • **Status:** ✅ Built (Mock Data)
 
-### 3.2. FlowPay (Payments)
+- **Overview:** High-level view of Total Balance (₹59,823), Monthly Spend, and Credit Score (782)
+- **Visuals:** Glassmorphic cards, neon accents, charts powered by Recharts (Area + Bar)
+- **Widgets:** 11 data widgets including wealth history, daily spending, weekly trends, EMI stress, loan readiness, AI insights, and recent transactions
+- **Sustainability:** Real-time eco-impact card showing CO2 and water savings
+- **AI Integration:** Gemini-generated "Spend Personality" insight based on transaction data
+- **Quick Actions:** Scan & Pay, Send Money, Check Score, view AI Insights
 
-- UPI-style payment integration simulation.
-- P2P transfers.
-- Bill payments and subscriptions management.
+### 3.2. FlowPay — Payments Ecosystem
 
-### 3.3. FlowCredit (Credit Health)
+> **Component:** `FlowPay.tsx` • **Status:** 🔄 UI Built (Simulated)
 
-- Credit Score visualization (Guage/Meter).
-- Credit builder tips driven by AI.
-- Loan eligibility checker.
+- **Scan & Pay:** QR code scanner with animated scanning UI (simulated — no real camera)
+- **Send Money:** Bottom sheet modal with UPI ID input and amount field
+- **Upcoming EMIs:** 3 tracked EMIs with "Pay Now" action
+- **Pay Services:** 8-category grid (Power, Recharge, DTH, Rent, Broadband, Card Bill, Housing, SIP)
+- **Transaction Ledger:** 6-item payment history with sent/received indicators
+- **Disclosure:** "Simulated Mode" badge — real UPI integration planned
 
-### 3.4. FlowGoals (Smart Savings)
+### 3.3. FlowCredit — Credit Health Intelligence
 
-- **Wish Tracker:** Users define a goal (e.g., "Bali Trip", "iPhone 16").
-- **AI Plan:** FlowMint AI generates a step-by-step saving plan based on income and spending habits.
-- **Auto-Save:** Rules to roundup spare change or save daily.
+> **Component:** `FlowCredit.tsx` • **Status:** 🔄 UI Built (Mock Score)
 
-### 3.5. FlowLend (Lending - Future Phase)
+- **Credit Score Gauge:** Custom SVG arc gauge with gradient (300–900 range), showing 782 "Excellent"
+- **Score Trajectory:** 6-month history chart (Jul–Dec)
+- **Credit Behavior:** 3 indicator cards — Utilization (42%), EMI/Income (36%), Late Payments (0)
+- **Credit Education:** Expandable accordion explaining 5 score factors with weighted progress bars
+- **What-If Simulator:** Interactive scenario builder — Pay off debt (slider), new card toggle, loyalty streak, close old account — with real-time predicted score
+- **Actionable Tips:** AI strategy cards for credit improvement
+- **Disclosure:** "Manual / Estimated Score – Bureau integration coming soon"
 
-- Micro-loans for short-term needs.
-- P2P lending marketplace (Peer-to-Peer).
+### 3.4. FlowGoals — Smart Savings with AI
 
-### 3.6. FlowMint AI (The Brain)
+> **Component:** `FlowGoals.tsx` • **Status:** ✅ AI Working (Mock Goals)
 
-- **Persona:** Witty, Gen-Z lingo ("No cap", "Bet"), direct and actionable advice.
-- **Tech:** Google Gemini Flash & Pro models.
-- **Capabilities:**
-  - "Spend Personality" analysis.
-  - "Alpha Tips" for wealth creation.
-  - Budgeting hacks custom to Indian user context.
+- **Wish Tracker:** Goal cards with progress bars (Tokyo Trip 50%, MacBook Pro 25%)
+- **AI Plan Generator:** One-tap Gemini AI analysis that creates a detailed 3-step saving strategy
+- **Recommended Plans:** Suggested new goals (Masters Fund, New Ride)
+- **Tech:** `getWishTrackerPlan()` → Gemini Pro model with "thinking" mode for deeper analysis
+
+### 3.5. Expense Tracker — Track Every Rupee
+
+> **Component:** `ExpenseTracker.tsx` • **Status:** 🔄 UI Built (Local State)
+
+- **Expense List:** 10 items with category icons, recurring detection, and date grouping
+- **Add Expense:** Bottom sheet modal with smart category auto-suggestion (regex-based)
+- **Anomaly Detection:** Alert banner when daily spending exceeds 1.8× the average
+- **Monthly Trend:** Bar chart showing 4-month spending trend
+- **Category Breakdown:** Progress bar breakdown by category with percentages
+- **Recurring Detection:** Auto-tags monthly subscriptions
+
+### 3.6. Bill Reminders — Never Miss a Payment
+
+> **Component:** `BillReminders.tsx` • **Status:** 🔄 UI Built (Local State)
+
+- **Overdue Alert:** Prominent red banner with late fee calculation
+- **Summary Cards:** Total due amount + EMI-to-income stress ratio
+- **EMI Stress Meter:** Visual gauge with color-coded risk levels (Green/Yellow/Red)
+- **Filter Tabs:** All, Upcoming, Overdue, Paid
+- **Bill List:** 8 bills with icons, due dates, and "Pay Now" action
+- **AI Advisory:** Contextual advice on overdue payments and credit score impact
+
+### 3.7. AI Wish Tracker — Lifestyle Goal Tracking
+
+> **Component:** `AIWishTracker.tsx` • **Status:** ✅ AI Working (Groq/Gemini)
+
+- **Wishlist:** Detailed wish cards with progress rings, funded amounts, savings timeline
+- **Add Wish:** Modal for creating new wishes with amount targets
+- **Summary:** Total wishlist value and overall saved amount
+- **Saving Estimate:** Per-wish timeline based on monthly saving rate
+
+### 3.8. Loan Marketplace — Discover & Compare
+
+> **Component:** `LoanMarketplace.tsx` • **Status:** 🔄 UI Built (Mock Products)
+
+- **Pre-Approved Hero:** ₹5,00,000 at 9.25% with "Check Eligibility" CTA
+- **Readiness Dashboard:** Credit score (782), readiness percentage (72%), EMI load (36%)
+- **EMI Simulator:** Interactive calculator with amount/tenure sliders, showing monthly EMI, total interest, and new EMI load percentage
+- **Loan Products:** 6 products from HDFC, Bajaj Finserv, IDFC First, Muthoot, ICICI, SBI with eligibility scoring
+- **Disclosure:** "Simulated Mode — No real applications are processed"
+
+### 3.9. FlowLend — Lending Partner Access
+
+> **Component:** `FlowLend.tsx` • **Status:** 🔄 UI Built (Static Data)
+
+- **Pre-Approved Offer:** ₹5,00,000 at 10.5% with "Get Instant Cash" CTA
+- **Partner Cards:** HDFC Bank (Personal, 9.25%), Muthoot Finance (Gold, 8.0%), ICICI Bank (Education, 10.5%)
+- **Regulatory Disclosure:** "FlowMint is a technology partner and not a licensed NBFC"
+
+### 3.10. FlowMint AI — The Brain
+
+> **Component:** `AIInsights.tsx` + `geminiService.ts` • **Status:** 🔄 Partial
+
+- **Smart Insights Feed:** 6 categorized insight cards (Goal Acceleration, EMI Stress, Credit Health, Loan Readiness, Spending Psychology, Wish Strategy)
+- **AI Chat Interface:** Message bubbles with bot/user roles (currently keyword-matching, NOT real Gemini)
+- **Persona:** Witty, Gen-Z lingo ("No cap", "Bet"), direct and actionable
+- **Integrated AI:** Dashboard spending insights + FlowGoals savings plans use REAL Gemini API
+- **Gap:** The AI Insights tab itself uses hardcoded data — needs Gemini integration with full user context
+
+### 3.11. Sustainability — Eco Impact
+
+> **Component:** `SustainabilityCard.tsx` • **Status:** 🔄 UI Built (Mock Data)
+
+- **Eco Score:** 72/100 with "Good" rating
+- **Impact Metrics:** -12kg CO2 saved, 340L water saved
+- **Weekly Chart:** 7-day sustainability score trend (AreaChart)
+- **CTA:** "View Green Insights" button
+
+### 3.12. Onboarding & Setup
+
+> **Components:** `Onboarding.tsx` + `InitialSetup.tsx` • **Status:** ✅ Built
+
+- **Onboarding:** 8-slide auto-playing feature showcase with skip option
+- **Profile Setup:** 7-step wizard — Name, City (GPS auto-detect), Vibe, Profession, Income, Identity Verification (Aadhaar/PAN/eKYC), Celebration
+- **Working APIs:** GPS geolocation, Nominatim reverse geocoding, DiceBear avatars
+- **Gap:** KYC verification is simulated; profile data not persisted to backend
+
+---
 
 ## 4. Technical Architecture
 
-- **Frontend:** React 19 (TypeScript) + Vite.
-- **Backend:** Node.js + Express.js (Middleware for Auth & Logic).
-- **Database:** Supabase (PostgreSQL) for user data.
-- **Styling:** Tailwind CSS v4 + Framer Motion (Animations).
-- **Mobile:** Capacitor 8+ (Android/iOS wrapper).
-- **AI:** Google GenAI SDK (Gemini 1.5/2.0).
-- **State Management:** React Hooks / Context.
-- **Authentication:** Hybrid (Google OAuth + Mobile OTP) via HttpOnly Cookies.
+### Stack Summary
+
+| Layer      | Technology                                | Version                 |
+| ---------- | ----------------------------------------- | ----------------------- |
+| Frontend   | React (TypeScript)                        | 19.2.4                  |
+| Build Tool | Vite                                      | 6.2.0                   |
+| Styling    | Tailwind CSS                              | 4.1.18                  |
+| Animations | Framer Motion                             | 12.34.0                 |
+| Charts     | Recharts                                  | 3.7.0                   |
+| Backend    | Express.js                                | 5.2.1                   |
+| Database   | Supabase (PostgreSQL)                     | Client v2.95.3          |
+| AI Engine  | Google Gemini                             | `@google/genai` v1.39.0 |
+| Mobile     | Capacitor                                 | 8.1.0                   |
+| Auth       | Custom JWT + Google OAuth + Supabase Auth | —                       |
+| State      | React Hooks / Context                     | —                       |
+| PWA        | vite-plugin-pwa                           | 1.2.0                   |
+
+### API Integration Status
+
+| Metric                        | Count    |
+| ----------------------------- | -------- |
+| Total API Points Identified   | **78**   |
+| ✅ Integrated (Real, Working) | 18 (23%) |
+| 🔄 Ongoing (Mock/Partial)     | 12 (15%) |
+| ❌ Pending (Not Built)        | 48 (62%) |
+
+> 📄 See **`API_INTEGRATION_MAP.md`** for the complete 78-API registry with methods, endpoints, and explanations.
+
+### Key Integrations Working
+
+1. Supabase Auth (session management, ID token sign-in, auth state listener)
+2. Supabase Database (profiles, app_users tables)
+3. Google Sign-In — Web (GSI) + Android (Credential Manager via Capacitor plugin)
+4. Express Auth Server (4 endpoints: google, mobile, me, logout)
+5. Google Gemini AI (spending insights via Flash model + savings plans via Pro model)
+6. OpenStreetMap Nominatim (reverse geocoding for city detection)
+7. DiceBear (avatar generation)
+8. PWA Service Worker (auto-updating)
+
+---
 
 ## 5. Roadmap
 
-### Phase 1: MVP (Current Status)
+### Phase 1: MVP ✅ (Current Status)
 
-- [x] UI/UX Foundation (Glassmorphism, Dark/Light Mode).
-- [x] Basic Dashboard & Navigation.
-- [x] AI Integration (Gemini Service connected).
-- [x] Mock Data for demonstration (Transactions, Loans).
-- [x] Component structure (FlowPay, FlowGoals, etc.).
-- [x] **Secure Authentication:** Google Sign-In & Mobile OTP flow implemented.
-- [x] **Backend Layer:** Express server with Supabase connection.
+- [x] UI/UX Foundation — Cyber-Finance aesthetic with dark/light mode
+- [x] 15 component architecture — all feature modules built
+- [x] Dashboard with 11 data widgets and charts
+- [x] Secure Authentication — Google Sign-In (Web + Native) & Mobile OTP
+- [x] Backend Layer — Express server with Supabase connection
+- [x] AI Integration — Gemini Service (spending insights + savings plans)
+- [x] Onboarding — 8-slide walkthrough + 7-step profile wizard
+- [x] FlowPay — UPI simulation, QR scan UI, transaction ledger
+- [x] FlowCredit — Credit gauge, What-If simulator, education module
+- [x] FlowGoals — AI-powered savings plan generation
+- [x] ExpenseTracker — Categorized tracking with anomaly detection
+- [x] BillReminders — Due date tracking with overdue alerts
+- [x] LoanMarketplace — EMI simulator, 6 loan products
+- [x] SustainabilityCard — Eco impact scoring
+- [x] ErrorBoundary — Crash protection with retry UI
+- [x] PWA manifest and service worker
+- [x] Capacitor Android project configured
 
-### Phase 2: "Addups" (Next Features)
+### Phase 2: Data Integration 🔄 (Next Sprint)
 
-- [ ] **Real Data Integration:** Connect with Account Aggregator (AA) framework for real bank transactions.
-- [ ] **Enhanced AI Chat:** Dedicated chat interface for financial queries.
-- [ ] **Gamification Engine:** Points system, badges ("Saver", "Investor"), and leaderboards.
-- [ ] **Sustainability Metrics:** API integration for real carbon footprint data per merchant category.
+- [ ] **Supabase Tables:** Create `transactions`, `expenses`, `bills`, `goals`, `wishes`, `payments` tables
+- [ ] **CRUD Operations:** Replace all mock data with real Supabase queries
+- [ ] **Profile Persistence:** Save InitialSetup data to `profiles` table
+- [ ] **SMS OTP:** Integrate Twilio/MSG91 for real mobile verification
+- [ ] **Apple Sign-In:** Implement via Apple JS SDK + Supabase Apple provider
+- [ ] **Supabase RLS:** Row Level Security policies on all tables
+- [ ] **API Routes:** Build Express `/api/*` routes for business logic
 
-### Phase 3: Production Readiness
+### Phase 3: External APIs 📡 (Integrations Sprint)
 
-- [ ] **Security Audit:** OWASP Top 10 check for financial data.
-- [ ] **Performance Optimization:** Code splitting, lazy loading components.
-- [ ] **Store Deployment:** Google Play Store & Apple App Store submission via Capacitor.
-- [ ] **Monetization:** Premium tier ("FlowMint Black") offering lower fees, higher rewards, and advanced AI.
+- [ ] **Account Aggregator (AA):** Real bank transaction data via AA framework APIs
+- [ ] **Credit Bureau:** CIBIL/Experian API for real credit score
+- [ ] **UPI Payments:** Razorpay/PayU PSP for real UPI transactions
+- [ ] **KYC Verification:** Digio/Surepass/IDfy for Aadhaar/PAN verification
+- [ ] **Bill Payments:** BBPS via BillDesk/Razorpay for real bill payments
+- [ ] **Push Notifications:** Firebase Cloud Messaging for bill reminders
+- [ ] **Carbon Footprint:** Climatiq/Carbon Interface for sustainability scoring
 
-## 6. Success Metrics
+### Phase 4: AI Enhancement 🧠
 
-- **DAU/MAU:** Daily/Monthly Active Users.
-- **Retention:** D30 Retention Rate.
-- **Financial Health:** Average increase in user credit score after 6 months.
-- **AI Engagement:** Number of queries/insights generated per user.
+- [ ] **Contextual Insights:** Gemini API with full user financial context
+- [ ] **Conversational AI Chat:** Replace keyword matching with real Gemini chat
+- [ ] **Streaming Responses:** SSE/WebSocket for real-time AI response streaming
+- [ ] **Smart Categorization:** AI-powered expense categorization
+- [ ] **Predictive Analytics:** Spending forecasts and budget recommendations
+
+### Phase 5: Production Readiness 🚀
+
+- [ ] **Security Audit:** OWASP Top 10, rate limiting, CSRF protection, input sanitization
+- [ ] **Performance:** Code splitting, lazy loading, image optimization
+- [ ] **Testing:** Unit tests, integration tests, E2E tests
+- [ ] **Monitoring:** Error tracking (Sentry), analytics (Mixpanel/Amplitude)
+- [ ] **Store Deployment:** Google Play Store & Apple App Store via Capacitor
+- [ ] **Monetization:** FlowMint Black premium tier — lower fees, advanced AI, exclusive experiences
+
+### Phase 6: Growth Features 🌱
+
+- [ ] **Gamification Engine:** Points, badges ("Saver", "Investor", "Credit Master"), leaderboards
+- [ ] **FlowCoins Reward System:** Earn coins for financial discipline, redeem for experiences
+- [ ] **P2P Lending:** Peer-to-peer lending marketplace
+- [ ] **Investment Module:** Fractional stocks, mutual fund collections
+- [ ] **Cross-border Payments:** International transfer capability
+- [ ] **Community Features:** Financial challenges with friends
+
+---
+
+## 6. User Journey Map
+
+```
+Install/Open App
+│
+├── First Time User
+│   ├── Onboarding Slideshow (8 slides)
+│   ├── Auth Screen
+│   │   ├── Google Sign-In → Supabase Auth
+│   │   ├── Mobile OTP → Express Backend
+│   │   └── Apple Sign-In (Future)
+│   ├── Initial Setup Wizard (7 steps)
+│   │   ├── Name + City (GPS) + Vibe
+│   │   ├── Profession + Income
+│   │   └── Identity Verification (KYC)
+│   └── → Dashboard
+│
+├── Returning User
+│   ├── Session Check → Auto Login
+│   └── → Dashboard
+│
+└── Dashboard (Command Center)
+    ├── Home Tab → Balance, Charts, AI Insights, Sustainability
+    ├── Pay Tab → FlowPay (UPI, Bills, EMIs)
+    ├── Credit Tab → FlowCredit (Score, Simulator, Tips)
+    ├── Goals Tab → FlowGoals (AI Plans), AIWishTracker
+    ├── AI Tab → AIInsights (Feed + Chat)
+    ├── FAB Menu → Expense Tracker, Bill Reminders
+    ├── Navigation → Loan Marketplace, FlowLend
+    └── Profile → Settings, Theme Toggle, Logout
+```
+
+---
+
+## 7. Success Metrics
+
+| Metric                 | Description                                    | Target                |
+| ---------------------- | ---------------------------------------------- | --------------------- |
+| **DAU/MAU**            | Daily/Monthly Active Users                     | 50K MAU in first year |
+| **Retention**          | D30 retention rate                             | >40%                  |
+| **Financial Health**   | Average credit score increase after 6 months   | +15 points            |
+| **AI Engagement**      | Queries + insights generated per user per week | >5                    |
+| **Feature Adoption**   | % of users using ≥3 features regularly         | >60%                  |
+| **Transaction Volume** | Monthly UPI payment volume                     | ₹10Cr/month by Year 2 |
+| **NPS**                | Net Promoter Score                             | >50                   |
+
+---
+
+## 8. Competitive Landscape
+
+| Competitor | Strength               | FlowMint Advantage                                      |
+| ---------- | ---------------------- | ------------------------------------------------------- |
+| CRED       | Credit score + rewards | AI-powered advisory + expense tracking + sustainability |
+| Jupiter    | Digital banking        | Multi-service ecosystem (loans + credit + goals)        |
+| Fi Money   | Smart savings          | Deeper AI integration with Gemini Pro                   |
+| PhonePe    | UPI payments           | Credit health + financial planning + gamification       |
+| Groww      | Investments            | Lifestyle goals + eco-impact tracking                   |
+
+---
+
+## 9. Regulatory Considerations
+
+| Area                      | Status                                                                                            |
+| ------------------------- | ------------------------------------------------------------------------------------------------- |
+| **NBFC Licensing**        | FlowMint is a technology partner, NOT a licensed NBFC. All loans processed by regulated partners. |
+| **UPI Compliance**        | Will require NPCI approval + PSP license or partnership with licensed PSP.                        |
+| **Data Protection**       | Must comply with DPDP Act 2023 (Digital Personal Data Protection).                                |
+| **KYC/AML**               | Aadhaar eKYC and PAN verification required for financial services.                                |
+| **RBI Guidelines**        | All lending partners must be RBI-regulated NBFCs/Banks.                                           |
+| **Sustainability Claims** | Eco-impact metrics should be based on verified emission factor databases.                         |
+
+---
+
+> **Document Owner:** FlowMint Product Team  
+> **Review Cycle:** Monthly  
+> **Related Documents:** `DOCUMENTATION.md` (Technical) • `KNOWLEDGEBASE.md` (Design System) • `API_INTEGRATION_MAP.md` (API Registry)

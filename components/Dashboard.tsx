@@ -13,7 +13,7 @@ import {
   Fingerprint, Heart, Target, AlertTriangle, Shield, Clock,
   Plus, Bell, Percent, TrendingUp, Calculator
 } from 'lucide-react';
-import { getSpendingInsights } from '../services/geminiService';
+import { llmService } from '../services/llmService';
 import { apiService } from '../services/apiService';
 import { Transaction } from '../types';
 import SustainabilityCard from './SustainabilityCard';
@@ -71,8 +71,20 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
       setLoading(true);
       const [txs] = await Promise.all([apiService.getTransactions()]);
       setTransactions(txs);
-      const aiInsight = await getSpendingInsights(txs);
-      setInsight(aiInsight);
+      // Use FlowMint AI (Llama 3.3 via Groq) for spending insights
+      try {
+        const insightData = await llmService.getSpendingInsight({
+          transactions: txs.slice(0, 15).map(t => ({
+            title: t.title,
+            amount: t.amount,
+            category: t.category || 'uncategorized',
+            type: t.type,
+          })),
+        });
+        setInsight(`${insightData.personality}: ${insightData.tip}`);
+      } catch {
+        setInsight('Keep tracking your spending — your financial awareness is already a superpower!');
+      }
       setLoading(false);
     };
     fetchData();
