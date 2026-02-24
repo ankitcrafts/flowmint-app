@@ -40,7 +40,7 @@ export const getPlatform = (): 'android' | 'ios' | 'web' => {
  */
 export const getApiBase = (): string => {
   if (isNativeApp()) {
-    return (import.meta as any).env?.VITE_API_SERVER_URL || 'https://flowmint-server.onrender.com';
+    return (import.meta as any).env?.VITE_API_SERVER_URL || 'https://flowmint-app.onrender.com';
   }
   return '';
 };
