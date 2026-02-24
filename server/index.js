@@ -6,6 +6,8 @@ import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import path from 'path';
+import helmet from 'helmet';
+import { rateLimit } from 'express-rate-limit';
 
 import { fileURLToPath } from 'url';
 
@@ -61,6 +63,22 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+
+// 🛡️ Security Headers (XSS, Clickjacking, etc.)
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow images from other domains
+  contentSecurityPolicy: false, // Disable CSP for dev convenience, enable in strict production
+}));
+
+// 🚦 Global Rate Limiter (Prevents DDoS/Brute Force)
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 100, // Limit each IP to 100 requests per window
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many requests from this IP, please try again after 15 minutes.' }
+});
+app.use('/api/', globalLimiter); // Apply only to API routes
 
 // Health check — required by Render/Railway to verify server is alive
 app.get('/', (req, res) => {
@@ -176,27 +194,23 @@ const authenticateToken = async (req, res, next) => {
       console.log('Auth: Supabase getUser exception:', err.message);
     }
 
-    // Strategy 2b: Decode Supabase JWT directly (fallback)
-    // Supabase JWTs are standard JWTs — we can decode them to get user info
+    // Strategy 2b: Verify Supabase JWT directly (fallback)
+    // NOTE: Supabase uses a specific secret for JWTs (found in Project Settings > API)
+    // We use the JWT_SECRET from our env which should match the Supabase JWT Secret.
     try {
-      // Decode without verification first to extract user data
-      const decoded = jwt.decode(supabaseToken);
+      const decoded = jwt.verify(supabaseToken, JWT_SECRET);
       if (decoded && decoded.sub) {
-        // Verify it's a legitimate Supabase JWT by checking issuer
-        const expectedIssuer = `https://${(supabaseUrl || '').replace('https://', '').replace('/', '')}/auth/v1`;
-        if (decoded.iss === expectedIssuer || decoded.iss?.includes('supabase')) {
-          req.user = {
-            id: decoded.sub,
-            email: decoded.email || '',
-            name: decoded.user_metadata?.full_name || decoded.email || 'User',
-            supabase_id: decoded.sub,
-          };
-          console.log('Auth: ✅ Authenticated via Supabase JWT decode for:', decoded.email);
-          return next();
-        }
+        req.user = {
+          id: decoded.sub,
+          email: decoded.email || '',
+          name: decoded.user_metadata?.full_name || decoded.email || 'User',
+          supabase_id: decoded.sub,
+        };
+        console.log('Auth: ✅ Verified via Supabase JWT signature for:', decoded.email);
+        return next();
       }
     } catch (err) {
-      console.log('Auth: JWT decode fallback failed:', err.message);
+      console.log('Auth: JWT signature verification failed:', err.message);
     }
   }
 

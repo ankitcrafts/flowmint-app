@@ -54,120 +54,176 @@
 | cors                | 2.8.6   | Cross-origin request handling                |
 | dotenv              | 17.3.1  | Environment variable management              |
 
-### AI & Services
+# FlowMint — Engineering & Technical Documentation
 
-| Technology                | Version | Purpose                            |
-| ------------------------- | ------- | ---------------------------------- |
-| @google/genai             | 1.39.0  | Gemini AI SDK (Fallback)           |
-| Groq API                  | —       | Primary Llama 3.3 Provider (Free)  |
-| Model: `llama-3.3-70b`    | —       | Primary reasoning & planning model |
-| Model: `gemini-2.0-flash` | —       | High-speed fallback model          |
-
-### Dev Tooling
-
-| Technology           | Version | Purpose                                        |
-| -------------------- | ------- | ---------------------------------------------- |
-| @vitejs/plugin-react | 5.0.0   | React Fast Refresh for development             |
-| vite-plugin-pwa      | 1.2.0   | PWA manifest and service worker generation     |
-| concurrently         | 9.2.1   | Runs Express + Vite dev servers simultaneously |
-| nodemon              | 3.1.11  | Auto-restart backend on file changes           |
-| PostCSS              | 8.5.6   | CSS processing pipeline                        |
-| Autoprefixer         | 10.4.24 | Browser prefix automation                      |
+> **Project:** FlowMint — Financial Super-App with AI Wealth Management  
+> **Version:** 1.8.0  
+> **Last Updated:** 25 Feb 2026 — Cloud Deployment & Security Hardening Update.
 
 ---
 
-## 3. Getting Started
+## 🏗️ Technology Stack
+
+| Layer           | Technology                                       | Purpose                                                             |
+| --------------- | ------------------------------------------------ | ------------------------------------------------------------------- |
+| **Frontend**    | React 19, Vite, TypeScript                       | High-performance SPA with modern UI/UX.                             |
+| **Styling**     | Tailwind CSS, Framer Motion                      | Layouts, custom animations, and "Cyber-Finance" aesthetic.          |
+| **Mobile**      | Capacitor 8+                                     | Native Android/iOS wrapper for web assets.                          |
+| **Backend**     | Node.js, Express.js (on Render)                  | Secure API proxy, auth mediation, and AI orchestration.             |
+| **Database**    | Supabase (Postgres)                              | Row-level secured (RLS) data persistence.                           |
+| **Auth**        | Supabase Auth + Google GSI + Native Cred Manager | Cross-platform identity (Google One Tap & Native Sign-In).          |
+| **AI (Core)**   | Groq (Llama 3.3 70B)                             | Primary LLM for ultra-low latency financial insights (Llama-first). |
+| **AI (Backup)** | Gemini 2.0 Flash                                 | Fallback LLM and high-context reasoning.                            |
+
+---
+
+## 🛠️ Getting Started
 
 ### Prerequisites
 
-- **Node.js** v18 or higher
-- **npm** (comes with Node.js)
-- **Android Studio** (for Android builds) / **Xcode** (for iOS builds, macOS only)
-- **Supabase Project** — URL, Anon Key, and Service Role Key
-- **Google Cloud Console Project** — OAuth 2.0 Client ID (with SHA-1 for Android)
-- **Groq API Key** — For primary AI model (Llama 3.3)
-- **Google Gemini API Key** — From AI Studio (Backup AI)
-- **VITE_API_SERVER_URL** — (Optional) Set to your PC IP for mobile testing
+- Node.js (v20+)
+- npm (v10+)
+- Git
+- Google Cloud Project (for Auth)
+- Groq API Key (for Primary AI)
 
 ### Installation
 
-1. **Clone the repository:**
+1.  **Clone the Repo**:
 
-   ```bash
-   git clone <repo-url>
-   cd flowmint---financial-super-app
-   ```
+    ```bash
+    git clone https://github.com/ankitcrafts/flowmint-app.git
+    cd flowmint-app
+    ```
 
-2. **Install dependencies:**
+2.  **Install Base Dependencies**:
 
-   ```bash
-   npm install
-   ```
+    ```bash
+    npm install
+    ```
 
-3. **Environment Setup:**
-   Create a `.env` file in the project root:
+3.  **Install Server Dependencies**:
 
-   ```env
-   # ── App ──────────────────────────────
-   VITE_API_URL=http://localhost:3000
+    ```bash
+    cd server && npm install && cd ..
+    ```
 
-   # ── AI ───────────────────────────────
-   GEMINI_API_KEY=your_gemini_api_key
+4.  **Configure Environment**:
+    Create `.env.local` in root AND `server/.env` with:
 
-   # ── Supabase ─────────────────────────
-   VITE_SUPABASE_URL=https://your-project.supabase.co
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+    ```env
+    VITE_SUPABASE_URL=***
+    VITE_SUPABASE_ANON_KEY=***
+    GROQ_API_KEY=***
+    GEMINI_API_KEY=***
+    JWT_SECRET=*** (Must match Supabase JWT Secret)
+    ```
 
-   # ── Authentication ───────────────────
-   GOOGLE_CLIENT_ID=your_google_oauth_client_id
-   JWT_SECRET=your_jwt_secret_key
-   ```
+5.  **Run Development Server**:
+    ```bash
+    npm run dev       # Starts Vite (Frontend) and Server (Backend) concurrently
+    ```
 
-   > **Note:** `VITE_` prefixed variables are exposed to the frontend via Vite's `import.meta.env`. Non-prefixed variables are backend-only.
+---
 
-### Running Locally (Full Stack)
+## 🏛️ System Architecture
 
-Start both the Express backend and Vite frontend concurrently:
+### 1. Hybrid Cross-Platform (React + Capacitor)
 
-```bash
-npm run dev
+FlowMint uses a single codebase for Web and Android. The frontend detects the platform at runtime to toggle between Browser APIs (Google One Tap) and Native Plugins (Credential Manager).
+
+### 2. Double-Shield Authentication
+
+- **Web**: Google One Tap → Response → Supabase Auth.
+- **Mobile**: Native Capacitor Plugin → Android Credential Manager → Token → Supabase Auth.
+- **Session Persistence**: JWTs are stored in HTTPOnly cookies (Web) and Secure Storage (Native).
+
+### 3. AI Resilience Logic (The 15s Rule)
+
+The backend implements a failure-proof AI chain:
+
+1.  **Groq (Llama 3.3 70B)**: Triggered first. Time limit: 15 seconds.
+2.  **Gemini 2.0 Flash**: Triggered if Groq fails or times out.
+3.  **Local Deterministic Engine**: Triggered if all AIs fail (Pure JSON math).
+
+---
+
+## 🔐 Security Standards
+
+- **JWT Signature Verification**: Every backend request verifies the JWT signature using `JWT_SECRET` to prevent token tampering.
+- **Express Rate Limiting**: Global limit of 100 requests per 15 minutes to prevent DDoS and API credit exhaustion.
+- **Helmet.js Headers**: Implemented in production to set secure HTTP headers (XSS, Clickjacking, MIME).
+- **CORS Restricted**: Backend only accepts requests from allowed domains and local development.
+- **Row Level Security (RLS)**: Enforced in Supabase. Users can strictly only `SELECT/INSERT/UPDATE` their own records by `auth.uid()`.
+
+---
+
+## 📂 Directory Structure
+
+```text
+flowmint/
+├── src/                    # Frontend Application
+│   ├── components/         # Atomic UI components
+│   ├── pages/              # View components (Dashboard, FlowPay, etc.)
+│   ├── services/           # API & Database interaction logic
+│   ├── utils/              # Calculation engines & helpers
+│   ├── plugins/            # Capacitor native code bridges
+│   └── App.tsx             # Main router & Auth wrapper
+├── server/                 # Express Backend
+│   ├── index.js            # API Proxy & Security Middleware
+│   ├── package.json        # Lean backend dependencies
+│   └── DEPLOY.md           # Production deployment guide
+├── supabase/
+│   └── migrations/         # SQL schema & RLS policies
+├── android/                # Native Android project files
+├── capacitor.config.ts     # Platform configuration
+└── vite.config.ts          # Build & Proxy configuration
 ```
 
-| Service  | URL                     | Description              |
-| -------- | ----------------------- | ------------------------ |
-| Frontend | `http://localhost:5173` | Vite dev server with HMR |
-| Backend  | `http://localhost:3000` | Express API server       |
+---
 
-The Vite config includes a proxy that forwards `/auth/*` and `/api/*` requests from `:5173` to `:3000` automatically.
+## 📡 API Reference (Partial)
 
-### Available Scripts
+### AI Insights (`POST /api/ai/spending-insight`)
 
-| Script                 | Command                                | Description                 |
-| ---------------------- | -------------------------------------- | --------------------------- |
-| `npm run dev`          | `concurrently "npm run server" "vite"` | Full-stack development      |
-| `npm run dev:frontend` | `vite`                                 | Frontend only (no Express)  |
-| `npm run server`       | `node server/index.js`                 | Backend only                |
-| `npm run build`        | `vite build`                           | Production build to `dist/` |
-| `npm run preview`      | `vite preview`                         | Preview production build    |
+- **Protected**: Yes (JWT)
+- **Engine**: Groq (Llama 3.3)
+- **Input**: Transaction categories & totals
+- **Output**: Personality analysis + 3 actionable tips.
 
-### Running on Mobile (Android)
+### Wish Plan (`POST /api/ai/wish-plan`)
 
-1. **Build the web assets:**
-   ```bash
-   npm run build
-   ```
-2. **Sync with Capacitor:**
-   ```bash
-   npx cap sync
-   ```
-3. **Open in Android Studio:**
-   ```bash
-   npx cap open android
-   ```
-4. Run the app on an emulator or connected device from Android Studio.
+- **Protected**: Yes (JWT)
+- **Engine**: Groq (Llama 3.3)
+- **Input**: `{ wishName, price, currentSavings, timeframe }`
+- **Output**: 3-step saving blueprint + speed-up tip.
 
-> **Important:** For Google Sign-In on Android, you must register your debug SHA-1 fingerprint in Google Cloud Console and add the `GoogleAuthPlugin` to your Capacitor Android activity.
+### Health Check (`GET /`)
+
+- **Protected**: No
+- **Returns**: Server status, version, uptime, and AI provider availability (API Key status).
+
+---
+
+## 🚀 Deployment
+
+- **Frontend**: Hosted on Vercel/Netlify or packaged as Android APK.
+- **Backend**: Deployed on Render.com (`https://flowmint-app.onrender.com`).
+- **Database**: Managed Supabase instance.
+
+> **Note**: For mobile APKs, Ensure `VITE_API_URL` is set to the Render production URL in the build environment.
+
+---
+
+## 📈 Roadmap
+
+| Milestone | Feature                                    | Status     |
+| --------- | ------------------------------------------ | ---------- |
+| **0.8**   | Multi-Model AI (Groq + Gemini)             | ✅ Done    |
+| **0.9**   | Cloud Deployment & Security Hardening      | ✅ Done    |
+| **1.0**   | Real Bank Integration (Account Aggregator) | 🔄 Ongoing |
+| **1.1**   | Credit Bureau Real-time Pull               | ❌ Pending |
+| **1.2**   | P2P Smart Lending Engine                   | ❌ Pending |
 
 ### Running on Mobile (iOS) — _macOS Only_
 

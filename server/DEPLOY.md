@@ -58,7 +58,9 @@
 
 # GOOGLE_CLIENT_ID = 67326297377-our22c4hei4djsjv0v4piilbpe53a3e0.apps.googleusercontent.com
 
-# JWT_SECRET = your-secure-jwt-secret-key-021303
+# JWT_SECRET = (Your Supabase JWT Secret — MUST match dashboard)
+
+# Found in: Project Settings → API → JWT Settings → JWT Secret
 
 # GROQ_API_KEY = (your Groq API key)
 

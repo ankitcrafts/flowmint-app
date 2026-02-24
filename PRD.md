@@ -1,57 +1,5 @@
 # FlowMint — Product Requirements Document (PRD)
 
-> **Version:** 2.0 • **Last Updated:** 20 Feb 2026 • **Status:** Phase 1 MVP Complete
-
----
-
-## 1. Executive Summary
-
-**Product Name:** FlowMint  
-**Tagline:** "Your money, your flow."  
-**Vision:** To become the ultimate "Financial Super App" for Indian Gen-Z and Millennials — blending traditional finance with modern lifestyle, sustainability tracking, and AI-driven advisory. FlowMint makes money management feel premium, intuitive, and rewarding.
-
-**Target Audience:** Digital-native Indians (Age 18–35) who are financially conscious but overwhelmed by traditional banking apps. They want one app that combines UPI payments, credit monitoring, expense tracking, savings goals, and intelligent financial advice.
-
-**Business Model:** Freemium — Free core features + Premium tier ("FlowMint Black") for advanced AI, lower fees, and exclusive experiences.
-
----
-
-## 2. Core Value Proposition
-
-| Pillar                     | Value                                                                                              |
-| -------------------------- | -------------------------------------------------------------------------------------------------- |
-| **Unified Financial View** | Single dashboard aggregating balance, spending, credit, bills, loans, and sustainability           |
-| **AI-Powered Advisory**    | Gemini-powered AI that speaks Gen-Z lingo and gives culturally relevant Indian financial advice    |
-| **Sustainability Focus**   | Track the environmental impact of every rupee spent — align financial health with planetary health |
-| **Gamified Growth**        | Turn credit building and savings into engaging challenges with visual progress and rewards         |
-| **Premium Experience**     | Cyber-Finance aesthetic with glassmorphism, neon accents, and fluid animations                     |
-
----
-
-## 3. Product Pillars & Features
-
-### 3.1. Dashboard — The Command Center
-
-> **Component:** `Dashboard.tsx` • **Status:** ✅ Built (Mock Data)
-
-- **Overview:** High-level view of Total Balance (₹59,823), Monthly Spend, and Credit Score (782)
-- **Visuals:** Glassmorphic cards, neon accents, charts powered by Recharts (Area + Bar)
-- **Widgets:** 11 data widgets including wealth history, daily spending, weekly trends, EMI stress, loan readiness, AI insights, and recent transactions
-- **Sustainability:** Real-time eco-impact card showing CO2 and water savings
-- **AI Integration:** Gemini-generated "Spend Personality" insight based on transaction data
-- **Quick Actions:** Scan & Pay, Send Money, Check Score, view AI Insights
-
-### 3.2. FlowPay — Payments Ecosystem
-
-> **Component:** `FlowPay.tsx` • **Status:** 🔄 UI Built (Simulated)
-
-- **Scan & Pay:** QR code scanner with animated scanning UI (simulated — no real camera)
-- **Send Money:** Bottom sheet modal with UPI ID input and amount field
-- **Upcoming EMIs:** 3 tracked EMIs with "Pay Now" action
-- **Pay Services:** 8-category grid (Power, Recharge, DTH, Rent, Broadband, Card Bill, Housing, SIP)
-- **Transaction Ledger:** 6-item payment history with sent/received indicators
-- **Disclosure:** "Simulated Mode" badge — real UPI integration planned
-
 ### 3.3. FlowCredit — Credit Health Intelligence
 
 > **Component:** `FlowCredit.tsx` • **Status:** 🔄 UI Built (Mock Score)
