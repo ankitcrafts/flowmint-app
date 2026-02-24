@@ -13,10 +13,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Determine env file based on environment
+// In production (Render/Railway), env vars are set in dashboard — dotenv is a no-op
+// In local dev, load from parent directory's .env.local
 const envPath = path.resolve(__dirname, process.env.NODE_ENV === 'production' ? '../.env.production' : '../.env.local');
 dotenv.config({ path: envPath });
-// Also load default .env as fallback
+// Also load default .env as fallback (parent dir, then server dir)
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -58,6 +61,20 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+
+// Health check — required by Render/Railway to verify server is alive
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'FlowMint API',
+    version: '1.0.0',
+    uptime: Math.floor(process.uptime()),
+    providers: {
+      groq: !!process.env.GROQ_API_KEY,
+      gemini: !!(process.env.GEMINI_API_KEY && !process.env.GEMINI_API_KEY.includes('PLACEHOLDER')),
+    },
+  });
+});
 
 // Initialize Supabase Client (Service Role)
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL; // Allow VITE prefix fallback for hybrid dev
