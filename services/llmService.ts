@@ -99,21 +99,25 @@ export interface FinancialProfile {
   last_ai_interaction?: string;
 }
 
+export interface ChatRequest {
+  message: string;
+}
+
+export interface ChatResponse {
+  reply: string;
+  category: string;
+  actionable: boolean;
+  followUp?: string | null;
+  conversationId?: string;
+  provider?: string;
+  model?: string;
+  responseTimeMs?: number;
+  fallback?: boolean;
+}
+
 // ─── Configuration ────────────────────────────────────────
 
-// Detect Capacitor (mobile APK) vs browser
-const isCapacitor = (): boolean => !!(window as any).Capacitor;
-
-// In Capacitor, we need the full server URL; in browser, Vite proxy handles /api/*
-const getApiBase = (): string => {
-  if (isCapacitor()) {
-    // For Capacitor APK, point to the deployed server
-    // If you deploy the server, set this to your production URL
-    // For now, use the local network IP for development
-    return (import.meta as any).env?.VITE_API_SERVER_URL || 'https://flowmint-server.onrender.com';
-  }
-  return '';
-};
+import { getApiBase } from '../utils/platform';
 
 const API_BASE = `${getApiBase()}/api/ai`;
 
@@ -139,12 +143,17 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 }
 
 async function apiCall<T>(url: string, options?: RequestInit): Promise<T> {
-  const headers = await getAuthHeaders();
+  const authHeaders = await getAuthHeaders();
 
   const response = await fetch(url, {
-    credentials: 'include', // Also send cookies for JWT auth
-    headers,
     ...options,
+    credentials: 'include', // Also send cookies for JWT auth
+    headers: {
+      ...authHeaders,
+      ...(options?.headers instanceof Headers 
+        ? Object.fromEntries(options.headers.entries()) 
+        : options?.headers as Record<string, string>),
+    },
   });
 
   // Usage limits disabled — free for all users
@@ -154,6 +163,7 @@ async function apiCall<T>(url: string, options?: RequestInit): Promise<T> {
   // }
 
   if (response.status === 401) {
+    console.warn('FlowMint Auth: 401 received — token present:', !!authHeaders['Authorization']);
     throw new Error('Please sign in to use FlowMint AI');
   }
 
@@ -216,6 +226,28 @@ export const llmService = {
       return {
         personality: 'The Balanced One',
         tip: 'Keep tracking your spending — your financial awareness is already a superpower!',
+      };
+    }
+  },
+
+  /**
+   * General-purpose financial chat — ask anything.
+   * Uses the real AI backend (Groq/Gemini) with fallback.
+   */
+  async chatWithAI(message: string): Promise<ChatResponse> {
+    try {
+      return await apiCall<ChatResponse>(`${API_BASE}/chat`, {
+        method: 'POST',
+        body: JSON.stringify({ message }),
+      });
+    } catch (error) {
+      console.error('FlowMint AI — Chat Error:', error);
+      return {
+        reply: "I'm having a brief moment — but here's a universal tip: automate ₹5,000/month into a liquid fund on salary day. Small steps build serious wealth! Try again in a moment 💪",
+        category: 'general',
+        actionable: true,
+        followUp: 'Want me to help analyze your spending or plan savings?',
+        fallback: true,
       };
     }
   },

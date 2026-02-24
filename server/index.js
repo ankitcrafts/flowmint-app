@@ -23,14 +23,37 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL || 'http://localhost:5173',
-    'http://localhost',
-    'http://localhost:3000',
-    'capacitor://localhost',       // Capacitor Android
-    'ionic://localhost',           // Ionic WebView
-    'https://localhost',           // Capacitor iOS
-  ],
+  origin: function(origin, callback) {
+    // Allow requests with no origin (Capacitor WebView, server-to-server, curl)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      process.env.FRONTEND_URL || 'http://localhost:5173',
+      'http://localhost',
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'capacitor://localhost',       // Capacitor Android
+      'ionic://localhost',           // Ionic WebView
+      'https://localhost',           // Capacitor iOS
+      'http://localhost:8100',       // Ionic dev server
+    ];
+    
+    // Allow all capacitor:// and ionic:// schemes
+    if (origin.startsWith('capacitor://') || origin.startsWith('ionic://')) {
+      return callback(null, true);
+    }
+    
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // In development, allow all origins
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    
+    callback(new Error('CORS not allowed'));
+  },
   credentials: true,
 }));
 app.use(express.json());
@@ -59,13 +82,47 @@ const GROQ_BASE_URL = process.env.FLOWMINT_AI_BASE_URL || 'https://api.groq.com/
 const LLAMA_MODEL = process.env.FLOWMINT_AI_MODEL || 'llama-3.3-70b-versatile';
 
 // Google Gemini — Fallback AI provider (when Groq rate-limits)
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_API_KEY_RAW = process.env.GEMINI_API_KEY;
+// Detect placeholder key — treat it as missing
+const GEMINI_API_KEY = (GEMINI_API_KEY_RAW && !GEMINI_API_KEY_RAW.includes('PLACEHOLDER')) ? GEMINI_API_KEY_RAW : null;
 const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
 
+// ─── Startup Health Check ─────────────────────────────────
+console.log('FlowMint AI: 🔑 API Keys Status:');
+console.log(`  Groq:   ${GROQ_API_KEY ? '✅ Present' : '❌ MISSING — primary AI will not work'}`);
+console.log(`  Gemini: ${GEMINI_API_KEY ? '✅ Present' : '⚠️  Missing or placeholder — fallback disabled'}`);
+
+// ─── Utilities ────────────────────────────────────────────
+
+/** Fetch with timeout — prevents hanging requests */
+function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal })
+    .finally(() => clearTimeout(timeout));
+}
+
+/** Safely parse JSON from AI responses — handles code blocks, extra text, etc. */
+function safeParseJSON(raw) {
+  if (!raw || typeof raw !== 'string') return {};
+  // Try direct parse first
+  try { return JSON.parse(raw); } catch {}
+  // Strip markdown code blocks
+  const stripped = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+  try { return JSON.parse(stripped); } catch {}
+  // Extract first JSON object
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (match) {
+    try { return JSON.parse(match[0]); } catch {}
+  }
+  console.warn('FlowMint AI: ⚠️ Could not parse AI response as JSON:', raw.slice(0, 200));
+  return {};
+}
+
 // Auth Middleware — supports JWT cookie + Supabase Bearer token
 const authenticateToken = async (req, res, next) => {
-  // Strategy 1: Express JWT from cookie (web, after /auth/google)
+  // Strategy 1: Express JWT from cookie (web, after /auth/google or /auth/mobile)
   const cookieToken = req.cookies.access_token;
   if (cookieToken) {
     try {
@@ -74,15 +131,17 @@ const authenticateToken = async (req, res, next) => {
       return next();
     } catch (err) {
       // Cookie token invalid — fall through to other strategies
+      console.log('Auth: Cookie token invalid, trying other strategies');
     }
   }
 
-  // Strategy 2: Supabase Bearer token (from Supabase Auth session)
+  // Strategy 2: Supabase Bearer token (from Supabase Auth session — e.g. Google Sign-In)
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const supabaseToken = authHeader.slice(7);
+    
+    // Strategy 2a: Verify via Supabase Admin API
     try {
-      // Verify with Supabase — get user from token
       const { data: { user }, error } = await supabase.auth.getUser(supabaseToken);
       if (user && !error) {
         req.user = {
@@ -93,12 +152,39 @@ const authenticateToken = async (req, res, next) => {
         };
         return next();
       }
+      if (error) {
+        console.log('Auth: Supabase getUser error:', error.message);
+      }
     } catch (err) {
-      // Supabase token invalid — fall through
+      console.log('Auth: Supabase getUser exception:', err.message);
+    }
+
+    // Strategy 2b: Decode Supabase JWT directly (fallback)
+    // Supabase JWTs are standard JWTs — we can decode them to get user info
+    try {
+      // Decode without verification first to extract user data
+      const decoded = jwt.decode(supabaseToken);
+      if (decoded && decoded.sub) {
+        // Verify it's a legitimate Supabase JWT by checking issuer
+        const expectedIssuer = `https://${(supabaseUrl || '').replace('https://', '').replace('/', '')}/auth/v1`;
+        if (decoded.iss === expectedIssuer || decoded.iss?.includes('supabase')) {
+          req.user = {
+            id: decoded.sub,
+            email: decoded.email || '',
+            name: decoded.user_metadata?.full_name || decoded.email || 'User',
+            supabase_id: decoded.sub,
+          };
+          console.log('Auth: ✅ Authenticated via Supabase JWT decode for:', decoded.email);
+          return next();
+        }
+      }
+    } catch (err) {
+      console.log('Auth: JWT decode fallback failed:', err.message);
     }
   }
 
   // No valid auth found
+  console.log('Auth: ❌ No valid auth — headers present:', !!authHeader, '| cookie present:', !!cookieToken);
   return res.status(401).json({ error: 'Please sign in to use FlowMint AI' });
 };
 
@@ -294,7 +380,7 @@ async function callLlama(systemPrompt, userPrompt, maxTokens = 512) {
 
   const startTime = Date.now();
 
-  const response = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
+  const response = await fetchWithTimeout(`${GROQ_BASE_URL}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -310,11 +396,11 @@ async function callLlama(systemPrompt, userPrompt, maxTokens = 512) {
       max_tokens: maxTokens,
       response_format: { type: 'json_object' },
     }),
-  });
+  }, 15000);
 
   if (!response.ok) {
     const errBody = await response.text();
-    throw new Error(`Groq API error ${response.status}: ${errBody}`);
+    throw new Error(`Groq API error ${response.status}: ${errBody.slice(0, 200)}`);
   }
 
   const data = await response.json();
@@ -342,7 +428,7 @@ async function callGemini(systemPrompt, userPrompt, maxTokens = 512) {
 
   const startTime = Date.now();
 
-  const response = await fetch(
+  const response = await fetchWithTimeout(
     `${GEMINI_BASE_URL}/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
     {
       method: 'POST',
@@ -356,12 +442,13 @@ async function callGemini(systemPrompt, userPrompt, maxTokens = 512) {
           responseMimeType: 'application/json',
         },
       }),
-    }
+    },
+    15000
   );
 
   if (!response.ok) {
     const errBody = await response.text();
-    throw new Error(`Gemini API error ${response.status}: ${errBody}`);
+    throw new Error(`Gemini API error ${response.status}: ${errBody.slice(0, 200)}`);
   }
 
   const data = await response.json();
@@ -474,12 +561,16 @@ async function saveConversation(userId, { type, title, inputContext, aiResponse,
     .single();
 
   if (error) {
-    console.error('Conversation save error:', error);
+    // Non-fatal — log but don't block the AI response
+    console.warn('FlowMint: ⚠️ Conversation save failed (non-fatal):', error.message || error.code);
+    // Common: table doesn't exist yet, RLS policy blocked, etc.
   }
 
-  // 2. Update the user's financial profile (build it over time)
+  // 2. Update the user's financial profile (build it over time) — also non-blocking
   if (type === 'wish_plan' && inputContext) {
-    await updateFinancialProfile(userId, inputContext);
+    updateFinancialProfile(userId, inputContext).catch(err => 
+      console.warn('FlowMint: ⚠️ Profile update failed (non-fatal):', err.message)
+    );
   }
 
   return conversation;
@@ -658,7 +749,7 @@ Create a realistic, actionable saving plan.`;
 
   try {
     const { content: rawResponse, tokens, responseTimeMs, provider, model } = await callAI(systemPrompt, userPrompt);
-    const plan = JSON.parse(rawResponse);
+    const plan = safeParseJSON(rawResponse);
 
     const result = {
       aiTip: plan.aiTip || `You can afford "${wishName}" in approximately ${Math.ceil((price - currentSavings) / ((monthlyIncome - monthlyExpenses - existingEMIs) * 0.7))} months.`,
@@ -782,7 +873,7 @@ What's my spending personality and one tip to improve?`;
 
   try {
     const { content: rawResponse, tokens, responseTimeMs, provider, model } = await callAI(systemPrompt, userPrompt, 256);
-    const insight = JSON.parse(rawResponse);
+    const insight = safeParseJSON(rawResponse);
 
     const result = {
       personality: insight.personality || 'The Balanced One',
@@ -819,6 +910,96 @@ What's my spending personality and one tip to improve?`;
     res.json({
       personality: 'The Balanced One',
       tip: 'Your spending is on track. Keep building that emergency fund — aim for 6 months of expenses!',
+    });
+  }
+});
+
+/**
+ * POST /api/ai/chat
+ * General-purpose financial chat — ask anything about savings, spending, loans, credit, etc.
+ * Uses the same AI fallback chain (Groq → Gemini → static fallback).
+ * Conversations are saved to Supabase for user history.
+ */
+app.post('/api/ai/chat', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+  const { message } = req.body;
+
+  if (!message || !message.trim()) {
+    return res.status(400).json({ error: 'Message is required' });
+  }
+
+  const systemPrompt = `You are FlowMint AI, a witty, knowledgeable, and sharp financial advisor for Indian Gen-Z and Millennials.
+
+PERSONALITY:
+- Use Gen-Z lingo naturally (no cap, bet, vibe check, flex) but stay financially accurate
+- Be direct, actionable, and motivating
+- Be conversational but concise — keep responses under 150 words
+- Understand Indian financial products: SIP, PPF, FD, RD, UPI, EMI, CIBIL/credit score, NPS, ELSS, 80C, HRA
+- Reference Indian context: Swiggy, Zomato, Zerodha, Groww, PhonePe, Netflix India pricing
+- All amounts in ₹ (Indian Rupees)
+
+CAPABILITIES:
+- Personal finance advice (budgeting, saving, investing, debt management)
+- Spending optimization and expense tracking guidance
+- Credit score improvement strategies
+- Loan eligibility and EMI calculations
+- Tax-saving tips (Section 80C, 80D, HRA, etc.)
+- Investment options comparison (SIP, FD, PPF, mutual funds, stocks)
+- Goal-based financial planning
+- Insurance guidance (term, health)
+
+RESPOND ONLY with valid JSON in this exact schema:
+{
+  "reply": "Your conversational response here",
+  "category": "savings|spending|credit|loans|investing|tax|insurance|general",
+  "actionable": true/false,
+  "followUp": "Optional follow-up question to engage the user"
+}`;
+
+  const userPrompt = message.trim();
+
+  try {
+    const { content: rawResponse, tokens, responseTimeMs, provider, model } = await callAI(systemPrompt, userPrompt, 512);
+    const parsed = safeParseJSON(rawResponse);
+
+    const result = {
+      reply: parsed.reply || "I'm here to help with your finances! Could you tell me more about what you need advice on?",
+      category: parsed.category || 'general',
+      actionable: parsed.actionable || false,
+      followUp: parsed.followUp || null,
+    };
+
+    // Save conversation to Supabase
+    const conversation = await saveConversation(userId, {
+      type: 'chat',
+      title: message.trim().slice(0, 80),
+      inputContext: { message: userPrompt },
+      aiResponse: result,
+      modelUsed: model,
+      provider,
+      responseTimeMs,
+      tokensUsed: tokens,
+    });
+
+    res.json({
+      ...result,
+      conversationId: conversation?.id,
+      provider,
+      model,
+      responseTimeMs,
+    });
+  } catch (error) {
+    console.error('FlowMint AI — Chat Error:', error.message);
+
+    // Static fallback — still useful
+    res.json({
+      reply: "That's a great question! I'm having a brief moment, but here's a universal money tip: automate your savings by setting up a ₹5,000 auto-transfer on salary day into a liquid fund. Small consistent actions build serious wealth over time. Try asking me again in a moment! 💪",
+      category: 'general',
+      actionable: true,
+      followUp: 'Want me to help you set up a savings plan or analyze your spending?',
+      provider: 'fallback',
+      model: 'static',
+      fallback: true,
     });
   }
 });

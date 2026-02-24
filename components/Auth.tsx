@@ -14,6 +14,7 @@ import Onboarding from './Onboarding';
 import InitialSetup from './InitialSetup';
 import { supabase } from '../services/supabase';
 import GoogleAuth from '../plugins/GoogleAuth';
+import { isNativeApp } from '../utils/platform';
 
 interface UserProfile {
   name: string;
@@ -32,21 +33,6 @@ declare global {
   }
 }
 
-// Detect if running inside Capacitor (APK) or in browser
-const isCapacitor = (): boolean => {
-  return !!(window as any).Capacitor;
-};
-
-// Get API base URL: use server in dev, empty for Capacitor
-const getApiBase = (): string => {
-  if (isCapacitor()) {
-    // In Capacitor, we can't hit localhost. We'll handle auth client-side.
-    return '';
-  }
-  // In browser dev, Vite proxy handles /auth/* -> localhost:3000
-  return '';
-};
-
 const Auth: React.FC<AuthProps> = ({ onLoginSuccess, theme }) => {
   const [step, setStep] = useState<'welcome' | 'mobile' | 'otp' | 'handshake' | 'onboarding' | 'initial-setup'>('welcome');
   const [socialProvider, setSocialProvider] = useState<'Google' | 'Apple' | null>(null);
@@ -61,8 +47,8 @@ const Auth: React.FC<AuthProps> = ({ onLoginSuccess, theme }) => {
 
   // Load Google Identity Services script (only for browser, not Capacitor)
   useEffect(() => {
-    if (isCapacitor()) {
-      // In Capacitor, we'll use Supabase OAuth instead of GSI
+    if (isNativeApp()) {
+      // In native app, we'll use native Credential Manager instead of GSI
       return;
     }
 
@@ -175,14 +161,9 @@ const Auth: React.FC<AuthProps> = ({ onLoginSuccess, theme }) => {
       }
     } catch (err: any) {
       console.error('Native Google Sign-In failed:', err);
-      // Fallback to demo profile if native plugin isn't available
-      const profile = {
-        name: 'FlowMint User',
-        email: 'user@flowmint.app',
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=google`,
-      };
-      setStoredProfile(profile);
-      setStep('onboarding');
+      setError('Google Sign-In failed. Please try again.');
+      setStep('welcome');
+      setSocialProvider(null);
     }
   };
 
@@ -191,8 +172,8 @@ const Auth: React.FC<AuthProps> = ({ onLoginSuccess, theme }) => {
     setSocialProvider('Google');
     setError('');
 
-    // In Capacitor, use Supabase OAuth
-    if (isCapacitor()) {
+    // In native app (APK/IPA), use native Credential Manager
+    if (isNativeApp()) {
       handleGoogleLoginCapacitor();
       return;
     }

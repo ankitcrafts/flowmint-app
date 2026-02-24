@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Sparkles, Zap, Shield, TrendingUp, TrendingDown, AlertTriangle,
   Heart, Target, Calculator, CreditCard, ChevronRight, Brain,
-  MessageSquare, Send, Bot, User, Lightbulb
+  MessageSquare, Send, Bot, User, Lightbulb, Loader2
 } from 'lucide-react';
+import { llmService } from '../services/llmService';
 
 interface InsightCard {
   id: string;
@@ -56,36 +57,52 @@ const AI_INSIGHTS: InsightCard[] = [
 ];
 
 const CHAT_MESSAGES = [
-  { role: 'bot', text: 'Hey! I\'m your FlowMint AI advisor. Ask me anything about your finances — savings, loans, credit, or spending.' },
+  { role: 'bot' as const, text: 'Hey! I\'m your FlowMint AI advisor. Ask me anything about your finances — savings, loans, credit, spending, tax, or investments. I\'m powered by real AI! 🤖✨' },
 ];
 
 const AIInsights: React.FC = () => {
   const [view, setView] = useState<'insights' | 'chat'>('insights');
-  const [chatMessages, setChatMessages] = useState(CHAT_MESSAGES);
+  const [chatMessages, setChatMessages] = useState<{role: 'bot' | 'user'; text: string}[]>(CHAT_MESSAGES);
   const [inputText, setInputText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const handleSend = () => {
-    if (!inputText.trim()) return;
-    const userMsg = { role: 'user', text: inputText };
+  // Auto-scroll to latest message
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages, isLoading]);
+
+  const handleSend = async () => {
+    if (!inputText.trim() || isLoading) return;
+    const userMsg = { role: 'user' as const, text: inputText };
     setChatMessages(prev => [...prev, userMsg]);
+    const currentMessage = inputText;
     setInputText('');
+    setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const responses: Record<string, string> = {
-        'loan': 'Based on your profile (credit score 782, income ₹50K, existing EMIs ₹18K), you can safely take a personal loan up to ₹1.5L. Your EMI-to-income would stay below 50%. Would you like me to show loan options?',
-        'save': 'Here are 3 quick ways to boost your savings: 1) Reduce Swiggy orders by 2/week (saves ₹2,400/mo), 2) Switch to annual Netflix plan (saves ₹780/yr), 3) Set up auto-transfer of ₹5K on salary day. Shall I set this up?',
-        'credit': 'Your credit score is 782 (Excellent). It improved +12 pts this month thanks to on-time EMI payments. To cross 800, keep your credit card utilization below 30% — you\'re currently at 42%. Pay ₹8K more on your HDFC card this month.',
-        'default': 'That\'s a great question! Based on your financial profile: you have ₹59,823 in your account, 3 active EMIs totaling ₹18K, and a credit score of 782. Your financial health is good, but there\'s room for optimization. What specific area would you like advice on?',
-      };
-      const lower = inputText.toLowerCase();
-      let reply = responses.default;
-      if (lower.includes('loan') || lower.includes('borrow')) reply = responses.loan;
-      else if (lower.includes('save') || lower.includes('saving') || lower.includes('budget')) reply = responses.save;
-      else if (lower.includes('credit') || lower.includes('score') || lower.includes('cibil')) reply = responses.credit;
+    try {
+      const response = await llmService.chatWithAI(currentMessage);
+      
+      let replyText = response.reply;
+      if (response.followUp) {
+        replyText += `\n\n💡 ${response.followUp}`;
+      }
+      if (response.provider && response.provider !== 'fallback') {
+        replyText += `\n\n⚡ Powered by ${response.provider === 'groq' ? 'Llama 3.3' : 'Gemini'}${response.responseTimeMs ? ` (${response.responseTimeMs}ms)` : ''}`;
+      }
+      if (response.fallback) {
+        replyText += '\n\n🔄 (AI is busy — this is a cached tip. Try again!)';
+      }
 
-      setChatMessages(prev => [...prev, { role: 'bot', text: reply }]);
-    }, 1500);
+      setChatMessages(prev => [...prev, { role: 'bot' as const, text: replyText }]);
+    } catch (error) {
+      setChatMessages(prev => [...prev, {
+        role: 'bot' as const,
+        text: "Oops, something went wrong! But here's a quick tip: start a ₹500/month SIP today — your future self will thank you. Try asking again! 💪",
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const severityStyles: Record<string, { border: string; bg: string }> = {
@@ -158,7 +175,7 @@ const AIInsights: React.FC = () => {
       ) : (
         <div className="space-y-4">
           {/* Chat Messages */}
-          <div className="space-y-3 min-h-[300px]">
+          <div className="space-y-3 min-h-[300px] max-h-[55vh] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
             {chatMessages.map((msg, i) => (
               <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${msg.role === 'bot' ? 'bg-brand/10' : ''}`}
@@ -171,10 +188,26 @@ const AIInsights: React.FC = () => {
                     backgroundColor: msg.role === 'user' ? 'var(--brand-primary)' : undefined,
                     color: msg.role === 'user' ? '#000' : 'var(--text-color)',
                   }}>
-                  <p className="text-xs leading-relaxed font-medium">{msg.text}</p>
+                  <p className="text-xs leading-relaxed font-medium whitespace-pre-line">{msg.text}</p>
                 </div>
               </div>
             ))}
+            {/* Typing Indicator */}
+            {isLoading && (
+              <div className="flex gap-3">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-brand/10">
+                  <Bot className="w-4 h-4 text-brand" />
+                </div>
+                <div className="max-w-[80%] p-4 rounded-2xl glass border" style={{ borderColor: 'var(--glass-border)' }}>
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 text-brand animate-spin" />
+                    <span className="text-xs text-gray-400 font-medium">FlowMint AI is thinking...</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Scroll anchor */}
+            <div ref={chatEndRef} />
           </div>
 
           {/* Chat Input */}
@@ -183,16 +216,18 @@ const AIInsights: React.FC = () => {
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Ask about loans, savings, credit..."
-              className="flex-1 h-14 px-5 rounded-2xl text-sm font-bold focus:outline-none border-2 theme-transition"
+              placeholder={isLoading ? 'AI is thinking...' : 'Ask about loans, savings, credit, tax...'}
+              disabled={isLoading}
+              className="flex-1 h-14 px-5 rounded-2xl text-sm font-bold focus:outline-none border-2 theme-transition disabled:opacity-50"
               style={{ backgroundColor: 'var(--card-subtle)', borderColor: 'var(--glass-border)', color: 'var(--text-color)' }}
             />
             <button
               onClick={handleSend}
-              className="w-14 h-14 bg-brand rounded-2xl flex items-center justify-center text-black shadow-lg shrink-0"
+              disabled={isLoading || !inputText.trim()}
+              className="w-14 h-14 bg-brand rounded-2xl flex items-center justify-center text-black shadow-lg shrink-0 disabled:opacity-50 transition-opacity"
               style={{ boxShadow: '0 8px 20px var(--brand-glow)' }}
             >
-              <Send className="w-5 h-5" />
+              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
             </button>
           </div>
         </div>
