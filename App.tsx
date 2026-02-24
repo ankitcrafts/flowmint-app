@@ -17,7 +17,8 @@ import {
   Sparkles,
   Menu,
   X,
-  ChevronRight
+  ChevronRight,
+  Upload
 } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import FlowPay from './components/FlowPay';
@@ -31,6 +32,8 @@ import LoanMarketplace from './components/LoanMarketplace';
 import AIInsights from './components/AIInsights';
 import Auth from './components/Auth';
 import ErrorBoundary from './components/ErrorBoundary';
+import CreditDashboard from './pages/CreditDashboard';
+import CreditUpload from './pages/CreditUpload';
 import { supabase } from './services/supabase';
 
 interface UserProfile {
@@ -50,6 +53,8 @@ enum Tab {
   Wishes = 'wishes',
   Loans = 'loans',
   AI = 'ai',
+  CreditCore = 'credit_core',
+  CreditUpload = 'credit_upload',
 }
 
 const App: FC = () => {
@@ -61,18 +66,24 @@ const App: FC = () => {
   const [showMore, setShowMore] = useState(false);
 
   useEffect(() => {
-    const fetchProfile = async (userId: string) => {
-      const { data, error } = await supabase
+    const fetchProfile = async (userId: string, sessionUser?: any) => {
+      const { data } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (data) {
         setUserProfile({
           name: data.name,
-          email: 'user@flowmint.com',
-          avatar: data.avatar_url
+          email: data.email || sessionUser?.email || 'user@flowmint.com',
+          avatar: data.avatar_url || sessionUser?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`
+        });
+      } else if (sessionUser) {
+        setUserProfile({
+          name: sessionUser.user_metadata?.full_name || sessionUser.user_metadata?.name || 'FlowMint User',
+          email: sessionUser.email || '',
+          avatar: sessionUser.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`
         });
       }
     };
@@ -80,7 +91,7 @@ const App: FC = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setIsAuthenticated(true);
-        fetchProfile(session.user.id);
+        fetchProfile(session.user.id, session.user);
       }
       setIsLoaded(true);
     });
@@ -90,7 +101,7 @@ const App: FC = () => {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
       if (session) {
-         fetchProfile(session.user.id);
+         fetchProfile(session.user.id, session.user);
       } else {
          setUserProfile(null);
       }
@@ -157,6 +168,8 @@ const App: FC = () => {
       case Tab.Wishes: return <AIWishTracker />;
       case Tab.Loans: return <LoanMarketplace />;
       case Tab.AI: return <AIInsights />;
+      case Tab.CreditCore: return <CreditDashboard />;
+      case Tab.CreditUpload: return <CreditUpload />;
       default: return <Dashboard theme={theme} userProfile={userProfile} onNavigate={handleNavigate} />;
     }
   };
@@ -235,7 +248,9 @@ const App: FC = () => {
                 <MoreMenuItem icon={<Calculator className="w-5 h-5" />} label="Loan Market" color="text-blue-400" onTap={() => handleNavigate('loans')} />
                 <MoreMenuItem icon={<Sparkles className="w-5 h-5" />} label="AI Advisor" color="text-brand" onTap={() => handleNavigate('ai')} />
                 <MoreMenuItem icon={<Wallet className="w-5 h-5" />} label="UPI Pay" color="text-cyan-400" onTap={() => handleNavigate('pay')} />
-                <MoreMenuItem icon={<ShieldCheck className="w-5 h-5" />} label="Credit Score" color="text-brand" onTap={() => handleNavigate('credit')} />
+                <MoreMenuItem icon={<ShieldCheck className="w-5 h-5 shadow-[0_0_10px_rgba(6,182,212,0.4)]" />} label="Credit Center" color="text-cyan-400" onTap={() => handleNavigate('credit_core')} />
+                <MoreMenuItem icon={<Upload className="w-5 h-5" />} label="Upload Statement" color="text-emerald-400" onTap={() => handleNavigate('credit_upload')} />
+                <MoreMenuItem icon={<ShieldCheck className="w-5 h-5" />} label="Basic Score" color="text-brand" onTap={() => handleNavigate('credit')} />
                 <MoreMenuItem icon={<Target className="w-5 h-5" />} label="Goals" color="text-purple-400" onTap={() => handleNavigate('goals')} />
                 <MoreMenuItem icon={<LayoutDashboard className="w-5 h-5" />} label="Dashboard" color="text-brand" onTap={() => handleNavigate('dashboard')} />
               </div>
