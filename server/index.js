@@ -121,7 +121,7 @@ const GEMINI_API_KEY_RAW = process.env.GEMINI_API_KEY;
 // Detect placeholder key — treat it as missing
 const GEMINI_API_KEY = (GEMINI_API_KEY_RAW && !GEMINI_API_KEY_RAW.includes('PLACEHOLDER')) ? GEMINI_API_KEY_RAW : null;
 const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
 // ─── Startup Health Check ─────────────────────────────────
 console.log('FlowMint AI: 🔑 API Keys Status:');

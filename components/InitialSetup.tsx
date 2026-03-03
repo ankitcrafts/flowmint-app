@@ -74,7 +74,7 @@ interface InitialSetupProps {
   theme: 'light' | 'dark';
 }
 
-type SetupStep = 'name' | 'city' | 'vibe' | 'field' | 'income' | 'savings' | 'identity-choice' | 'details-review' | 'ekyc' | 'celebration';
+type SetupStep = 'name' | 'city' | 'vibe' | 'field' | 'income' | 'savings' | 'identity-choice' | 'details-review' | 'ekyc' | 'card-details' | 'celebration';
 
 const FIELD_OPTIONS: Record<string, { label: string, icon: React.ReactNode }[]> = {
   Student: [
@@ -133,6 +133,15 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme }) => {
     fullAddress: 'No. 42, 10th Main Road, Stage 2, Indiranagar, Bengaluru - 560038'
   });
 
+  // Card details state
+  const [cardType, setCardType] = useState<'credit' | 'debit'>('debit');
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCvv, setCardCvv] = useState('');
+  const [cardName, setCardName] = useState('');
+  const [cardError, setCardError] = useState('');
+  const [isCardSaving, setIsCardSaving] = useState(false);
+
   // Assistant typing logic
   useEffect(() => {
     let text = "";
@@ -146,6 +155,7 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme }) => {
       case 'identity-choice': text = "Let's verify your identity to unlock higher limits."; break;
       case 'details-review': text = "Details fetched! Everything looking sharp?"; break;
       case 'ekyc': text = "Secure your account with a quick biometric handshake."; break;
+      case 'card-details': text = `Link a card to unlock full dashboard insights.`; break;
       case 'celebration': text = "You're all set, Alpha. Ready to enter the flow?"; break;
     }
     
@@ -251,8 +261,42 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme }) => {
     setTimeout(() => {
       setIsVerifying(false);
       setIsEkycComplete(true);
-      setTimeout(() => setStep('celebration'), 800);
+      setTimeout(() => setStep('card-details'), 800);
     }, 2500);
+  };
+
+  // Card helpers
+  const handleCardNumberChange = (val: string) => {
+    setCardError('');
+    const numeric = val.replace(/\D/g, '').slice(0, 16);
+    const formatted = numeric.match(/.{1,4}/g)?.join(' ') || numeric;
+    setCardNumber(formatted);
+  };
+
+  const handleCardExpiryChange = (val: string) => {
+    setCardError('');
+    const numeric = val.replace(/\D/g, '').slice(0, 4);
+    if (numeric.length >= 3) {
+      setCardExpiry(`${numeric.slice(0, 2)}/${numeric.slice(2)}`);
+    } else {
+      setCardExpiry(numeric);
+    }
+  };
+
+  const handleCardSubmit = () => {
+    const digits = cardNumber.replace(/\s/g, '');
+    if (digits.length < 12) { setCardError('Card number too short'); return; }
+    if (!cardExpiry || cardExpiry.length < 4) { setCardError('Enter a valid expiry (MM/YY)'); return; }
+    const month = parseInt(cardExpiry.slice(0, 2));
+    if (month < 1 || month > 12) { setCardError('Invalid expiry month'); return; }
+    if (cardCvv.length < 3) { setCardError('Enter a valid CVV'); return; }
+    if (!cardName.trim()) { setCardError('Enter cardholder name'); return; }
+
+    setIsCardSaving(true);
+    setTimeout(() => {
+      setIsCardSaving(false);
+      setStep('celebration');
+    }, 1500);
   };
 
   const handleCompleteSetup = async () => {
@@ -579,8 +623,125 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme }) => {
                   label={isVerifying ? "VERIFYING..." : "SECURE NOW"} 
                 />
                 {!isEkycComplete && (
-                  <button onClick={() => setStep('celebration')} className="w-full text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] py-2">Skip for now</button>
+                  <button onClick={() => setStep('card-details')} className="w-full text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] py-2">Skip for now</button>
                 )}
+              </div>
+            </div>
+          )}
+
+          {step === 'card-details' && (
+            <div className="space-y-6">
+              {/* Card Type Toggle */}
+              <div className="flex p-1 bg-white/5 rounded-2xl gap-1">
+                <button 
+                  onClick={() => { setCardType('debit'); setCardError(''); }}
+                  className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${cardType === 'debit' ? 'bg-brand text-black shadow-lg shadow-brand/20' : 'text-gray-500'}`}
+                >
+                  Debit Card
+                </button>
+                <button 
+                  onClick={() => { setCardType('credit'); setCardError(''); }}
+                  className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${cardType === 'credit' ? 'bg-brand text-black shadow-lg shadow-brand/20' : 'text-gray-500'}`}
+                >
+                  Credit Card
+                </button>
+              </div>
+
+              {/* Card Visual */}
+              <div className="relative glass border border-white/10 rounded-[1.5rem] p-6 space-y-6 overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 blur-3xl pointer-events-none rounded-full"></div>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-brand" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">
+                      {cardType === 'credit' ? 'Credit Card' : 'Debit Card'}
+                    </span>
+                  </div>
+                  <div className="flex gap-1">
+                    <div className="w-6 h-6 rounded-full bg-red-500/80"></div>
+                    <div className="w-6 h-6 rounded-full bg-yellow-500/80 -ml-3"></div>
+                  </div>
+                </div>
+
+                {/* Card Number */}
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="0000 0000 0000 0000"
+                  value={cardNumber}
+                  onChange={(e) => handleCardNumberChange(e.target.value)}
+                  className="w-full bg-transparent text-2xl font-black tracking-[0.15em] focus:outline-none placeholder:text-gray-700"
+                  style={{ color: 'var(--text-color)' }}
+                />
+
+                {/* Expiry + CVV Row */}
+                <div className="flex gap-6">
+                  <div className="flex-1">
+                    <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest mb-1">Expiry</p>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="MM/YY"
+                      value={cardExpiry}
+                      onChange={(e) => handleCardExpiryChange(e.target.value.replace('/', ''))}
+                      className="w-full bg-transparent text-lg font-black tracking-widest focus:outline-none placeholder:text-gray-700"
+                      style={{ color: 'var(--text-color)' }}
+                    />
+                  </div>
+                  <div className="w-20">
+                    <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest mb-1">CVV</p>
+                    <input
+                      type="password"
+                      inputMode="numeric"
+                      placeholder="•••"
+                      maxLength={4}
+                      value={cardCvv}
+                      onChange={(e) => { setCardError(''); setCardCvv(e.target.value.replace(/\D/g, '').slice(0, 4)); }}
+                      className="w-full bg-transparent text-lg font-black tracking-widest focus:outline-none placeholder:text-gray-700"
+                      style={{ color: 'var(--text-color)' }}
+                    />
+                  </div>
+                </div>
+
+                {/* Cardholder Name */}
+                <div>
+                  <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest mb-1">Cardholder Name</p>
+                  <input
+                    type="text"
+                    placeholder="As on card"
+                    value={cardName}
+                    onChange={(e) => { setCardError(''); setCardName(e.target.value.toUpperCase()); }}
+                    className="w-full bg-transparent text-sm font-black tracking-widest uppercase focus:outline-none placeholder:text-gray-700"
+                    style={{ color: 'var(--text-color)' }}
+                  />
+                </div>
+              </div>
+
+              {cardError && (
+                <div className="flex items-center gap-2 px-2 text-red-500 animate-in fade-in slide-in-from-top-1">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-black uppercase tracking-widest leading-none">{cardError}</span>
+                </div>
+              )}
+
+              {/* Security Note */}
+              <div className="flex items-center gap-2 px-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-brand shrink-0" />
+                <p className="text-[8px] text-gray-500 font-bold uppercase tracking-wider">256-bit encrypted • PCI DSS compliant • Never stored</p>
+              </div>
+
+              <div className="space-y-4 pt-1">
+                <PremiumButton
+                  disabled={isCardSaving}
+                  onClick={handleCardSubmit}
+                  label={isCardSaving ? 'LINKING...' : 'LINK CARD'}
+                />
+                <button
+                  onClick={() => setStep('celebration')}
+                  className="w-full text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] py-2"
+                >
+                  Skip for now
+                </button>
               </div>
             </div>
           )}
@@ -604,7 +765,7 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme }) => {
       {step !== 'name' && step !== 'celebration' && (
         <button 
           onClick={() => {
-            const steps: SetupStep[] = ['name', 'city', 'vibe', 'field', 'income', 'savings', 'identity-choice', 'details-review', 'ekyc', 'celebration'];
+            const steps: SetupStep[] = ['name', 'city', 'vibe', 'field', 'income', 'savings', 'identity-choice', 'details-review', 'ekyc', 'card-details', 'celebration'];
             const idx = steps.indexOf(step);
             if (idx > 0) setStep(steps[idx - 1]);
           }}

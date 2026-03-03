@@ -87,9 +87,7 @@ const AIInsights: React.FC = () => {
       if (response.followUp) {
         replyText += `\n\n💡 ${response.followUp}`;
       }
-      if (response.provider && response.provider !== 'fallback') {
-        replyText += `\n\n⚡ Powered by ${response.provider === 'groq' ? 'Llama 3.3' : 'Gemini'}${response.responseTimeMs ? ` (${response.responseTimeMs}ms)` : ''}`;
-      }
+
       if (response.fallback) {
         replyText += '\n\n🔄 (AI is busy — this is a cached tip. Try again!)';
       }

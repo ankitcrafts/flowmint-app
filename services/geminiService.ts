@@ -6,10 +6,10 @@ import { GoogleGenAI, Type } from "@google/genai";
 
 export const getSpendingInsights = async (transactions: any[]) => {
   // Create a new GoogleGenAI instance right before making an API call to ensure it always uses the most up-to-date API key
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-2.5-flash',
       contents: `Analyze these transactions and provide a "Spend Personality" and one "Alpha Tip". Transactions: ${JSON.stringify(transactions)}`,
       config: {
         systemInstruction: "You are FlowMint AI, a witty financial genius for Indian Millennials. You use Gen-Z lingo (no cap, bet, flex) but provide serious financial wisdom. Be brief. Maximum 2 sentences.",
@@ -25,10 +25,10 @@ export const getSpendingInsights = async (transactions: any[]) => {
 
 export const getWishTrackerPlan = async (goal: string, amount: number, currentSavings: number) => {
   // Create a new GoogleGenAI instance right before making an API call
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-2.5-flash',
       contents: `I want to buy '${goal}' costing ₹${amount}. I have ₹${currentSavings} saved. Create a 3-step saving plan for an Indian millennial earning ₹60k/month.`,
       config: {
         systemInstruction: "You are the FlowMint AI Wish Specialist. You help users turn dreams into reality with disciplined saving hacks.",
