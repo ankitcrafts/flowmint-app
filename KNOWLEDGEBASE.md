@@ -113,7 +113,8 @@ FlowMint adopts a **"Cyber-Finance"** aesthetic — a premium, dark-mode-first d
   - `navigator.geolocation.getCurrentPosition()` — GPS
   - Nominatim reverse geocoding — city detection
   - DiceBear avatars — avatar generation
-- **Mock APIs:** Aadhaar/PAN verification, eKYC biometric scan
+- **Mock APIs:** Aadhaar/PAN verification.
+- **Local Logic:** eKYC biometric scan uses Web Crypto API for secure local AES-GCM encryption/decryption (Identity Vault).
 - **Gap:** Profile data is NOT persisted to backend (stays in local state)
 
 ### FlowPay (`FlowPay.tsx`) — 308 lines
@@ -157,9 +158,9 @@ FlowMint adopts a **"Cyber-Finance"** aesthetic — a premium, dark-mode-first d
 ### AIInsights (`AIInsights.tsx`) — 205 lines
 
 - **Features:** Smart Insights feed (6 cards), AI Chat interface with message bubbles
-- **Chat Logic:** `handleSend()` matches keywords (loan/save/credit) → returns canned responses after 1.5s delay
-- **Mock Data:** All — `AI_INSIGHTS` (6 cards), chat responses hardcoded
-- **Gap:** No real Gemini API integration in this component (ironically — despite being the "AI" tab)
+- **Chat Logic:** `handleSend()` passes user context + queries to the `/api/ai/chat` Express endpoint powered by Groq (Llama 3.3).
+- **Mock Data:** Initial AI_INSIGHTS (6 cards) are predefined, but conversational chat uses real LLM.
+- **Gap:** Pre-loaded mock insight cards could eventually pull context-aware real history from backend.
 
 ### LoanMarketplace (`LoanMarketplace.tsx`) — 232 lines
 

@@ -1,6 +1,6 @@
 # FlowMint AI — Custom LLM Strategy
 
-> **Version:** 2.1 | **Updated:** 25 Feb 2026  
+> **Version:** 2.1 | **Updated:** 7 March 2026  
 > **Stack:** Llama 3.3 70B (Groq) → Gemini 2.0 Flash (Fallback) → Express → React  
 > **Vision:** A resilient, multi-model AI system optimized for Indian financial context.
 

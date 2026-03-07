@@ -430,13 +430,14 @@ Since the app includes an Express backend server, it requires a persistent Node.
 **Recommended Hosts:** Render, Railway, Heroku, or a VPS (AWS EC2, DigitalOcean).
 
 1. Build the frontend: `npm run build`
-2. Configure Express to serve the `dist/` folder as static files
-3. Set all environment variables on the host
-4. Start: `npm run server`
+2. Start Server: `node index.js` (The server uses `index.js` at the root, NOT `dist/index.js`)
 
 > **Vercel/Netlify:** These are static hosts and won't work with the current Express setup unless you refactor auth routes into serverless functions.
 
-### Android (Play Store)
+### Android (APK available natively)
+
+The compiled `.apk` can be grabbed directly from the root of the project `flowmint.apk`.
+To build manually:
 
 1. Open: `npx cap open android`
 2. Update `versionCode` and `versionName` in `android/app/build.gradle`

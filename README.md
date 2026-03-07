@@ -4,11 +4,11 @@
   <h1>💎 FlowMint</h1>
   <p><strong>The Future of "Cyber-Finance" — Intelligent Wealth Management for India.</strong></p>
 
-  <p>
-    <img src="https://img.shields.io/badge/Version-1.8.0-cyan?style=for-the-badge" alt="Version 1.8.0" />
+    <img src="https://img.shields.io/badge/Version-2.0.0-cyan?style=for-the-badge" alt="Version 2.0.0" />
     <img src="https://img.shields.io/badge/Stack-React_19_%2B_Express-purple?style=for-the-badge" alt="Stack" />
     <img src="https://img.shields.io/badge/AI-Groq_%7C_Llama_3.3-green?style=for-the-badge" alt="AI" />
     <img src="https://img.shields.io/badge/Platform-Web_%2F_Android-blue?style=for-the-badge" alt="Platform" />
+
   </p>
 </div>
 
@@ -78,6 +78,10 @@ npm run dev
 ```
 
 Access the dashboard at `http://localhost:5173`.
+
+### 5. Android APK
+
+The `flowmint.apk` Android application file is available directly in the root directory for easy installation.
 
 ---
 

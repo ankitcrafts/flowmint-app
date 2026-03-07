@@ -26,6 +26,10 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Tell Express it is running behind a proxy (like Render)
+// This fixes the express-rate-limit 'X-Forwarded-For' validation error by allowing it to use proxy headers for IP tracking.
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(cors({
   origin: function(origin, callback) {

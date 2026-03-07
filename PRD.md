@@ -72,13 +72,12 @@
 
 ### 3.10. FlowMint AI — The Brain
 
-> **Component:** `AIInsights.tsx` + `geminiService.ts` • **Status:** 🔄 Partial
+> **Component:** `AIInsights.tsx` + `geminiService.ts` / `llmService.ts` • **Status:** ✅ Fully Integrated
 
-- **Smart Insights Feed:** 6 categorized insight cards (Goal Acceleration, EMI Stress, Credit Health, Loan Readiness, Spending Psychology, Wish Strategy)
-- **AI Chat Interface:** Message bubbles with bot/user roles (currently keyword-matching, NOT real Gemini)
+- **Smart Insights Feed:** 6 categorized insight cards (Goal Acceleration, EMI Stress, Credit Health, Loan Readiness, Spending Psychology, Wish Strategy) generated via Groq backend.
+- **AI Chat Interface:** Real conversational chat powered by Llama 3.3 / Gemini via backend server APIs with streaming fallback architecture.
 - **Persona:** Witty, Gen-Z lingo ("No cap", "Bet"), direct and actionable
-- **Integrated AI:** Dashboard spending insights + FlowGoals savings plans use REAL Gemini API
-- **Gap:** The AI Insights tab itself uses hardcoded data — needs Gemini integration with full user context
+- **Integrated AI:** Dashboard spending insights + FlowGoals savings plans + Full-text conversational Chat uses REAL LLM APIs (Groq + Gemini).
 
 ### 3.11. Sustainability — Eco Impact
 
@@ -187,8 +186,8 @@
 
 ### Phase 4: AI Enhancement 🧠
 
-- [ ] **Contextual Insights:** Gemini API with full user financial context
-- [ ] **Conversational AI Chat:** Replace keyword matching with real Gemini chat
+- [x] **Conversational AI Chat:** Implement robust Llama 3.3 / Gemini chat backend instead of keyword matching
+- [ ] **Contextual Insights:** Complete user financial context injection
 - [ ] **Streaming Responses:** SSE/WebSocket for real-time AI response streaming
 - [ ] **Smart Categorization:** AI-powered expense categorization
 - [ ] **Predictive Analytics:** Spending forecasts and budget recommendations

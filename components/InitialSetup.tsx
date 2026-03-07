@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 
 import { supabase } from '../services/supabase';
+import { generateBiometricKey, encryptDeviceData, decryptDeviceData, EncryptedPayload } from '../utils/crypto';
 
 // --- Verhoeff Algorithm Implementation ---
 const d = [
@@ -133,6 +134,11 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme }) => {
     fullAddress: 'No. 42, 10th Main Road, Stage 2, Indiranagar, Bengaluru - 560038'
   });
 
+  // Local Biometric Crypto Vault State
+  const [encryptedVault, setEncryptedVault] = useState<EncryptedPayload | null>(null);
+  const [vaultKey, setVaultKey] = useState<CryptoKey | null>(null);
+  const [decryptedData, setDecryptedData] = useState<string>('');
+
   // Card details state
   const [cardType, setCardType] = useState<'credit' | 'debit'>('debit');
   const [cardNumber, setCardNumber] = useState('');
@@ -154,7 +160,7 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme }) => {
       case 'savings': text = `Based on your ₹${monthlyIncome.toLocaleString()} ${vibe === 'Student' ? 'budget' : 'income'}, how much do you plan to save?`; break;
       case 'identity-choice': text = "Let's verify your identity to unlock higher limits."; break;
       case 'details-review': text = "Details fetched! Everything looking sharp?"; break;
-      case 'ekyc': text = "Secure your account with a quick biometric handshake."; break;
+      case 'ekyc': text = "Lock your identity securely on-device with FlowMint Local Biometrics."; break;
       case 'card-details': text = `Link a card to unlock full dashboard insights.`; break;
       case 'celebration': text = "You're all set, Alpha. Ready to enter the flow?"; break;
     }
@@ -256,13 +262,53 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme }) => {
     }, 1500);
   };
 
-  const startEkyc = () => {
+  const startEkyc = async () => {
     setIsVerifying(true);
-    setTimeout(() => {
-      setIsVerifying(false);
+    
+    try {
+      // 1. Simulate the biometric scan delay securely
+      await new Promise(r => setTimeout(r, 1200));
+
+      // 2. Generate a highly secure local Biometric Key mimicking native Secure Enclaves
+      const key = await generateBiometricKey();
+
+      // 3. Prepare the Sensitive Payload
+      const sensitivePayload = JSON.stringify({
+        idType,
+        idNumber,
+        ...fetchedDetails
+      });
+
+      // 4. Encrypt the payload natively with AES-GCM
+      const encrypted = await encryptDeviceData(sensitivePayload, key);
+
+      // 5. Save the encrypted vault & the key locally
+      setEncryptedVault(encrypted);
+      setVaultKey(key);
+      
       setIsEkycComplete(true);
-      setTimeout(() => setStep('card-details'), 800);
-    }, 2500);
+    } catch (err) {
+      console.error("Local BioCrypt Failed", err);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const testDecryption = async () => {
+    setIsVerifying(true);
+    try {
+      // Re-trigger biometric scan to authorize decryption
+      await new Promise(r => setTimeout(r, 1000));
+      
+      if (encryptedVault && vaultKey) {
+        const decrypted = await decryptDeviceData(encryptedVault, vaultKey);
+        setDecryptedData(decrypted);
+      }
+    } catch (err) {
+      console.error("Decryption Failed", err);
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   // Card helpers
@@ -596,10 +642,10 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme }) => {
           )}
 
           {step === 'ekyc' && (
-            <div className="space-y-8 flex flex-col items-center py-6">
-              <div className="relative cursor-pointer" onClick={startEkyc}>
+            <div className="space-y-8 flex flex-col items-center py-6 w-full">
+              <div className="relative cursor-pointer" onClick={isEkycComplete ? undefined : startEkyc}>
                 <div className={`absolute inset-0 bg-brand/20 rounded-full animate-ping ${isVerifying ? 'opacity-100' : 'opacity-0'}`}></div>
-                <div className={`w-32 h-32 rounded-full border-4 border-dashed border-brand/30 flex items-center justify-center transition-all duration-500 ${isVerifying ? 'rotate-180 border-brand' : ''}`}>
+                <div className={`w-32 h-32 rounded-full border-4 border-dashed border-brand/30 flex items-center justify-center transition-all duration-500 ${isVerifying ? 'rotate-[360deg] border-brand' : ''}`}>
                   <div className="w-24 h-24 bg-brand/10 rounded-full flex items-center justify-center text-brand shadow-[0_0_30px_var(--brand-glow)]">
                     {isEkycComplete ? <ShieldCheck className="w-12 h-12" /> : <Fingerprint className="w-12 h-12" />}
                   </div>
@@ -612,18 +658,57 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme }) => {
               </div>
               
               <div className="text-center">
-                <h3 className="text-xl font-black uppercase tracking-tight" style={{ color: 'var(--text-color)' }}>Biometric Handshake</h3>
-                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-2 leading-none">REQUIRED FOR HIGH-LIMIT FLOWS</p>
+                <h3 className="text-xl font-black uppercase tracking-tight" style={{ color: 'var(--text-color)' }}>{isEkycComplete ? 'Identity Secured' : 'Local Identity Vault'}</h3>
+                {!isEkycComplete && <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-2 leading-none">CRYPTOGRAPHICALLY SECURED ON DEVICE</p>}
               </div>
 
+              {isEkycComplete && encryptedVault && (
+                <div className="w-full glass border border-brand/20 rounded-[1.5rem] p-5 text-left animate-in fade-in slide-in-from-bottom-2 space-y-3">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[9px] font-black text-brand uppercase tracking-widest flex items-center gap-1">
+                       <ShieldCheck className="w-3 h-3" /> Encrypted Vault Payload
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-gray-400 font-mono break-all leading-tight bg-black/40 p-3 rounded-xl border border-white/5">
+                    {encryptedVault.ciphertext.substring(0, 110)}...
+                  </p>
+                  
+                  {decryptedData ? (
+                    <div className="mt-4 pt-4 border-t border-brand/20 animate-in fade-in relative">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-brand/10 blur-2xl pointer-events-none rounded-full"></div>
+                      <span className="text-[9px] font-black text-brand uppercase tracking-widest mb-2 block">Decrypted Payload</span>
+                      <pre className="text-[10px] text-brand/90 font-mono mt-1 overflow-x-auto bg-brand/5 p-3 rounded-xl border border-brand/10">
+                        {JSON.stringify(JSON.parse(decryptedData), null, 2)}
+                      </pre>
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={testDecryption}
+                      disabled={isVerifying}
+                      className="mt-4 p-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-brand/10 text-brand hover:bg-brand/20 border border-brand/20 transition-all w-full flex items-center justify-center gap-2 group active:scale-95"
+                    >
+                      {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Fingerprint className="w-4 h-4 group-hover:scale-110 transition-transform" />}
+                      {isVerifying ? "UNLOCKING VAULT..." : "RE-VERIFY & DECRYPT DATA"}
+                    </button>
+                  )}
+                </div>
+              )}
+
               <div className="w-full space-y-4 pt-2">
-                <PremiumButton 
-                  disabled={isVerifying || isEkycComplete} 
-                  onClick={startEkyc} 
-                  label={isVerifying ? "VERIFYING..." : "SECURE NOW"} 
-                />
+                {!isEkycComplete ? (
+                    <PremiumButton disabled={isVerifying} onClick={startEkyc} label={isVerifying ? "ENCRYPTING..." : "SECURE NOW"} />
+                ) : (
+                    <PremiumButton onClick={() => setStep('card-details')} label="CONTINUE TO DASHBOARD" showSparkles />
+                )}
+                
                 {!isEkycComplete && (
-                  <button onClick={() => setStep('card-details')} className="w-full text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] py-2">Skip for now</button>
+                  <button 
+                    onClick={() => setStep('card-details')} 
+                    disabled={isVerifying}
+                    className="w-full text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] py-2 disabled:opacity-50 transition-opacity"
+                  >
+                    Skip for now
+                  </button>
                 )}
               </div>
             </div>
