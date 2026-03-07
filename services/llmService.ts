@@ -145,33 +145,36 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 async function apiCall<T>(url: string, options?: RequestInit): Promise<T> {
   const authHeaders = await getAuthHeaders();
 
-  const response = await fetch(url, {
-    ...options,
-    credentials: 'include', // Also send cookies for JWT auth
-    headers: {
-      ...authHeaders,
-      ...(options?.headers instanceof Headers 
-        ? Object.fromEntries(options.headers.entries()) 
-        : options?.headers as Record<string, string>),
-    },
-  });
+  // Add timeout to prevent hanging when backend is sleeping (Render free tier)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout
 
-  // Usage limits disabled — free for all users
-  // if (response.status === 429) {
-  //   const data = await response.json();
-  //   throw new LimitReachedError(data.message, data.usage, data.limit, data.tier);
-  // }
+  try {
+    const response = await fetch(url, {
+      ...options,
+      credentials: 'include', // Also send cookies for JWT auth
+      signal: controller.signal,
+      headers: {
+        ...authHeaders,
+        ...(options?.headers instanceof Headers 
+          ? Object.fromEntries(options.headers.entries()) 
+          : options?.headers as Record<string, string>),
+      },
+    });
 
-  if (response.status === 401) {
-    console.warn('FlowMint Auth: 401 received — token present:', !!authHeaders['Authorization']);
-    throw new Error('Please sign in to use FlowMint AI');
+    if (response.status === 401) {
+      console.warn('FlowMint Auth: 401 received — token present:', !!authHeaders['Authorization']);
+      throw new Error('Please sign in to use FlowMint AI');
+    }
+
+    if (!response.ok) {
+      throw new Error(`AI service error: ${response.status}`);
+    }
+
+    return response.json();
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  if (!response.ok) {
-    throw new Error(`AI service error: ${response.status}`);
-  }
-
-  return response.json();
 }
 
 // ─── Custom Error for Rate Limits (COMMENTED OUT — free for all users) ──
@@ -232,24 +235,35 @@ export const llmService = {
 
   /**
    * General-purpose financial chat — ask anything.
-   * Uses the real AI backend (Groq/Gemini) with fallback.
+   * Uses the real AI backend (Groq/Gemini) first.
+   * If the backend is unreachable (Render sleeping), falls back to direct Gemini API call.
    */
   async chatWithAI(message: string): Promise<ChatResponse> {
+    // 1. Try backend API first (Groq → Gemini on server)
     try {
       return await apiCall<ChatResponse>(`${API_BASE}/chat`, {
         method: 'POST',
         body: JSON.stringify({ message }),
       });
-    } catch (error) {
-      console.error('FlowMint AI — Chat Error:', error);
-      return {
-        reply: "I'm having a brief moment — but here's a universal tip: automate ₹5,000/month into a liquid fund on salary day. Small steps build serious wealth! Try again in a moment 💪",
-        category: 'general',
-        actionable: true,
-        followUp: 'Want me to help analyze your spending or plan savings?',
-        fallback: true,
-      };
+    } catch (backendError) {
+      console.warn('FlowMint AI — Backend unreachable, trying direct Gemini:', backendError);
     }
+
+    // 2. Fallback: Call Gemini directly from the frontend
+    try {
+      return await this._directGeminiChat(message);
+    } catch (geminiError) {
+      console.error('FlowMint AI — Direct Gemini also failed:', geminiError);
+    }
+
+    // 3. Final fallback: static response
+    return {
+      reply: "I'm having a brief moment — but here's a universal tip: automate ₹5,000/month into a liquid fund on salary day. Small steps build serious wealth! Try again in a moment 💪",
+      category: 'general',
+      actionable: true,
+      followUp: 'Want me to help analyze your spending or plan savings?',
+      fallback: true,
+    };
   },
 
   // ── Usage & Limits (DISABLED — free for all users) ────
@@ -355,6 +369,58 @@ export const llmService = {
     } catch {
       return { exists: false, profile_completeness: 0 };
     }
+  },
+
+  // ── Direct Gemini Fallback (when backend is unreachable) ─
+
+  /**
+   * Call Gemini directly from the frontend when the backend server is down.
+   * This ensures the AI chat always works, even when Render is sleeping.
+   */
+  async _directGeminiChat(message: string): Promise<ChatResponse> {
+    const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error('No Gemini API key available for direct fallback');
+    }
+
+    const { GoogleGenAI } = await import('@google/genai');
+    const ai = new GoogleGenAI({ apiKey });
+
+    const systemPrompt = `You are FlowMint AI, a witty, knowledgeable financial advisor for Indian Gen-Z and Millennials.
+Use Gen-Z lingo naturally (no cap, bet, vibe check, flex) but stay financially accurate.
+Be direct, actionable, and conversational. Keep responses under 150 words.
+Understand Indian financial products: SIP, PPF, FD, RD, UPI, EMI, CIBIL, NPS, ELSS, 80C, HRA.
+All amounts in ₹ (Indian Rupees).
+
+RESPOND ONLY with valid JSON:
+{"reply": "your response", "category": "savings|spending|credit|loans|investing|tax|insurance|general", "actionable": true/false, "followUp": "optional follow-up question"}`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: message,
+      config: {
+        systemInstruction: systemPrompt,
+        responseMimeType: 'application/json',
+      },
+    });
+
+    const rawText = response.text || '{}';
+    let parsed: any = {};
+    try {
+      parsed = JSON.parse(rawText);
+    } catch {
+      // If JSON parse fails, use the raw text as reply
+      parsed = { reply: rawText, category: 'general', actionable: false };
+    }
+
+    return {
+      reply: parsed.reply || rawText,
+      category: parsed.category || 'general',
+      actionable: parsed.actionable || false,
+      followUp: parsed.followUp || null,
+      provider: 'gemini-direct',
+      model: 'gemini-2.5-flash',
+    };
   },
 
   // ── Fallback ───────────────────────────────────────────
