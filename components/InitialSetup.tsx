@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 
 import { supabase } from '../services/supabase';
-import { generateBiometricKey, encryptDeviceData, decryptDeviceData, EncryptedPayload } from '../utils/crypto';
+import { BiometricService } from '../services/BiometricService';
 
 // --- Verhoeff Algorithm Implementation ---
 const d = [
@@ -73,6 +73,7 @@ interface UserProfile {
 interface InitialSetupProps {
   onComplete: (profile?: UserProfile) => void;
   theme: 'light' | 'dark';
+  initialStep?: SetupStep;
 }
 
 type SetupStep = 'name' | 'city' | 'vibe' | 'field' | 'income' | 'savings' | 'identity-choice' | 'details-review' | 'ekyc' | 'card-details' | 'celebration';
@@ -108,8 +109,8 @@ const FIELD_OPTIONS: Record<string, { label: string, icon: React.ReactNode }[]> 
   ]
 };
 
-const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme }) => {
-  const [step, setStep] = useState<SetupStep>('name');
+const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme, initialStep = 'name' }) => {
+  const [step, setStep] = useState<SetupStep>(initialStep);
   const [name, setName] = useState('');
   const [nameError, setNameError] = useState('');
   const [city, setCity] = useState('');
@@ -135,9 +136,11 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme }) => {
   });
 
   // Local Biometric Crypto Vault State
-  const [encryptedVault, setEncryptedVault] = useState<EncryptedPayload | null>(null);
-  const [vaultKey, setVaultKey] = useState<CryptoKey | null>(null);
-  const [decryptedData, setDecryptedData] = useState<string>('');
+  const [hasExistingBiometric, setHasExistingBiometric] = useState(false);
+  const [hasInvalidatedBiometric, setHasInvalidatedBiometric] = useState(false);
+  const [lockoutExpiration, setLockoutExpiration] = useState<number | null>(null);
+  const [lockoutTimeLeft, setLockoutTimeLeft] = useState<string>('');
+  const [failedAttempts, setFailedAttempts] = useState(0);
 
   // Card details state
   const [cardType, setCardType] = useState<'credit' | 'debit'>('debit');
@@ -178,6 +181,95 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme }) => {
     }, 25);
     return () => clearInterval(interval);
   }, [step, name, vibe, monthlyIncome]);
+
+  useEffect(() => {
+    if (step === 'ekyc') {
+      // 1. Check existing enrollments
+      const checkExistingBiometric = async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            const status = await BiometricService.checkUserEnrollment(session.user.id);
+            if (status.isEnrolled && !status.isInvalidated) {
+               setHasExistingBiometric(true);
+            } else if (status.isInvalidated) {
+               setHasInvalidatedBiometric(true);
+            }
+          }
+        } catch (e) {
+           console.error("Failed to check existing biometric", e);
+        }
+      };
+      checkExistingBiometric();
+      
+      // 2. Check Lockout state
+      const checkLockout = () => {
+         const storedExpiry = localStorage.getItem('flowmint_bio_lockout');
+         if (storedExpiry) {
+            const expiryTime = parseInt(storedExpiry, 10);
+            if (Date.now() < expiryTime) {
+               setLockoutExpiration(expiryTime);
+               return;
+            } else {
+               localStorage.removeItem('flowmint_bio_lockout');
+               localStorage.removeItem('flowmint_bio_fails');
+               setFailedAttempts(0);
+            }
+         }
+         
+         const fails = parseInt(localStorage.getItem('flowmint_bio_fails') || '0', 10);
+         setFailedAttempts(fails);
+      };
+      checkLockout();
+
+      // 3. Listen to native plugin for failures
+      import('../plugins/BiometricAuth').then((m) => {
+         const BiometricAuth = m.default;
+         BiometricAuth.addListener('onBiometricFailure', () => {
+            const newFails = parseInt(localStorage.getItem('flowmint_bio_fails') || '0', 10) + 1;
+            if (newFails >= 10) {
+              const expiry = Date.now() + 10 * 60 * 1000; // 10 minutes from now
+              localStorage.setItem('flowmint_bio_lockout', expiry.toString());
+              localStorage.removeItem('flowmint_bio_fails');
+              setLockoutExpiration(expiry);
+              setFailedAttempts(0);
+              setIsVerifying(false);
+            } else {
+              localStorage.setItem('flowmint_bio_fails', newFails.toString());
+              setFailedAttempts(newFails);
+            }
+         });
+      });
+    }
+  }, [step]);
+
+  // Lockout Countdown Timer
+  useEffect(() => {
+    let interval: number | undefined;
+    if (lockoutExpiration) {
+      const updateTimer = () => {
+        const diff = lockoutExpiration - Date.now();
+        if (diff <= 0) {
+          setLockoutExpiration(null);
+          setLockoutTimeLeft('');
+          localStorage.removeItem('flowmint_bio_lockout');
+          localStorage.removeItem('flowmint_bio_fails');
+          setFailedAttempts(0);
+          if (interval) clearInterval(interval);
+        } else {
+          const mins = Math.floor(diff / 60000);
+          const secs = Math.floor((diff % 60000) / 1000);
+          setLockoutTimeLeft(`${mins}:${secs.toString().padStart(2, '0')}`);
+        }
+      };
+      
+      updateTimer(); // Initialize immediately
+      interval = window.setInterval(updateTimer, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [lockoutExpiration]);
 
   const validateName = () => {
     const trimmed = name.trim();
@@ -266,49 +358,58 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme }) => {
     setIsVerifying(true);
     
     try {
-      // 1. Simulate the biometric scan delay securely
-      await new Promise(r => setTimeout(r, 1200));
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("No session");
 
-      // 2. Generate a highly secure local Biometric Key mimicking native Secure Enclaves
-      const key = await generateBiometricKey();
-
-      // 3. Prepare the Sensitive Payload
-      const sensitivePayload = JSON.stringify({
-        idType,
-        idNumber,
-        ...fetchedDetails
-      });
-
-      // 4. Encrypt the payload natively with AES-GCM
-      const encrypted = await encryptDeviceData(sensitivePayload, key);
-
-      // 5. Save the encrypted vault & the key locally
-      setEncryptedVault(encrypted);
-      setVaultKey(key);
-      
+      await BiometricService.enrollBiometrics(session.user.id);
       setIsEkycComplete(true);
+      setHasExistingBiometric(false);
+      setHasInvalidatedBiometric(false);
+
+      // Auto-navigate after successful enrollment
+      setTimeout(() => {
+         if (initialStep === 'ekyc') {
+             handleCompleteSetup();
+         } else {
+             setStep('card-details');
+         }
+      }, 1500);
     } catch (err) {
-      console.error("Local BioCrypt Failed", err);
+      console.error("Biometric Setup Failed", err);
     } finally {
       setIsVerifying(false);
     }
   };
 
-  const testDecryption = async () => {
+  const verifyExistingBiometric = async () => {
     setIsVerifying(true);
     try {
-      // Re-trigger biometric scan to authorize decryption
-      await new Promise(r => setTimeout(r, 1000));
-      
-      if (encryptedVault && vaultKey) {
-        const decrypted = await decryptDeviceData(encryptedVault, vaultKey);
-        setDecryptedData(decrypted);
-      }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("No session");
+
+      await BiometricService.verifyBiometrics(session.user.id);
+      setIsEkycComplete(true);
+      setTimeout(() => {
+         handleCompleteSetup();
+      }, 1000);
     } catch (err) {
-      console.error("Decryption Failed", err);
+      console.error("Biometric Verification Failed", err);
+      // If it fails, force them to re-enroll
+      setHasExistingBiometric(false);
+      setHasInvalidatedBiometric(true);
     } finally {
       setIsVerifying(false);
     }
+  };
+
+  const handleResetBiometric = async () => {
+    // SECURITY: If anyone clicks "Setup New Biometric" when 
+    // a valid session already exists, we MUST force them into a 
+    // Step-Up authentication flow to prove they are the actual account owner!
+    // We achieve this securely by killing the session and returning them to OTP/Google Auth.
+    setIsVerifying(true);
+    await supabase.auth.signOut();
+    // App.tsx will automatically pick up the session death and route them to <Auth />
   };
 
   // Card helpers
@@ -643,10 +744,10 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme }) => {
 
           {step === 'ekyc' && (
             <div className="space-y-8 flex flex-col items-center py-6 w-full">
-              <div className="relative cursor-pointer" onClick={isEkycComplete ? undefined : startEkyc}>
+              <div className="relative cursor-pointer" onClick={isEkycComplete || lockoutExpiration ? undefined : (hasExistingBiometric ? verifyExistingBiometric : startEkyc)}>
                 <div className={`absolute inset-0 bg-brand/20 rounded-full animate-ping ${isVerifying ? 'opacity-100' : 'opacity-0'}`}></div>
-                <div className={`w-32 h-32 rounded-full border-4 border-dashed border-brand/30 flex items-center justify-center transition-all duration-500 ${isVerifying ? 'rotate-[360deg] border-brand' : ''}`}>
-                  <div className="w-24 h-24 bg-brand/10 rounded-full flex items-center justify-center text-brand shadow-[0_0_30px_var(--brand-glow)]">
+                <div className={`w-32 h-32 rounded-full border-4 border-dashed flex items-center justify-center transition-all duration-500 ${isVerifying ? 'rotate-[360deg] border-brand' : lockoutExpiration ? 'border-red-500/50 cursor-not-allowed' : 'border-brand/30'}`}>
+                  <div className={`w-24 h-24 rounded-full flex items-center justify-center shadow-[0_0_30px_var(--brand-glow)] ${lockoutExpiration ? 'bg-red-500/10 text-red-500' : 'bg-brand/10 text-brand'}`}>
                     {isEkycComplete ? <ShieldCheck className="w-12 h-12" /> : <Fingerprint className="w-12 h-12" />}
                   </div>
                 </div>
@@ -658,52 +759,50 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme }) => {
               </div>
               
               <div className="text-center">
-                <h3 className="text-xl font-black uppercase tracking-tight" style={{ color: 'var(--text-color)' }}>{isEkycComplete ? 'Identity Secured' : 'Local Identity Vault'}</h3>
-                {!isEkycComplete && <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-2 leading-none">CRYPTOGRAPHICALLY SECURED ON DEVICE</p>}
+                <h3 className="text-xl font-black uppercase tracking-tight" style={{ color: lockoutExpiration ? '#ef4444' : 'var(--text-color)' }}>
+                  {lockoutExpiration ? 'SENSOR BLOCKED' : isEkycComplete ? 'Identity Secured' : (hasExistingBiometric ? 'Verify Identity' : 'Secure Hardware Login')}
+                </h3>
+                {!isEkycComplete && <p className="text-[10px] pb-1 text-gray-500 font-bold uppercase tracking-widest mt-2 leading-tight">
+                  {lockoutExpiration 
+                    ? `10 FAILED ATTEMPTS. LOCKED FOR ${lockoutTimeLeft}.` 
+                    : hasExistingBiometric 
+                       ? 'TAP TO SCAN FINGERPRINT' 
+                       : (hasInvalidatedBiometric ? 'BIOMETRICS CHANGED. PLEASE RE-ENROLL.' : 'TAP TO ENROLL HARDWARE BIOMETRICS')}
+                </p>}
+                {!isEkycComplete && !lockoutExpiration && failedAttempts > 0 && <p className="text-[9px] text-red-400 font-bold uppercase tracking-widest leading-none">
+                  {10 - failedAttempts} attempts remaining
+                </p>}
               </div>
 
-              {isEkycComplete && encryptedVault && (
-                <div className="w-full glass border border-brand/20 rounded-[1.5rem] p-5 text-left animate-in fade-in slide-in-from-bottom-2 space-y-3">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-[9px] font-black text-brand uppercase tracking-widest flex items-center gap-1">
-                       <ShieldCheck className="w-3 h-3" /> Encrypted Vault Payload
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-gray-400 font-mono break-all leading-tight bg-black/40 p-3 rounded-xl border border-white/5">
-                    {encryptedVault.ciphertext.substring(0, 110)}...
+              {isEkycComplete && (
+                <div className="w-full glass border border-brand/20 rounded-[1.5rem] p-5 text-center animate-in fade-in zoom-in-95 space-y-3">
+                  <ShieldCheck className="w-12 h-12 text-brand mx-auto drop-shadow-[0_0_15px_var(--brand-glow)]" />
+                  <p className="text-[12px] text-white font-bold uppercase tracking-widest">
+                    Device verified. Welcome back.
                   </p>
-                  
-                  {decryptedData ? (
-                    <div className="mt-4 pt-4 border-t border-brand/20 animate-in fade-in relative">
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-brand/10 blur-2xl pointer-events-none rounded-full"></div>
-                      <span className="text-[9px] font-black text-brand uppercase tracking-widest mb-2 block">Decrypted Payload</span>
-                      <pre className="text-[10px] text-brand/90 font-mono mt-1 overflow-x-auto bg-brand/5 p-3 rounded-xl border border-brand/10">
-                        {JSON.stringify(JSON.parse(decryptedData), null, 2)}
-                      </pre>
-                    </div>
-                  ) : (
-                    <button 
-                      onClick={testDecryption}
-                      disabled={isVerifying}
-                      className="mt-4 p-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-brand/10 text-brand hover:bg-brand/20 border border-brand/20 transition-all w-full flex items-center justify-center gap-2 group active:scale-95"
-                    >
-                      {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Fingerprint className="w-4 h-4 group-hover:scale-110 transition-transform" />}
-                      {isVerifying ? "UNLOCKING VAULT..." : "RE-VERIFY & DECRYPT DATA"}
-                    </button>
-                  )}
                 </div>
               )}
 
-              <div className="w-full space-y-4 pt-2">
-                {!isEkycComplete ? (
-                    <PremiumButton disabled={isVerifying} onClick={startEkyc} label={isVerifying ? "ENCRYPTING..." : "SECURE NOW"} />
-                ) : (
-                    <PremiumButton onClick={() => setStep('card-details')} label="CONTINUE TO DASHBOARD" showSparkles />
+              <div className="w-full space-y-4 pt-4">
+                {!isEkycComplete && hasExistingBiometric && (
+                  <button 
+                    onClick={handleResetBiometric} 
+                    disabled={isVerifying}
+                    className="w-full text-[10px] font-black text-brand uppercase tracking-[0.2em] py-2 disabled:opacity-50 transition-opacity"
+                  >
+                    Setup New Biometric Instead
+                  </button>
                 )}
                 
-                {!isEkycComplete && (
+                {!isEkycComplete && !hasExistingBiometric && (
                   <button 
-                    onClick={() => setStep('card-details')} 
+                    onClick={() => {
+                      if (initialStep === 'ekyc') {
+                        handleCompleteSetup();
+                      } else {
+                        setStep('card-details');
+                      }
+                    }} 
                     disabled={isVerifying}
                     className="w-full text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] py-2 disabled:opacity-50 transition-opacity"
                   >

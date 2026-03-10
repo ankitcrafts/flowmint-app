@@ -31,10 +31,12 @@ import AIWishTracker from './components/AIWishTracker';
 import LoanMarketplace from './components/LoanMarketplace';
 import AIInsights from './components/AIInsights';
 import Auth from './components/Auth';
+import InitialSetup from './components/InitialSetup';
 import ErrorBoundary from './components/ErrorBoundary';
 import CreditDashboard from './pages/CreditDashboard';
 import CreditUpload from './pages/CreditUpload';
 import { supabase } from './services/supabase';
+import { BiometricService } from './services/BiometricService';
 
 interface UserProfile {
   name: string;
@@ -61,6 +63,7 @@ const App: FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Dashboard);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isBiometricVerified, setIsBiometricVerified] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [showMore, setShowMore] = useState(false);
@@ -88,22 +91,43 @@ const App: FC = () => {
       }
     };
 
+    const checkBiometrics = async (userId: string) => {
+      const status = await BiometricService.checkUserEnrollment(userId);
+      if (status.isEnrolled && !status.isInvalidated) {
+        try {
+          await BiometricService.verifyBiometrics(userId);
+          setIsBiometricVerified(true);
+        } catch (e) {
+          console.error("Biometric verification failed", e);
+          setIsBiometricVerified(false); 
+        }
+      } else {
+        setIsBiometricVerified(false);
+      }
+    };
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setIsAuthenticated(true);
         fetchProfile(session.user.id, session.user);
+        checkBiometrics(session.user.id);
+      } else {
+        setIsLoaded(true);
       }
-      setIsLoaded(true);
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setIsAuthenticated(!!session);
       if (session) {
          fetchProfile(session.user.id, session.user);
+         if (event === 'SIGNED_IN') {
+           checkBiometrics(session.user.id);
+         }
       } else {
          setUserProfile(null);
+         setIsBiometricVerified(false);
       }
     });
 
@@ -122,9 +146,26 @@ const App: FC = () => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   };
 
-  const handleLoginSuccess = (profile?: UserProfile) => {
+  const handleLoginSuccess = async (profile?: UserProfile) => {
     if (profile) setUserProfile(profile);
     setIsAuthenticated(true);
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      const status = await BiometricService.checkUserEnrollment(session.user.id);
+      if (status.isEnrolled && !status.isInvalidated) {
+        try {
+          await BiometricService.verifyBiometrics(session.user.id);
+          setIsBiometricVerified(true);
+        } catch (e) {
+          setIsBiometricVerified(false); 
+        }
+      } else {
+        setIsBiometricVerified(false);
+      }
+    } else {
+      setIsBiometricVerified(false); // No session, drop them to setup (which shouldn't happen)
+    }
   };
 
   const handleNavigate = (tab: string) => {
@@ -152,6 +193,23 @@ const App: FC = () => {
     return (
       <ErrorBoundary>
         <Auth onLoginSuccess={handleLoginSuccess} theme={theme} />
+      </ErrorBoundary>
+    );
+  }
+
+  if (isAuthenticated && !isBiometricVerified) {
+    return (
+      <ErrorBoundary>
+        <InitialSetup 
+          theme={theme} 
+          initialStep="ekyc" 
+          onComplete={(profile) => {
+            if (profile) {
+              setUserProfile(prev => prev ? { ...prev, ...profile, email: prev.email || profile.email } : profile);
+            }
+            setIsBiometricVerified(true);
+          }}
+        />
       </ErrorBoundary>
     );
   }
