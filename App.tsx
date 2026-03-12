@@ -106,14 +106,13 @@ const App: FC = () => {
       }
     };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
         setIsAuthenticated(true);
-        fetchProfile(session.user.id, session.user);
-        checkBiometrics(session.user.id);
-      } else {
-        setIsLoaded(true);
+        await fetchProfile(session.user.id, session.user);
+        await checkBiometrics(session.user.id);
       }
+      setIsLoaded(true);
     });
 
     const {
