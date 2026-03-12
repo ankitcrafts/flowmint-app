@@ -1,9 +1,10 @@
 
 import React, { useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import {
   Bell, Calendar, Clock, AlertTriangle, CheckCircle2, Plus, X,
   Zap, Smartphone, Home, Wifi, Droplets, CreditCard, Flame,
-  ChevronRight, Shield, TrendingUp
+  ChevronRight, Shield, TrendingUp, ShieldCheck, Lock
 } from 'lucide-react';
 
 interface Bill {
@@ -214,6 +215,40 @@ const BillReminders: React.FC = () => {
           </p>
         </div>
       )}
+      {/* ─── Vivid Simulated Mode Indicator ─── */}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        className="mt-8 relative group pb-10"
+      >
+        <div className="absolute inset-0 bg-brand/5 blur-xl rounded-[2rem] group-hover:bg-brand/10 transition-all duration-500" />
+        <div className="relative glass rounded-3xl p-6 border border-brand/10 flex flex-col items-center gap-3 text-center theme-transition">
+          <div className="flex items-center justify-center gap-2">
+            <motion.div
+              animate={{ rotate: [0, 5, -5, 0] }}
+              transition={{ repeat: Infinity, duration: 3 }}
+            >
+              <ShieldCheck className="w-5 h-5 text-brand" />
+            </motion.div>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand">Vivid Simulation Engine</span>
+          </div>
+          
+          <p className="text-[10px] text-gray-400 font-bold leading-relaxed max-w-[260px]">
+            Payment reminders and bill parsing are <span className="text-brand">simulated for this experience</span>. BBPS & utility integrations are currently in sandbox.
+          </p>
+
+          <div className="flex items-center gap-6 pt-2 border-t border-brand/5 w-full justify-center">
+             <div className="flex items-center gap-1 text-[9px] font-black text-brand">
+                <Lock className="w-2.5 h-2.5" /> SECURE LINK
+             </div>
+             <div className="w-px h-3 bg-brand/10" />
+             <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[8px] font-black text-emerald-500 uppercase tracking-tighter">Live Sandbox</span>
+             </div>
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 };

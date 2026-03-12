@@ -11,7 +11,7 @@ import {
   Eye, EyeOff, ArrowUpRight, Landmark, CreditCard,
   BarChart2, Activity, ShieldAlert, ChevronRight,
   Fingerprint, Heart, Target, AlertTriangle, Shield, Clock,
-  Plus, Bell, Percent, TrendingUp, Calculator,
+  Plus, Bell, Percent, TrendingUp, Calculator, ShieldCheck, Lock,
   Car, Banknote, Play, ShoppingBag, Wifi, Fuel, UtensilsCrossed,
   Gamepad2, Music, Plane, Home, BookOpen, Dumbbell, Pill
 } from 'lucide-react';
@@ -263,7 +263,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="space-y-5 pb-4"
+      className="space-y-[var(--section-gap)] pb-4"
     >
       {/* ═══ Verification Nudge ═══════════════════════════════ */}
       {!userProfile?.verified && (
@@ -271,7 +271,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
           variants={cardSlideUp}
           whileHover={{ scale: 1.02, y: -2 }}
           whileTap={{ scale: 0.98 }}
-          className="glass rounded-[2rem] p-5 border-2 border-brand/20 bg-brand/5 flex items-center justify-between group cursor-pointer hover:bg-brand/10 transition-all shadow-[0_10px_30px_rgba(0,255,163,0.1)]"
+          className="glass rounded-[2.2rem] p-[var(--card-padding)] border-2 border-brand/20 bg-brand/5 flex items-center justify-between group cursor-pointer hover:bg-brand/10 transition-all shadow-[0_10px_30px_rgba(0,255,163,0.1)]"
           onClick={() => onNavigate?.('credit')}>
           <div className="flex items-center gap-4">
             <motion.div 
@@ -303,7 +303,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
         className="glass rounded-[2.5rem] border overflow-hidden theme-transition" 
         style={{ borderColor: 'var(--glass-border)' }}
       >
-        <div className="p-7 pb-2 flex items-center justify-between">
+        <div className="p-[var(--card-padding)] pb-2 flex items-center justify-between">
           <motion.div 
             className="flex items-center gap-3"
             initial={{ opacity: 0, x: -20 }}
@@ -323,7 +323,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
           </motion.button>
         </div>
 
-        <div className="px-7 pt-4">
+        <div className="px-[var(--card-padding)] pt-4">
           <div className="flex items-center justify-between">
             <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Current Balance</p>
             <motion.button 
@@ -366,7 +366,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
       </motion.section>
 
       {/* ═══ Quick Actions ═════════════════════════════════════ */}
-      <motion.div variants={cardSlideUp} className="grid grid-cols-4 gap-3">
+      <motion.div variants={cardSlideUp} className="grid grid-cols-4 gap-[calc(var(--section-gap)*0.6)]">
         {[
           { icon: <Plus className="w-5 h-5" />, label: 'Add Expense', tab: 'expenses' },
           { icon: <Target className="w-5 h-5" />, label: 'Goals', tab: 'wishes' },
@@ -381,7 +381,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
             transition={{ delay: 0.4 + i * 0.08, type: 'spring', stiffness: 200 }}
             whileHover={{ scale: 1.08, y: -4 }}
             whileTap={{ scale: 0.92 }}
-            className="flex flex-col items-center gap-2 p-4 glass rounded-2xl border theme-transition hover:border-brand/30 transition-all relative"
+            className="flex flex-col items-center gap-2 p-[calc(var(--card-padding)*0.8)] glass rounded-2xl border theme-transition hover:border-brand/30 transition-all relative"
             style={{ borderColor: 'var(--glass-border)' }}
           >
             {action.badge && (
@@ -401,12 +401,12 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
       </motion.div>
 
       {/* ═══ Credit + EMI Stress Row ═══════════════════════════ */}
-      <motion.div variants={cardSlideUp} className="grid grid-cols-2 gap-4">
+      <motion.div variants={cardSlideUp} className="grid grid-cols-2 gap-[var(--section-gap)]">
         {/* Credit Health */}
         <motion.div 
           whileHover={{ scale: 1.03, y: -3 }}
           whileTap={{ scale: 0.97 }}
-          className="glass rounded-[2rem] p-5 border theme-transition cursor-pointer transition-all"
+          className="glass rounded-[2rem] p-[var(--card-padding)] border theme-transition cursor-pointer transition-all"
           style={{ borderColor: 'var(--glass-border)' }}
           onClick={() => onNavigate?.('credit')}
         >
@@ -444,7 +444,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
         <motion.div 
           whileHover={{ scale: 1.03, y: -3 }}
           whileTap={{ scale: 0.97 }}
-          className="glass rounded-[2rem] p-5 border theme-transition cursor-pointer transition-all"
+          className="glass rounded-[2rem] p-[var(--card-padding)] border theme-transition cursor-pointer transition-all"
           style={{ borderColor: 'var(--glass-border)' }}
           onClick={() => onNavigate?.('bills')}
         >
@@ -485,7 +485,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
             variants={cardSlideUp}
             whileHover={{ scale: 1.02, y: -3 }}
             whileTap={{ scale: 0.97 }}
-            className="glass rounded-[2rem] p-6 border-2 theme-transition cursor-pointer transition-all relative overflow-hidden"
+            className="glass rounded-[2.2rem] p-[var(--card-padding)] border-2 theme-transition cursor-pointer transition-all relative overflow-hidden"
             style={{ borderColor: statusConfig.color + '30' }}
             onClick={() => onNavigate?.('loans')}
           >
@@ -570,7 +570,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
         variants={cardSlideRight}
         whileHover={{ scale: 1.02, x: 5 }}
         whileTap={{ scale: 0.98 }}
-        className="glass rounded-[2rem] p-5 border theme-transition cursor-pointer transition-all"
+        className="glass rounded-[2.2rem] p-[var(--card-padding)] border theme-transition cursor-pointer transition-all"
         style={{ borderColor: 'var(--glass-border)' }}
         onClick={() => onNavigate?.('bills')}
       >
@@ -601,7 +601,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
         variants={cardSlideRight}
         whileHover={{ scale: 1.02, x: 5 }}
         whileTap={{ scale: 0.98 }}
-        className="glass rounded-[2rem] p-5 border bg-gradient-to-r from-brand/5 to-amber-500/5 theme-transition cursor-pointer transition-all"
+        className="glass rounded-[2.2rem] p-[var(--card-padding)] border bg-gradient-to-r from-brand/5 to-amber-500/5 theme-transition cursor-pointer transition-all"
         style={{ borderColor: 'var(--glass-border)' }}
         onClick={() => onNavigate?.('wishes')}
       >
@@ -630,7 +630,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
       <motion.div 
         variants={cardSlideUp} 
         whileHover={{ scale: 1.01 }}
-        className="glass rounded-3xl p-5 border flex gap-4 items-start theme-transition" 
+        className="glass rounded-[2.2rem] p-[var(--card-padding)] border flex gap-4 items-start theme-transition" 
         style={{ borderColor: 'var(--glass-border)' }}
       >
         <motion.div 
@@ -658,7 +658,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
       {/* ═══ Spending Flow Chart ═══════════════════════════════ */}
       <motion.section 
         variants={cardSlideUp} 
-        className="glass rounded-[2.5rem] p-7 border theme-transition relative overflow-hidden group shadow-2xl" 
+        className="glass rounded-[2.5rem] p-[var(--card-padding)] border theme-transition relative overflow-hidden group shadow-2xl" 
         style={{ 
           borderColor: 'var(--glass-border)',
           background: theme === 'light' ? 'var(--bg-color)' : 'rgba(255,255,255,0.02)'
@@ -829,7 +829,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
       </motion.section>
 
       {/* ═══ Recent Activity ═══════════════════════════════════ */}
-      <motion.section variants={cardSlideUp} className="space-y-4">
+      <motion.section variants={cardSlideUp} className="space-y-[calc(var(--section-gap)*0.75)] pb-10">
         <div className="flex items-center justify-between px-2">
           <div className="flex items-center gap-2">
             <motion.div
@@ -853,7 +853,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
                 transition={{ delay: 0.08 * i, type: 'spring', stiffness: 180, damping: 18 }}
                 whileHover={{ scale: 1.03, x: 10 }}
                 whileTap={{ scale: 0.96 }}
-                className="flex items-center justify-between p-4 glass rounded-[1.8rem] border theme-transition cursor-pointer"
+                className="flex items-center justify-between p-[var(--card-padding)] glass rounded-[1.8rem] border theme-transition cursor-pointer"
                 style={{ borderColor: 'var(--glass-border)' }}
               >
                 <div className="flex items-center gap-4">
@@ -905,6 +905,69 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
             );
           })}
         </div>
+      </motion.section>
+
+      {/* ─── Security & Reliability Oversight ─── */}
+      <motion.section 
+        variants={cardSlideUp}
+        className="mt-12 mb-20 space-y-6"
+      >
+        <div className="flex flex-col items-center text-center gap-2">
+           <div className="w-10 h-px bg-brand/20" />
+           <p className="text-[9px] font-black text-gray-500 uppercase tracking-[0.3em]">Institutional Grade Security</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+           {/* Trust Marker 1 */}
+           <div className="glass rounded-3xl p-5 border border-brand/5 flex flex-col items-center text-center gap-3 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+              <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center">
+                 <ShieldCheck className="w-5 h-5 text-brand" />
+              </div>
+              <div className="space-y-1">
+                 <p className="text-[10px] font-black text-brand uppercase tracking-widest">RBI Regulated</p>
+                 <p className="text-[8px] text-gray-500 font-bold uppercase">Compliance Node v2.1</p>
+              </div>
+           </div>
+
+           {/* Trust Marker 2 */}
+           <div className="glass rounded-3xl p-5 border border-brand/5 flex flex-col items-center text-center gap-3 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+              <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                 <Lock className="w-5 h-5 text-blue-400" />
+              </div>
+              <div className="space-y-1">
+                 <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">PCI-DSS Ready</p>
+                 <p className="text-[8px] text-gray-500 font-bold uppercase">Encrypted Handshake</p>
+              </div>
+           </div>
+        </div>
+
+        {/* ─── Vivid Simulated Mode Footer ─── */}
+        <div className="relative group mx-2">
+           <div className="absolute inset-0 bg-brand/5 blur-xl rounded-[2rem] group-hover:bg-brand/10 transition-all duration-500" />
+           <div className="relative glass rounded-[2rem] p-5 border-2 border-brand/10 flex items-center justify-between theme-transition">
+              <div className="flex items-center gap-4">
+                 <motion.div 
+                   animate={{ scale: [1, 1.1, 1] }}
+                   transition={{ repeat: Infinity, duration: 3 }}
+                   className="w-10 h-10 rounded-xl bg-brand/20 flex items-center justify-center text-brand"
+                 >
+                    <Zap className="w-5 h-5" />
+                 </motion.div>
+                 <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-brand">Vivid Simulation Active</p>
+                    <p className="text-[8px] text-gray-500 font-bold uppercase mt-0.5">Sandbox Environment • No Real Money</p>
+                 </div>
+              </div>
+              <div className="flex items-center gap-2">
+                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                 <span className="text-[9px] font-black text-emerald-500 uppercase tracking-tighter">Live Monitor</span>
+              </div>
+           </div>
+        </div>
+
+        <p className="text-[8px] text-gray-600 font-bold uppercase tracking-[0.2em] text-center opacity-50">
+           © 2026 FlowMint Technologies • All Rights Reserved
+        </p>
       </motion.section>
     </motion.div>
   );

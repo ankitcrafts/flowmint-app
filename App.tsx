@@ -232,8 +232,14 @@ const App: FC = () => {
   };
 
   return (
-    <div className={`min-h-screen pb-24 max-w-md mx-auto relative theme-transition`}>
-      <header className="sticky top-0 z-50 p-4 glass flex items-center justify-between theme-transition" style={{ backgroundColor: 'var(--nav-bg)', borderColor: 'var(--glass-border)' }}>
+    <div className="min-h-screen w-full max-w-md mx-auto relative theme-transition overflow-x-hidden flex flex-col bg-bg">
+      <div className="noise-overlay" />
+      <header className="sticky top-0 z-50 px-[var(--card-padding)] py-4 glass flex items-center justify-between theme-transition" 
+              style={{ 
+                backgroundColor: 'var(--nav-bg)', 
+                borderColor: 'var(--glass-border)',
+                paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' 
+              }}>
         <button onClick={() => handleNavigate('dashboard')} className="flex items-center gap-2 cursor-pointer">
           <div className="w-8 h-8 bg-brand rounded-lg flex items-center justify-center">
             <Zap className="w-5 h-5 text-black fill-black" />
@@ -260,7 +266,8 @@ const App: FC = () => {
         </div>
       </header>
 
-      <main className="p-4">
+      <main className="px-[var(--card-padding)] py-4 flex-grow">
+
         <ErrorBoundary>
           <AnimatePresence mode="wait">
             <motion.div
@@ -317,7 +324,12 @@ const App: FC = () => {
       </AnimatePresence>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto glass border-t px-4 py-3 z-50 rounded-t-3xl shadow-[0_-10px_30px_rgba(0,0,0,0.1)] theme-transition" style={{ backgroundColor: 'var(--nav-bg)', borderColor: 'var(--glass-border)' }}>
+      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto glass border-t px-6 py-3 z-50 rounded-t-[2.5rem] shadow-[0_-10px_30px_rgba(0,0,0,0.1)] theme-transition" 
+           style={{ 
+             backgroundColor: 'var(--nav-bg)', 
+             borderColor: 'var(--glass-border)',
+             paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))'
+           }}>
         <div className="flex items-center justify-between">
           <NavButton
             active={activeTab === Tab.Dashboard}
@@ -331,7 +343,7 @@ const App: FC = () => {
             icon={<Receipt className="w-5 h-5" />}
             label="Expenses"
           />
-          <div className="relative -mt-10">
+          <div className="relative -mt-12">
             <button
               onClick={() => setShowMore(!showMore)}
               className="w-14 h-14 mint-gradient rounded-full flex items-center justify-center shadow-lg border-4 theme-transition"
@@ -355,6 +367,7 @@ const App: FC = () => {
         </div>
       </nav>
     </div>
+
   );
 };
 

@@ -1,5 +1,5 @@
-
 import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Briefcase, Gem, GraduationCap, Bike, Smartphone, Home,
   ChevronRight, Star, ShieldCheck, Zap, Lock, Calculator,
@@ -214,16 +214,50 @@ const LoanMarketplace: React.FC = () => {
         </div>
       </section>
 
-      {/* Simulated Mode Notice */}
-      <div className="glass rounded-3xl p-5 border flex gap-4 theme-transition" style={{ borderColor: 'var(--glass-border)' }}>
-        <ShieldCheck className="w-8 h-8 text-brand shrink-0" />
-        <div className="space-y-1">
-          <p className="text-[10px] font-black uppercase tracking-widest text-brand">Simulated Mode</p>
-          <p className="text-[10px] text-gray-500 leading-relaxed font-bold">
-            All loan data shown is simulated for demonstration. Live NBFC integrations coming soon. No real applications are processed.
-          </p>
+      {/* ─── Vivid Simulated Mode Indicator ─── */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1 }}
+        className="relative group mt-8"
+      >
+        <div className="absolute inset-0 bg-brand/10 blur-2xl rounded-[2rem] group-hover:bg-brand/20 transition-all duration-500" />
+        <div className="relative glass rounded-[2.2rem] p-6 border-2 border-brand/20 flex flex-col items-center text-center gap-4 theme-transition backdrop-blur-xl">
+          <motion.div 
+            animate={{ 
+              scale: [1, 1.15, 1],
+              rotate: [0, 5, -5, 0],
+              boxShadow: ["0 0 0px var(--brand-glow)", "0 0 20px var(--brand-glow)", "0 0 0px var(--brand-glow)"]
+            }}
+            transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
+            className="w-14 h-14 rounded-2xl bg-brand/20 flex items-center justify-center text-brand"
+          >
+            <ShieldCheck className="w-8 h-8" />
+          </motion.div>
+          
+          <div className="space-y-2">
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-sm font-black uppercase tracking-widest text-brand">Vivid Simulation Active</span>
+              <div className="px-2 py-0.5 rounded text-[8px] font-black bg-white/10 text-gray-500 uppercase tracking-tighter">Demo v1.0</div>
+            </div>
+            <p className="text-[11px] text-gray-400 font-bold leading-relaxed max-w-[280px] mx-auto">
+              All NBFC partnerships and loan approvals are <span className="text-brand">simulated for this experience</span>. Live API integrations with regulated lenders are currently in sandbox.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-6 pt-2 border-t border-brand/10 w-full justify-center">
+             <div className="flex flex-col items-center gap-1">
+                <p className="text-[8px] font-black text-gray-500 uppercase tracking-tighter">Security</p>
+                <div className="flex items-center gap-1 text-[9px] font-black text-brand"><Lock className="w-2.5 h-2.5" /> 256-BIT</div>
+             </div>
+             <div className="w-px h-6 bg-brand/10" />
+             <div className="flex flex-col items-center gap-1">
+                <p className="text-[8px] font-black text-gray-500 uppercase tracking-tighter">Status</p>
+                <div className="flex items-center gap-1 text-[9px] font-black text-emerald-500"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> SANDBOX</div>
+             </div>
+          </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

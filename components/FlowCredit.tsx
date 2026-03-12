@@ -1,9 +1,10 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { 
   Shield, TrendingUp, CheckCircle2, AlertCircle, Clock, ExternalLink, Landmark,
   History, Sparkles, Plus, Minus, Info, RefreshCw, ChevronRight,
-  CreditCard, Percent, BookOpen, AlertTriangle, HelpCircle, ChevronDown
+  CreditCard, Percent, BookOpen, AlertTriangle, HelpCircle, ChevronDown, ShieldCheck, Lock
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, Tooltip } from 'recharts';
 
@@ -316,6 +317,41 @@ const FlowCredit: React.FC = () => {
           <button className="p-3 glass rounded-xl text-brand group-hover:scale-110 transition-transform"><ExternalLink className="w-4 h-4" /></button>
         </div>
       </div>
+      {/* ─── Vivid Simulated Mode Indicator ─── */}
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="mt-8 relative group pb-10"
+      >
+        <div className="absolute inset-0 bg-brand/5 blur-xl rounded-[2rem] group-hover:bg-brand/10 transition-all duration-500" />
+        <div className="relative glass rounded-3xl p-6 border border-brand/10 flex flex-col items-center gap-3 text-center theme-transition">
+          <div className="flex items-center justify-center gap-2">
+            <motion.div
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ repeat: Infinity, duration: 3 }}
+            >
+              <ShieldCheck className="w-5 h-5 text-brand" />
+            </motion.div>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand">Vivid Simulation Engine</span>
+          </div>
+          
+          <p className="text-[10px] text-gray-400 font-bold leading-relaxed max-w-[260px]">
+             Credit monitoring and simulator are <span className="text-brand">simulated for this experience</span>. Bureau integrations are currently in sandbox.
+          </p>
+
+          <div className="flex items-center gap-6 pt-2 border-t border-brand/5 w-full justify-center">
+             <div className="flex items-center gap-1 text-[9px] font-black text-brand">
+                <Lock className="w-2.5 h-2.5" /> END-TO-END
+             </div>
+             <div className="w-px h-3 bg-brand/10" />
+             <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[8px] font-black text-emerald-500 uppercase tracking-tighter">Secure Link</span>
+             </div>
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 };

@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import {
   Scan, Send, Smartphone, Tv, Zap, Calendar, AlertCircle, CheckCircle2, QrCode,
   ArrowRight, Clock, CreditCard, Shield, Home, Wifi, IndianRupee, X,
-  ArrowDownLeft, ArrowUpRight, Tag
+  ArrowDownLeft, ArrowUpRight, Tag, ShieldCheck, Lock
 } from 'lucide-react';
 
 interface PaymentRecord {
@@ -196,14 +197,41 @@ const FlowPay: React.FC = () => {
         </div>
       )}
 
-      {/* Simulated Mode Footer */}
-      <div className="flex items-center justify-center gap-2 opacity-30 grayscale hover:grayscale-0 transition-all">
-        <span className="text-[10px] font-black italic" style={{ color: 'var(--text-color)' }}>BHIM</span>
-        <div className="w-px h-3" style={{ backgroundColor: 'var(--glass-border)' }}></div>
-        <span className="text-[10px] font-black uppercase" style={{ color: 'var(--text-color)' }}>UPI</span>
-        <div className="w-px h-3" style={{ backgroundColor: 'var(--glass-border)' }}></div>
-        <span className="text-[10px] font-black uppercase tracking-tighter" style={{ color: 'var(--text-color)' }}>Simulated Mode</span>
-      </div>
+      {/* ─── Vivid Simulated Mode Indicator ─── */}
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mt-8 relative group pb-10"
+      >
+        <div className="absolute inset-0 bg-brand/5 blur-xl rounded-[2rem] group-hover:bg-brand/10 transition-all duration-500" />
+        <div className="relative glass rounded-3xl p-5 border border-brand/10 flex flex-col items-center gap-3 text-center theme-transition">
+          <div className="flex items-center justify-center gap-2">
+            <motion.div
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
+            >
+              <ShieldCheck className="w-4 h-4 text-brand" />
+            </motion.div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-brand">Vivid Simulation Sandbox</span>
+          </div>
+          
+          <p className="text-[9px] text-gray-500 font-bold leading-relaxed max-w-[240px]">
+            FlowPay is currently in <span className="text-brand">Simulated Mode</span>. BHIM UPI & Banking integrations are active in sandbox. No real money movement.
+          </p>
+
+          <div className="flex items-center gap-4 pt-2 border-t border-brand/5 w-full justify-center">
+             <div className="flex items-center gap-1.5 opacity-40">
+                <span className="text-[8px] font-black italic" style={{ color: 'var(--text-color)' }}>BHIM</span>
+                <div className="w-px h-2 bg-gray-500" />
+                <span className="text-[8px] font-black uppercase" style={{ color: 'var(--text-color)' }}>UPI</span>
+             </div>
+             <div className="w-px h-3 bg-brand/10" />
+             <div className="flex items-center gap-1 text-[8px] font-black text-brand">
+                <Lock className="w-2.5 h-2.5" /> SECURE HANDSHAKE
+             </div>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Send Money Modal */}
       {showSendModal && (
