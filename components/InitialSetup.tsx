@@ -744,40 +744,113 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme, initialS
 
           {step === 'ekyc' && (
             <div className="space-y-8 flex flex-col items-center py-6 w-full">
-              <div className="relative cursor-pointer" onClick={isEkycComplete || lockoutExpiration ? undefined : (hasExistingBiometric ? verifyExistingBiometric : startEkyc)}>
-                <div className={`absolute inset-0 bg-brand/20 rounded-full animate-ping ${isVerifying ? 'opacity-100' : 'opacity-0'}`}></div>
-                <div className={`w-32 h-32 rounded-full border-4 border-dashed flex items-center justify-center transition-all duration-500 ${isVerifying ? 'rotate-[360deg] border-brand' : lockoutExpiration ? 'border-red-500/50 cursor-not-allowed' : 'border-brand/30'}`}>
-                  <div className={`w-24 h-24 rounded-full flex items-center justify-center shadow-[0_0_30px_var(--brand-glow)] ${lockoutExpiration ? 'bg-red-500/10 text-red-500' : 'bg-brand/10 text-brand'}`}>
-                    {isEkycComplete ? <ShieldCheck className="w-12 h-12" /> : <Fingerprint className="w-12 h-12" />}
+              {/* ─── Animated Fingerprint Scanner ─── */}
+              <div 
+                className="relative cursor-pointer group" 
+                onClick={isEkycComplete || lockoutExpiration ? undefined : (hasExistingBiometric ? verifyExistingBiometric : startEkyc)}
+              >
+                {/* Pulsing Rings (3 layers of radiating glow) */}
+                <div className="absolute inset-[-20px] rounded-full animate-ping opacity-20" 
+                  style={{ backgroundColor: lockoutExpiration ? '#EF4444' : '#FFDF00', animationDuration: '2s' }} />
+                <div className="absolute inset-[-12px] rounded-full animate-ping opacity-15" 
+                  style={{ backgroundColor: lockoutExpiration ? '#EF4444' : '#FFDF00', animationDuration: '2.5s', animationDelay: '0.3s' }} />
+                <div className="absolute inset-[-6px] rounded-full animate-ping opacity-10" 
+                  style={{ backgroundColor: lockoutExpiration ? '#EF4444' : '#FFDF00', animationDuration: '3s', animationDelay: '0.6s' }} />
+
+                {/* Outer Ring — neumorphic raised circle */}
+                <div 
+                  className="w-36 h-36 rounded-full flex items-center justify-center relative transition-all duration-500"
+                  style={{
+                    background: 'var(--bg-color, #E0E5EC)',
+                    boxShadow: lockoutExpiration
+                      ? 'inset 4px 4px 8px rgba(239,68,68,0.3), inset -4px -4px 8px rgba(255,255,255,0.5), 0 0 30px rgba(239,68,68,0.2)'
+                      : isVerifying 
+                        ? '0 0 40px rgba(255,223,0,0.5), inset 0 0 20px rgba(255,223,0,0.15)' 
+                        : '8px 8px 16px #A3B1C6, -8px -8px 16px #FFFFFF, inset 0 0 0 transparent',
+                  }}
+                >
+                  {/* Rotating border indicator during scanning */}
+                  {isVerifying && (
+                    <svg className="absolute inset-0 w-full h-full animate-spin" style={{ animationDuration: '2s' }} viewBox="0 0 144 144">
+                      <circle cx="72" cy="72" r="68" fill="none" stroke="#FFDF00" strokeWidth="3" strokeDasharray="60 380" strokeLinecap="round" />
+                    </svg>
+                  )}
+
+                  {/* Inner circle — the fingerprint container */}
+                  <div 
+                    className="w-24 h-24 rounded-full flex items-center justify-center relative overflow-hidden transition-all duration-500 group-hover:scale-110 group-active:scale-95"
+                    style={{
+                      background: lockoutExpiration 
+                        ? 'linear-gradient(145deg, #FEE2E2, #FECACA)' 
+                        : isEkycComplete
+                          ? 'linear-gradient(145deg, #D1FAE5, #A7F3D0)'
+                          : 'linear-gradient(145deg, #FFF3B0, #FFE066)',
+                      boxShadow: lockoutExpiration
+                        ? 'inset 2px 2px 4px rgba(239,68,68,0.2), 0 0 20px rgba(239,68,68,0.3)'
+                        : isEkycComplete
+                          ? 'inset 2px 2px 4px rgba(16,185,129,0.2), 0 0 20px rgba(16,185,129,0.3)'
+                          : '4px 4px 8px #A3B1C6, -4px -4px 8px #FFFFFF, 0 0 25px rgba(255,223,0,0.4)',
+                    }}
+                  >
+                    {/* Scanning beam animation */}
+                    {isVerifying && (
+                      <div 
+                        className="absolute left-0 right-0 h-1 rounded-full animate-bounce" 
+                        style={{ 
+                          background: 'linear-gradient(90deg, transparent 0%, #FFDF00 30%, #FFB800 70%, transparent 100%)',
+                          boxShadow: '0 0 15px rgba(255,223,0,0.6)',
+                          animationDuration: '1.2s'
+                        }} 
+                      />
+                    )}
+                    
+                    {/* Fingerprint Icon */}
+                    {isEkycComplete ? (
+                      <ShieldCheck className="w-12 h-12" style={{ color: '#059669' }} />
+                    ) : (
+                      <Fingerprint className="w-12 h-12" style={{ color: lockoutExpiration ? '#EF4444' : '#8B6914' }} />
+                    )}
                   </div>
                 </div>
-                {isVerifying && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-full h-1 bg-brand shadow-[0_0_15px_var(--brand-glow)] animate-bounce opacity-50"></div>
+
+                {/* Tap hint animation — bouncing hand */}
+                {!isVerifying && !isEkycComplete && !lockoutExpiration && (
+                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 animate-bounce" style={{ animationDuration: '1.5s' }}>
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center" 
+                      style={{ background: 'linear-gradient(145deg, #FFDF00, #FFB800)', boxShadow: '2px 2px 4px #A3B1C6, -2px -2px 4px #FFFFFF' }}>
+                      <span className="text-[8px] font-black text-black">👆</span>
+                    </div>
                   </div>
                 )}
               </div>
               
-              <div className="text-center">
-                <h3 className="text-xl font-black uppercase tracking-tight" style={{ color: lockoutExpiration ? '#ef4444' : 'var(--text-color)' }}>
+              {/* ─── Status Text ─── */}
+              <div className="text-center space-y-2">
+                <h3 className="text-xl font-black uppercase tracking-tight" style={{ color: lockoutExpiration ? '#EF4444' : 'var(--text-color)' }}>
                   {lockoutExpiration ? 'SENSOR BLOCKED' : isEkycComplete ? 'Identity Secured' : (hasExistingBiometric ? 'Verify Identity' : 'Secure Hardware Login')}
                 </h3>
-                {!isEkycComplete && <p className="text-[10px] pb-1 text-gray-500 font-bold uppercase tracking-widest mt-2 leading-tight">
-                  {lockoutExpiration 
-                    ? `10 FAILED ATTEMPTS. LOCKED FOR ${lockoutTimeLeft}.` 
-                    : hasExistingBiometric 
-                       ? 'TAP TO SCAN FINGERPRINT' 
-                       : (hasInvalidatedBiometric ? 'BIOMETRICS CHANGED. PLEASE RE-ENROLL.' : 'TAP TO ENROLL HARDWARE BIOMETRICS')}
-                </p>}
-                {!isEkycComplete && !lockoutExpiration && failedAttempts > 0 && <p className="text-[9px] text-red-400 font-bold uppercase tracking-widest leading-none">
-                  {10 - failedAttempts} attempts remaining
-                </p>}
+                {!isEkycComplete && (
+                  <p className="text-[10px] pb-1 font-bold uppercase tracking-widest mt-2 leading-tight" 
+                    style={{ color: lockoutExpiration ? '#EF4444' : '#6B7280' }}>
+                    {lockoutExpiration 
+                      ? `10 FAILED ATTEMPTS. LOCKED FOR ${lockoutTimeLeft}.` 
+                      : hasExistingBiometric 
+                         ? 'TAP TO SCAN FINGERPRINT' 
+                         : (hasInvalidatedBiometric ? 'BIOMETRICS CHANGED. PLEASE RE-ENROLL.' : 'TAP TO ENROLL HARDWARE BIOMETRICS')}
+                  </p>
+                )}
+                {!isEkycComplete && !lockoutExpiration && failedAttempts > 0 && (
+                  <p className="text-[9px] text-red-400 font-bold uppercase tracking-widest leading-none">
+                    {10 - failedAttempts} attempts remaining
+                  </p>
+                )}
               </div>
 
               {isEkycComplete && (
-                <div className="w-full glass border border-brand/20 rounded-[1.5rem] p-5 text-center animate-in fade-in zoom-in-95 space-y-3">
-                  <ShieldCheck className="w-12 h-12 text-brand mx-auto drop-shadow-[0_0_15px_var(--brand-glow)]" />
-                  <p className="text-[12px] text-white font-bold uppercase tracking-widest">
+                <div className="w-full glass border rounded-[1.5rem] p-5 text-center animate-in fade-in zoom-in-95 space-y-3"
+                  style={{ borderColor: '#059669' }}>
+                  <ShieldCheck className="w-12 h-12 mx-auto" style={{ color: '#059669', filter: 'drop-shadow(0 0 15px rgba(5,150,105,0.4))' }} />
+                  <p className="text-[12px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-color)' }}>
                     Device verified. Welcome back.
                   </p>
                 </div>
@@ -788,7 +861,8 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme, initialS
                   <button 
                     onClick={handleResetBiometric} 
                     disabled={isVerifying}
-                    className="w-full text-[10px] font-black text-brand uppercase tracking-[0.2em] py-2 disabled:opacity-50 transition-opacity"
+                    className="w-full text-[10px] font-black uppercase tracking-[0.2em] py-2 disabled:opacity-50 transition-opacity"
+                    style={{ color: '#B8860B' }}
                   >
                     Setup New Biometric Instead
                   </button>
