@@ -286,7 +286,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
 
       {/* AI Wish Tracker Highlights */}
       <motion.div variants={itemReq}
-        className="glass rounded-[2rem] p-5 border bg-gradient-to-r from-brand/5 to-purple-500/5 theme-transition cursor-pointer hover:border-brand/30 transition-all"
+        className="glass rounded-[2rem] p-5 border bg-gradient-to-r from-brand/5 to-amber-500/5 theme-transition cursor-pointer hover:border-brand/30 transition-all"
         style={{ borderColor: 'var(--glass-border)' }}
         onClick={() => onNavigate?.('wishes')}>
         <div className="flex items-center justify-between">

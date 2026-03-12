@@ -43,7 +43,7 @@ const FlowGoals: React.FC = () => {
           onAIAssist={() => fetchPlan("Tokyo Trip", 250000)}
         />
         <GoalCard 
-          icon={<Smartphone className="w-6 h-6 text-purple-400" />}
+          icon={<Smartphone className="w-6 h-6 text-amber-500" />}
           name="MacBook Pro M4"
           current={45000}
           target={180000}

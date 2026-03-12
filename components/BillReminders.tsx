@@ -37,7 +37,7 @@ const getIcon = (icon: string) => {
     phone: <Smartphone className="w-5 h-5 text-blue-400" />,
     wifi: <Wifi className="w-5 h-5 text-cyan-400" />,
     trending: <TrendingUp className="w-5 h-5 text-brand" />,
-    card: <CreditCard className="w-5 h-5 text-purple-400" />,
+    card: <CreditCard className="w-5 h-5 text-amber-500" />,
     flame: <Flame className="w-5 h-5 text-orange-400" />,
     water: <Droplets className="w-5 h-5 text-blue-300" />,
   };

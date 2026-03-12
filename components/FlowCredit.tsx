@@ -328,7 +328,7 @@ const CreditEducation: React.FC = () => {
     { label: 'Payment History', weight: 35, color: '#00FFA3', desc: 'Paying EMIs and credit card bills on time is the #1 factor.' },
     { label: 'Credit Utilization', weight: 30, color: '#F59E0B', desc: 'Keep your credit card usage below 30% of your total limit.' },
     { label: 'Credit Age', weight: 15, color: '#3B82F6', desc: 'Older accounts show stability. Avoid closing old cards.' },
-    { label: 'Credit Mix', weight: 10, color: '#8B5CF6', desc: 'Having a mix of secured (home/car) and unsecured (card) credit helps.' },
+    { label: 'Credit Mix', weight: 10, color: '#D4A017', desc: 'Having a mix of secured (home/car) and unsecured (card) credit helps.' },
     { label: 'New Inquiries', weight: 10, color: '#EF4444', desc: 'Too many loan applications in short time hurts your score.' },
   ];
 
@@ -339,8 +339,8 @@ const CreditEducation: React.FC = () => {
         className="w-full flex items-center justify-between p-6"
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-purple-500/10">
-            <BookOpen className="w-5 h-5 text-purple-400" />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-amber-500/10">
+            <BookOpen className="w-5 h-5 text-amber-500" />
           </div>
           <div className="text-left">
             <h4 className="font-black text-sm tracking-tight" style={{ color: 'var(--text-color)' }}>What Affects Your Score?</h4>

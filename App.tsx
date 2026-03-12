@@ -234,12 +234,12 @@ const App: FC = () => {
   return (
     <div className={`min-h-screen pb-24 max-w-md mx-auto relative theme-transition`}>
       <header className="sticky top-0 z-50 p-4 glass flex items-center justify-between theme-transition" style={{ backgroundColor: 'var(--nav-bg)', borderColor: 'var(--glass-border)' }}>
-        <div className="flex items-center gap-2">
+        <button onClick={() => handleNavigate('dashboard')} className="flex items-center gap-2 cursor-pointer">
           <div className="w-8 h-8 bg-brand rounded-lg flex items-center justify-center">
             <Zap className="w-5 h-5 text-black fill-black" />
           </div>
           <span className="font-extrabold text-xl tracking-tighter" style={{ color: 'var(--text-color)' }}>FlowMint</span>
-        </div>
+        </button>
         <div className="flex items-center gap-3">
           <button
             onClick={toggleTheme}
@@ -308,7 +308,7 @@ const App: FC = () => {
                 <MoreMenuItem icon={<ShieldCheck className="w-5 h-5 shadow-[0_0_10px_rgba(6,182,212,0.4)]" />} label="Credit Center" color="text-cyan-400" onTap={() => handleNavigate('credit_core')} />
                 <MoreMenuItem icon={<Upload className="w-5 h-5" />} label="Upload Statement" color="text-emerald-400" onTap={() => handleNavigate('credit_upload')} />
                 <MoreMenuItem icon={<ShieldCheck className="w-5 h-5" />} label="Basic Score" color="text-brand" onTap={() => handleNavigate('credit')} />
-                <MoreMenuItem icon={<Target className="w-5 h-5" />} label="Goals" color="text-purple-400" onTap={() => handleNavigate('goals')} />
+                <MoreMenuItem icon={<Target className="w-5 h-5" />} label="Goals" color="text-amber-500" onTap={() => handleNavigate('goals')} />
                 <MoreMenuItem icon={<LayoutDashboard className="w-5 h-5" />} label="Dashboard" color="text-brand" onTap={() => handleNavigate('dashboard')} />
               </div>
             </motion.div>

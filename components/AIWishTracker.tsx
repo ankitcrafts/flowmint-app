@@ -37,7 +37,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   plane: <Plane className="w-6 h-6 text-cyan-400" />,
   bike: <Bike className="w-6 h-6 text-red-400" />,
   education: <GraduationCap className="w-6 h-6 text-yellow-400" />,
-  luxury: <Gem className="w-6 h-6 text-purple-400" />,
+  luxury: <Gem className="w-6 h-6 text-amber-500" />,
   fashion: <Shirt className="w-6 h-6 text-pink-400" />,
   camera: <Camera className="w-6 h-6 text-orange-400" />,
 };
@@ -408,7 +408,7 @@ const AIWishTracker: React.FC = () => {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
-        className="glass rounded-[2rem] p-5 border bg-gradient-to-r from-brand/5 via-purple-500/5 to-blue-500/5 theme-transition"
+        className="glass rounded-[2rem] p-5 border bg-gradient-to-r from-brand/5 via-amber-500/5 to-yellow-500/5 theme-transition"
         style={{ borderColor: 'var(--glass-border)' }}
       >
         <div className="flex items-center gap-3">
@@ -647,17 +647,17 @@ const AIWishTracker: React.FC = () => {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2 }}
-                            className="flex items-start gap-3 p-4 rounded-2xl bg-purple-500/5"
+                            className="flex items-start gap-3 p-4 rounded-2xl bg-amber-500/5"
                           >
                             <motion.div
                               animate={{ rotate: [0, 15, -15, 0] }}
                               transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-                              className="w-8 h-8 rounded-lg flex items-center justify-center bg-purple-500/10 shrink-0"
+                              className="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-500/10 shrink-0"
                             >
-                              <Zap className="w-4 h-4 text-purple-400" />
+                              <Zap className="w-4 h-4 text-amber-500" />
                             </motion.div>
                             <div className="flex-1">
-                              <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-1">⚡ Speed Up</p>
+                              <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-1">⚡ Speed Up</p>
                               <p className="text-xs leading-relaxed" style={{ color: 'var(--text-color)' }}>{wish.speedUpTip}</p>
                             </div>
                           </motion.div>
@@ -988,7 +988,7 @@ const AIWishTracker: React.FC = () => {
                 exit={{ opacity: 0, height: 0 }}
                 className="overflow-hidden"
               >
-                <div className="p-5 rounded-2xl bg-gradient-to-r from-brand/5 via-purple-500/5 to-blue-500/5 border border-brand/20 space-y-3">
+                <div className="p-5 rounded-2xl bg-gradient-to-r from-brand/5 via-amber-500/5 to-yellow-500/5 border border-brand/20 space-y-3">
                   {/* Animated loader */}
                   <div className="flex items-center gap-3">
                     <div className="relative">
@@ -1028,7 +1028,7 @@ const AIWishTracker: React.FC = () => {
                       initial={{ width: '0%' }}
                       animate={{ width: ['0%', '35%', '60%', '85%', '95%'] }}
                       transition={{ duration: 8, times: [0, 0.2, 0.5, 0.8, 1], ease: 'easeOut' }}
-                      className="h-full rounded-full bg-gradient-to-r from-brand via-purple-400 to-blue-400"
+                      className="h-full rounded-full bg-gradient-to-r from-brand via-amber-400 to-yellow-400"
                     />
                   </div>
                 </div>

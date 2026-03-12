@@ -19,7 +19,7 @@ interface Expense {
 
 const CATEGORIES = [
   { name: 'Food', icon: Coffee, color: '#F97316' },
-  { name: 'Shopping', icon: ShoppingBag, color: '#8B5CF6' },
+  { name: 'Shopping', icon: ShoppingBag, color: '#D4A017' },
   { name: 'Transport', icon: Car, color: '#3B82F6' },
   { name: 'Recharge', icon: Smartphone, color: '#10B981' },
   { name: 'Bills', icon: Zap, color: '#F59E0B' },
@@ -163,8 +163,8 @@ const ExpenseTracker: React.FC = () => {
             <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Recurring</p>
             <p className="text-lg font-black mt-1" style={{ color: 'var(--text-color)' }}>₹{recurringTotal.toLocaleString()}</p>
             <div className="flex items-center gap-1 justify-end mt-1">
-              <RefreshCw className="w-3 h-3 text-purple-400" />
-              <span className="text-[9px] font-black text-purple-400 uppercase">Auto-detected</span>
+              <RefreshCw className="w-3 h-3 text-amber-500" />
+              <span className="text-[9px] font-black text-amber-500 uppercase">Auto-detected</span>
             </div>
           </div>
         </div>
@@ -286,7 +286,7 @@ const ExpenseTracker: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <p className="font-bold text-sm" style={{ color: 'var(--text-color)' }}>{expense.title}</p>
                         {expense.isRecurring && (
-                          <span className="text-[8px] font-black px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 uppercase">
+                          <span className="text-[8px] font-black px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 uppercase">
                             {expense.recurringTag}
                           </span>
                         )}

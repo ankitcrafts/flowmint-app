@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════
+   DARK THEME (Default)
+   ═══════════════════════════════════════════ */
 :root {
   --bg-color: #0a0a0a;
   --text-color: #ffffff;
@@ -14,105 +17,301 @@
   --brand-primary: #00ffa3;
   --brand-secondary: #00d1ff;
   --brand-glow: rgba(0, 255, 163, 0.3);
+  --brand-on-primary: #000000;
 }
 
+/* ═══════════════════════════════════════════
+   LIGHT THEME — Neumorphic Mobile Banking
+   Reference: soft UI, #E0E5EC bg,
+   dual shadow pairs, no visible borders,
+   recessed tracks, raised platforms
+   ═══════════════════════════════════════════ */
 .light {
-  --bg-color: #f4f7f6;
-  --text-color: #1a1a1a;
-  --glass-bg: rgba(0, 0, 0, 0.03);
-  --glass-border: rgba(0, 0, 0, 0.08);
-  --card-subtle: rgba(0, 0, 0, 0.02);
-  --nav-bg: rgba(244, 247, 246, 0.8);
+  --bg-color: #E0E5EC;
+  --text-color: #2D3436;
+  --glass-bg: #E0E5EC;
+  --glass-border: #C8CDD5;
+  --card-subtle: #D5DAE1;
+  --nav-bg: #E0E5EC;
 
-  /* Brand Colors - Light (Mixture of Purple and Mint) */
-  --brand-primary: #9f3fff;
-  --brand-secondary: #00fbaa;
-  --brand-glow: rgba(159, 63, 255, 0.25);
+  /* Brand Colors — Golden (readable on #E0E5EC) */
+  --brand-primary: #D4A017;
+  --brand-secondary: #C69200;
+  --brand-glow: rgba(255, 223, 0, 0.35);
+  --brand-on-primary: #2D3436;
+
+  /* Neumorphic Shadow System (from reference) */
+  --neu-raised:
+    8px 8px 16px #A3B1C6,
+    -8px -8px 16px #FFFFFF;
+  --neu-raised-sm:
+    4px 4px 8px #A3B1C6,
+    -4px -4px 8px #FFFFFF;
+  --neu-inset:
+    inset 4px 4px 8px #A3B1C6,
+    inset -4px -4px 8px #FFFFFF;
+  --neu-inset-sm:
+    inset 2px 2px 5px #A3B1C6,
+    inset -2px -2px 5px #FFFFFF;
+  --neu-flat:
+    3px 3px 6px #A3B1C6,
+    -3px -3px 6px #FFFFFF;
+
+  /* Surface gradients for convex/concave feel */
+  --neu-convex: linear-gradient(145deg, #E8EDF2, #D1D9E6);
+  --neu-concave: linear-gradient(145deg, #D1D9E6, #E8EDF2);
 }
 
+/* ═══════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════ */
 body {
   font-family: "Inter", sans-serif;
   background-color: var(--bg-color);
   color: var(--text-color);
   transition:
-    background-color 0.3s ease,
-    color 0.3s ease;
+    background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   overflow-x: hidden;
 }
 
+/* ─── Glass Card (Dark) ─── */
 .glass {
   background: var(--glass-bg);
   backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border);
 }
 
+/* ─── Neumorphic Card (Light) — raised convex surface, NO borders ─── */
+.light .glass {
+  background: var(--neu-convex);
+  backdrop-filter: none;
+  border: none;
+  border-radius: 24px;
+  box-shadow: var(--neu-raised);
+  transition: box-shadow 0.3s ease, transform 0.25s ease;
+}
+
+.light .glass:hover {
+  box-shadow:
+    10px 10px 20px #A3B1C6,
+    -10px -10px 20px #FFFFFF;
+}
+
+/* ─── Neumorphic Inset (inputs, recessed areas) ─── */
+.light input,
+.light textarea,
+.light select {
+  background: var(--bg-color);
+  border: none;
+  box-shadow: var(--neu-inset-sm);
+  border-radius: 12px;
+  color: var(--text-color);
+}
+
+.light input:focus,
+.light textarea:focus,
+.light select:focus {
+  box-shadow:
+    var(--neu-inset),
+    0 0 0 2px rgba(255, 223, 0, 0.3);
+  outline: none;
+}
+
+/* ─── Neumorphic Button System ─── */
+.light button {
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+/* Active/pressed: push IN */
+.light button:active {
+  box-shadow: var(--neu-inset-sm) !important;
+  transform: scale(0.98) !important;
+}
+
+/* ─── Raised button utility ─── */
+.skeu-raised {
+  position: relative;
+  overflow: hidden;
+}
+
+.light .skeu-raised {
+  background: var(--neu-convex);
+  border: none;
+  box-shadow: var(--neu-raised-sm);
+}
+
+.light .skeu-raised::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 100%);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.light .skeu-raised:active {
+  box-shadow: var(--neu-inset);
+  transform: translateY(1px);
+}
+
+/* ─── Embossed icon containers ─── */
+.light .skeu-icon {
+  background: var(--neu-convex);
+  border: none;
+  border-radius: 16px;
+  box-shadow: var(--neu-raised-sm);
+}
+
+.light .skeu-icon.active,
+.light .skeu-icon:active {
+  background: var(--neu-concave);
+  box-shadow: var(--neu-inset-sm);
+}
+
+/* ═══════════════════════════════════════════
+   GRADIENTS
+   ═══════════════════════════════════════════ */
 .mint-gradient {
-  background: linear-gradient(
-    135deg,
-    var(--brand-primary) 0%,
-    var(--brand-secondary) 100%
-  );
+  background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
 }
 
-.text-brand {
-  color: var(--brand-primary);
-}
-.bg-brand {
-  background-color: var(--brand-primary);
+.light .mint-gradient {
+  background: linear-gradient(135deg, #FFDF00 0%, #FFB800 50%, #FF9500 100%);
+  border: none;
+  box-shadow:
+    4px 4px 8px #A3B1C6,
+    -4px -4px 8px #FFFFFF,
+    inset 0 2px 0 rgba(255,255,255,0.4),
+    inset 0 -2px 0 rgba(0,0,0,0.06);
 }
 
+/* ═══════════════════════════════════════════
+   BRAND UTILITIES
+   ═══════════════════════════════════════════ */
+.text-brand { color: var(--brand-primary); }
+.bg-brand { background-color: var(--brand-primary); }
+
+/* Gold text matches the readable --brand-primary */
+.light .text-brand { color: #B8860B; }
+
+.light .bg-brand {
+  background-color: #FFDF00;
+  border: none;
+  box-shadow: var(--neu-raised-sm);
+}
+
+/* ═══════════════════════════════════════════
+   LIGHT Header & Nav — raised neumorphic platform
+   ═══════════════════════════════════════════ */
+.light nav.glass {
+  background: var(--neu-convex);
+  border: none;
+  border-radius: 24px 24px 0 0;
+  box-shadow:
+    0 -8px 16px #A3B1C6,
+    inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+.light header.glass {
+  background: var(--neu-convex);
+  border: none;
+  border-radius: 0 0 24px 24px;
+  box-shadow:
+    0 8px 16px #A3B1C6,
+    inset 0 -1px 0 rgba(255,255,255,0.6);
+}
+
+/* ─── Progress bar tracks (recessed neumorphic channel) ─── */
+.light .rounded-full.overflow-hidden {
+  box-shadow: var(--neu-inset-sm);
+  background-color: #D5DAE1 !important;
+}
+
+.light .bg-brand.h-full,
+.light .h-full.bg-brand,
+.light .bg-brand.rounded-full {
+  background-color: #FFDF00 !important;
+  box-shadow: none;
+  border: none;
+}
+
+/* ─── Neumorphic toggle ─── */
+.light .skeu-toggle {
+  background: var(--neu-concave);
+  box-shadow: var(--neu-inset-sm);
+  border-radius: 9999px;
+  border: none;
+}
+
+.light .skeu-toggle .toggle-knob {
+  background: var(--neu-convex);
+  box-shadow: var(--neu-raised-sm);
+  border: none;
+  border-radius: 9999px;
+}
+
+/* ─── Recessed panels ─── */
+.light .neu-recessed {
+  background: var(--bg-color);
+  border: none;
+  border-radius: 16px;
+  box-shadow: var(--neu-inset-sm);
+  padding: 16px;
+}
+
+/* ─── Neumorphic pagination dots ─── */
+.light .neu-dot {
+  background: var(--bg-color);
+  box-shadow: var(--neu-inset-sm);
+  border: none;
+  border-radius: 50%;
+}
+
+.light .neu-dot.active {
+  background: linear-gradient(145deg, #FFDF00, #FFB800);
+  box-shadow: var(--neu-raised-sm);
+}
+
+/* ═══════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════ */
 @keyframes float {
-  0% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-20px) rotate(5deg);
-  }
-  100% {
-    transform: translateY(0px) rotate(0deg);
-  }
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(5deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
 }
 
 @keyframes drift {
-  0% {
-    transform: translateX(0px) translateY(0px);
-    opacity: 0;
-  }
-  50% {
-    opacity: 0.6;
-  }
-  100% {
-    transform: translateX(100px) translateY(-100px);
-    opacity: 0;
-  }
+  0% { transform: translateX(0px) translateY(0px); opacity: 0; }
+  50% { opacity: 0.6; }
+  100% { transform: translateX(100px) translateY(-100px); opacity: 0; }
 }
 
 @keyframes shimmer {
-  0% {
-    transform: translateX(-200%);
-  }
-  100% {
-    transform: translateX(200%);
-  }
+  0% { transform: translateX(-200%); }
+  100% { transform: translateX(200%); }
 }
 
 @keyframes pulse-glow {
-  0%,
-  100% {
-    filter: drop-shadow(0 0 5px var(--brand-glow));
-  }
-  50% {
-    filter: drop-shadow(0 0 15px var(--brand-glow));
-  }
+  0%, 100% { filter: drop-shadow(0 0 5px var(--brand-glow)); }
+  50% { filter: drop-shadow(0 0 15px var(--brand-glow)); }
 }
 
-.animate-float {
-  animation: float 4s ease-in-out infinite;
+@keyframes goldShimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
 }
 
-.animate-pulse-glow {
-  animation: pulse-glow 3s ease-in-out infinite;
+@keyframes neuPulse {
+  0%, 100% { box-shadow: 8px 8px 16px #A3B1C6, -8px -8px 16px #FFFFFF; }
+  50% { box-shadow: 4px 4px 8px #A3B1C6, -4px -4px 8px #FFFFFF; }
 }
+
+.animate-float { animation: float 4s ease-in-out infinite; }
+.animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+.light .animate-pulse-glow { animation: neuPulse 3s ease-in-out infinite; }
 
 .currency-particle {
   position: absolute;
@@ -128,24 +327,35 @@ body {
 .shimmer-bar::after {
   content: "";
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.3) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
   animation: shimmer 3s infinite linear;
 }
 
-/* Scrollbar hiding for clean UI */
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
+.light .shimmer-bar::after {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,223,0,0.15) 50%, transparent 100%);
 }
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+
+/* Gold shimmer text */
+.light .gold-shimmer {
+  background: linear-gradient(90deg, #B8960F 0%, #FFDF00 40%, #FFB800 60%, #B8960F 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: goldShimmer 3s linear infinite;
+}
+
+/* ─── Scrollbar hiding ─── */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ─── Theme transition helper ─── */
+.theme-transition {
+  transition:
+    background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }

@@ -43,7 +43,7 @@ const AI_INSIGHTS: InsightCard[] = [
     severity: 'info', action: 'Explore Loans',
   },
   {
-    id: '5', category: 'Spending Psychology', icon: <Brain className="w-5 h-5 text-purple-400" />,
+    id: '5', category: 'Spending Psychology', icon: <Brain className="w-5 h-5 text-amber-500" />,
     title: 'Weekend Spending Pattern',
     message: 'You spend 2.3x more on weekends (avg ₹3,800) compared to weekdays (₹1,600). Setting a weekend budget of ₹2,500 could save ₹5,200/month.',
     severity: 'warning', action: 'Set Budget',

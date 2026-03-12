@@ -32,7 +32,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   phone: <Smartphone className="w-5 h-5 text-blue-400" />,
   bike: <Bike className="w-5 h-5 text-red-400" />,
   gem: <Gem className="w-5 h-5 text-yellow-400" />,
-  edu: <GraduationCap className="w-5 h-5 text-purple-400" />,
+  edu: <GraduationCap className="w-5 h-5 text-amber-500" />,
   home: <Home className="w-5 h-5 text-cyan-400" />,
 };
 

@@ -30,8 +30,8 @@ const ONBOARDING_SLIDES = [
     title: "FlowCredit Intelligence",
     description: "Real‑time CIBIL scores with actionable nudges to build your credit-worthy future.",
     icon: <ShieldCheck className="w-12 h-12" />,
-    color: "#8B5CF6",
-    gradient: "from-purple-500/20 to-transparent"
+    color: "#D4A017",
+    gradient: "from-amber-500/20 to-transparent"
   },
   {
     title: "FlowBNPL Freedom",
