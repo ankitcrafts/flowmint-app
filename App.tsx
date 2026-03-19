@@ -18,7 +18,8 @@ import {
   Menu,
   X,
   ChevronRight,
-  Upload
+  Upload,
+  Settings
 } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import FlowPay from './components/FlowPay';
@@ -33,8 +34,10 @@ import AIInsights from './components/AIInsights';
 import Auth from './components/Auth';
 import InitialSetup from './components/InitialSetup';
 import ErrorBoundary from './components/ErrorBoundary';
+import UserProfile from './components/UserProfile';
 import CreditDashboard from './pages/CreditDashboard';
 import CreditUpload from './pages/CreditUpload';
+import SettingsPanel from './components/SettingsPanel';
 import { supabase } from './services/supabase';
 import { BiometricService } from './services/BiometricService';
 
@@ -57,6 +60,7 @@ enum Tab {
   AI = 'ai',
   CreditCore = 'credit_core',
   CreditUpload = 'credit_upload',
+  Profile = 'profile',
 }
 
 const App: FC = () => {
@@ -67,6 +71,7 @@ const App: FC = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [showMore, setShowMore] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async (userId: string, sessionUser?: any) => {
@@ -227,6 +232,7 @@ const App: FC = () => {
       case Tab.AI: return <AIInsights />;
       case Tab.CreditCore: return <CreditDashboard />;
       case Tab.CreditUpload: return <CreditUpload />;
+      case Tab.Profile: return <UserProfile userProfile={userProfile} theme={theme} />;
       default: return <Dashboard theme={theme} userProfile={userProfile} onNavigate={handleNavigate} />;
     }
   };
@@ -258,8 +264,14 @@ const App: FC = () => {
             <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2" style={{ borderColor: 'var(--bg-color)' }}></span>
           </button>
           <button
-            onClick={() => setIsAuthenticated(false)}
-            className="w-8 h-8 rounded-full overflow-hidden border-2 border-brand theme-transition"
+             onClick={() => setShowSettings(true)}
+             className="relative p-2 rounded-full hover:bg-black/5"
+          >
+            <Settings className="w-5 h-5 text-gray-400" />
+          </button>
+          <button
+            onClick={() => handleNavigate('profile')}
+            className="w-8 h-8 rounded-full overflow-hidden border-2 border-brand theme-transition cursor-pointer block"
           >
             <img src={userProfile?.avatar || "https://picsum.photos/seed/user1/100/100"} alt="Avatar" />
           </button>
@@ -282,6 +294,19 @@ const App: FC = () => {
           </AnimatePresence>
         </ErrorBoundary>
       </main>
+
+      {/* Settings Overlay */}
+      <AnimatePresence>
+        {showSettings && (
+          <SettingsPanel 
+            onClose={() => setShowSettings(false)} 
+            onLogout={() => setIsAuthenticated(false)} 
+            userProfile={userProfile} 
+            theme={theme} 
+            toggleTheme={toggleTheme} 
+          />
+        )}
+      </AnimatePresence>
 
       {/* More Menu Overlay */}
       <AnimatePresence>
