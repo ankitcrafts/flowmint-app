@@ -4,7 +4,7 @@
   <h1>💎 FlowMint</h1>
   <p><strong>The Future of "Cyber-Finance" — Intelligent Wealth Management for India.</strong></p>
 
-    <img src="https://img.shields.io/badge/Version-2.0.0-cyan?style=for-the-badge" alt="Version 2.0.0" />
+    <img src="https://img.shields.io/badge/Version-2.1.0-cyan?style=for-the-badge" alt="Version 2.1.0" />
     <img src="https://img.shields.io/badge/Stack-React_19_%2B_Express-purple?style=for-the-badge" alt="Stack" />
     <img src="https://img.shields.io/badge/AI-Groq_%7C_Llama_3.3-green?style=for-the-badge" alt="AI" />
     <img src="https://img.shields.io/badge/Platform-Web_%2F_Android-blue?style=for-the-badge" alt="Platform" />
@@ -23,7 +23,7 @@ FlowMint is a premium, **"Cyber-Finance"** dashboard and financial super-app des
 - **AI Savings Blueprint**: Generate step-by-step plans to buy your next "Wish" (iPhone, Car, Trip) using Llama 3.3.
 - **Cyber-SDR Dashboard**: 11+ high-fidelity widgets showing wealth trends, EMI stress, and eco-impact.
 - **Resilient AI Chain**: Primary power from **Groq (Llama 3.3)** with a seamless fallback to **Gemini 2.0 Flash**.
-- **Financial Identity**: Integrated Aadhaar/PAN validation and native Google Sign-In for Android.
+- **Financial Identity & Biometrics**: Integrated Aadhaar/PAN validation and native Biometric Auth (Face ID/Fingerprint).
 - **FlowPay**: Intelligent bill reminders and smart payment tracking.
 
 ---
@@ -35,7 +35,7 @@ FlowMint is a premium, **"Cyber-Finance"** dashboard and financial super-app des
 | **React 19** + Vite       | **Node.js** + Express   | **Groq** (Llama 3.3 70B)  |
 | **Tailwind CSS**          | **Supabase** (Postgres) | **Gemini 2.0 Flash**      |
 | **Framer Motion**         | **Helmet** + Rate Limit | **Nominatim** (Geocoding) |
-| **Capacitor 8** (Android) | **JWT** + HTTPOnly      | **DiceBear** (Avatars)    |
+| **Capacitor 8** (Android) | **JWT** + HTTPOnly      | **Native Biometrics**     |
 
 ---
 

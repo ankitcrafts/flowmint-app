@@ -1,6 +1,6 @@
 # FlowMint Documentation
 
-> **Version:** 2.0 • **Last Updated:** 20 Feb 2026 • **Status:** MVP Phase 1 Complete
+> **Version:** 2.1 • **Last Updated:** 20 March 2026 • **Status:** MVP Phase 1 Complete
 
 ---
 
@@ -57,8 +57,8 @@
 # FlowMint — Engineering & Technical Documentation
 
 > **Project:** FlowMint — Financial Super-App with AI Wealth Management  
-> **Version:** 1.8.0  
-> **Last Updated:** 25 Feb 2026 — Cloud Deployment & Security Hardening Update.
+> **Version:** 2.1  
+> **Last Updated:** 20 March 2026 — Biometric Security Enhancements & Android Build Update.
 
 ---
 
@@ -72,6 +72,7 @@
 | **Backend**     | Node.js, Express.js (on Render)                  | Secure API proxy, auth mediation, and AI orchestration.             |
 | **Database**    | Supabase (Postgres)                              | Row-level secured (RLS) data persistence.                           |
 | **Auth**        | Supabase Auth + Google GSI + Native Cred Manager | Cross-platform identity (Google One Tap & Native Sign-In).          |
+| **Security**    | Biometric Auth (Face ID/Fingerprint)             | Step-up authentication & cryptographic keys for local identities.   |
 | **AI (Core)**   | Groq (Llama 3.3 70B)                             | Primary LLM for ultra-low latency financial insights (Llama-first). |
 | **AI (Backup)** | Gemini 2.0 Flash                                 | Fallback LLM and high-context reasoning.                            |
 
@@ -137,6 +138,7 @@ FlowMint uses a single codebase for Web and Android. The frontend detects the pl
 - **Web**: Google One Tap → Response → Supabase Auth.
 - **Mobile**: Native Capacitor Plugin → Android Credential Manager → Token → Supabase Auth.
 - **Session Persistence**: JWTs are stored in HTTPOnly cookies (Web) and Secure Storage (Native).
+- **Biometric Enclaves**: Local keys generated via Web Crypto map to Face ID/Fingerprint hardware, overriding manual OTPs for step-up actions (Identity Vault).
 
 ### 3. AI Resilience Logic (The 15s Rule)
 
@@ -267,10 +269,13 @@ flowmint---financial-super-app/
 ├── services/                   # Frontend service layer
 │   ├── geminiService.ts        # Gemini AI integration (insights + plans)
 │   ├── apiService.ts           # Mock data service (transactions, bills, goals, loans)
-│   └── supabase.ts             # Supabase client initialization
+│   ├── supabase.ts             # Supabase client initialization
+│   └── BiometricService.ts     # Interface for the biometric native plugin
 │
 ├── plugins/                    # Custom Capacitor plugins
-│   └── GoogleAuth.ts           # Native Google Sign-In bridge (Credential Manager)
+│   ├── GoogleAuth.ts           # Native Google Sign-In bridge (Credential Manager)
+│   ├── BiometricAuth.ts        # Setup for native Biometrics
+│   └── BiometricAuthWeb.ts     # Fallback Web-level biometry mappings
 │
 ├── server/                     # Backend Express.js server
 │   └── index.js                # Auth routes (/auth/google, /auth/mobile, /auth/me, /auth/logout)
@@ -430,7 +435,7 @@ Since the app includes an Express backend server, it requires a persistent Node.
 **Recommended Hosts:** Render, Railway, Heroku, or a VPS (AWS EC2, DigitalOcean).
 
 1. Build the frontend: `npm run build`
-2. Start Server: `node index.js` (The server uses `index.js` at the root, NOT `dist/index.js`)
+2. Start Server: `node index.js` (The startup script from package.json executes `node index.js` natively to host both UI and endpoints).
 
 > **Vercel/Netlify:** These are static hosts and won't work with the current Express setup unless you refactor auth routes into serverless functions.
 

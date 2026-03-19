@@ -1,6 +1,6 @@
 # FlowMint Knowledgebase & Design System
 
-> **Version:** 2.0 • **Last Updated:** 20 Feb 2026
+> **Version:** 2.1 • **Last Updated:** 20 March 2026
 
 ---
 
@@ -113,8 +113,8 @@ FlowMint adopts a **"Cyber-Finance"** aesthetic — a premium, dark-mode-first d
   - `navigator.geolocation.getCurrentPosition()` — GPS
   - Nominatim reverse geocoding — city detection
   - DiceBear avatars — avatar generation
-- **Mock APIs:** Aadhaar/PAN verification.
-- **Local Logic:** eKYC biometric scan uses Web Crypto API for secure local AES-GCM encryption/decryption (Identity Vault).
+  - Biometric Enclaves via Web Crypto API/Capacitor plugins.
+- **Security:** eKYC Biometric verify uses web crypto and device enclaves to secure private keys, bypassing third party providers.
 - **Gap:** Profile data is NOT persisted to backend (stays in local state)
 
 ### FlowPay (`FlowPay.tsx`) — 308 lines

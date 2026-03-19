@@ -2,7 +2,7 @@
 
 > **Total APIs Identified: 68**  
 > **Integrated: 23 | Ongoing (Partial/Mock): 9 | Pending (Not Built): 36**  
-> **Last Verified: 7 March 2026 — Server deployment using index.js on Render fixed and AI Chat E2E Verified.**
+> **Last Verified: 20 March 2026 — Server deployment, Step-Up Biometrics, and AI Chat E2E Verified.**
 
 ---
 
@@ -86,7 +86,7 @@
 | 21  | PAN Number Validation         | Client-side | _Regex: `/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/`_                                       | Validates PAN format using a regex pattern. No external API call.                                                         | 🔄 Ongoing    |
 | 22  | Fetch KYC Details (Aadhaar)   | —           | _Simulated: returns hardcoded demo name/DOB_                                  | Should fetch verified identity details from Aadhaar via a KYC provider. Currently returns fake data after a `setTimeout`. | ❌ Pending    |
 | 23  | Fetch KYC Details (PAN)       | —           | _Simulated: returns hardcoded demo name/DOB_                                  | Should verify PAN and return name/DOB from tax records via a KYC provider. Currently returns fake data.                   | ❌ Pending    |
-| 24  | eKYC Biometric Verification   | —           | _Local Biometic Vault: 256-bit AES-GCM encryption securely stores identity_   | Custom Web Crypto logic for AES-GCM local storage encryption/decryption, replacing the need for 3rd-party KYC providers.  | ✅ Integrated |
+| 24  | eKYC Biometric Verification   | Capacitor   | `BiometricAuth` plugin / `Web Crypto API`                                     | Utilizes Fingerprint/FaceID via Android BiometricAuthPlugin & local AES-GCM encryption, superseding external 3rd-party KYC. | ✅ Integrated |
 | 25  | Save User Profile to Backend  | `POST`      | `/api/profile` (🔒 JWT Protected)                                             | Persists all collected profile data to the `user_financial_profiles` table in Supabase.                                   | ✅ Integrated |
 | 26  | Generate Avatar — DiceBear    | `GET`       | `https://api.dicebear.com/7.x/avataaars/svg?seed={name}`                      | Generates unique SVG avatar based on user's name. Used in both `Auth.tsx` and `InitialSetup.tsx`.                         | ✅ Integrated |
 
@@ -227,5 +227,5 @@
 ---
 
 > **Document Status:** ✅ FULLY VERIFIED — Updated for Cloud Deployment & Security Hardening.  
-> **Last Updated:** 25 Feb 2026  
+> **Last Updated:** 20 March 2026  
 > **Total API Points: 68 | Integrated: 22 | Ongoing: 10 | Pending: 36**

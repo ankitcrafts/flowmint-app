@@ -1,5 +1,7 @@
 # FlowMint — Product Requirements Document (PRD)
 
+> **Version:** 2.1 • **Last Updated:** 20 March 2026
+
 ### 3.3. FlowCredit — Credit Health Intelligence
 
 > **Component:** `FlowCredit.tsx` • **Status:** 🔄 UI Built (Mock Score)
@@ -94,8 +96,8 @@
 
 - **Onboarding:** 8-slide auto-playing feature showcase with skip option
 - **Profile Setup:** 7-step wizard — Name, City (GPS auto-detect), Vibe, Profession, Income, Identity Verification (Aadhaar/PAN/eKYC), Celebration
-- **Working APIs:** GPS geolocation, Nominatim reverse geocoding, DiceBear avatars
-- **Gap:** KYC verification is simulated; profile data not persisted to backend
+- **Working APIs:** GPS geolocation, Nominatim reverse geocoding, DiceBear avatars, Native Biometrics (Android FaceID/Fingerprint)
+- **Security:** Identity vault created with on-device cryptographic keys (aes-gcm) ensuring biometric integrity without third-party KYC providers. Profile data not persisted to backend yet.
 
 ---
 
@@ -163,6 +165,7 @@
 - [x] ErrorBoundary — Crash protection with retry UI
 - [x] PWA manifest and service worker
 - [x] Capacitor Android project configured
+- [x] Biometric Security Enhancements (Face ID/Fingerprint Step-up, local AES-GCM Vault)
 
 ### Phase 2: Data Integration 🔄 (Next Sprint)
 
