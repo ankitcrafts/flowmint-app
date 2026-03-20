@@ -4,7 +4,7 @@
   <h1>💎 FlowMint</h1>
   <p><strong>The Future of "Cyber-Finance" — Intelligent Wealth Management for India.</strong></p>
 
-    <img src="https://img.shields.io/badge/Version-2.1.0-cyan?style=for-the-badge" alt="Version 2.1.0" />
+    <img src="https://img.shields.io/badge/Version-2.2.0-cyan?style=for-the-badge" alt="Version 2.2.0" />
     <img src="https://img.shields.io/badge/Stack-React_19_%2B_Express-purple?style=for-the-badge" alt="Stack" />
     <img src="https://img.shields.io/badge/AI-Groq_%7C_Llama_3.3-green?style=for-the-badge" alt="AI" />
     <img src="https://img.shields.io/badge/Platform-Web_%2F_Android-blue?style=for-the-badge" alt="Platform" />
@@ -20,10 +20,12 @@ FlowMint is a premium, **"Cyber-Finance"** dashboard and financial super-app des
 
 ### 🌟 Key Features
 
+- **Real Data Dashboard**: 11+ widgets powered by live Supabase queries — transactions, bills, goals, and spending charts.
 - **AI Savings Blueprint**: Generate step-by-step plans to buy your next "Wish" (iPhone, Car, Trip) using Llama 3.3.
-- **Cyber-SDR Dashboard**: 11+ high-fidelity widgets showing wealth trends, EMI stress, and eco-impact.
+- **Core Data CRUD**: Full create/read/update/delete for transactions, expenses, bills, goals, and payments — all persisted in Supabase.
 - **Resilient AI Chain**: Primary power from **Groq (Llama 3.3)** with a seamless fallback to **Gemini 2.0 Flash**.
 - **Financial Identity & Biometrics**: Integrated Aadhaar/PAN validation and native Biometric Auth (Face ID/Fingerprint).
+- **Professional UX**: Glassmorphic Toast notifications, shimmer skeleton loaders, and animated empty states.
 - **FlowPay**: Intelligent bill reminders and smart payment tracking.
 
 ---
@@ -89,6 +91,7 @@ The `flowmint.apk` Android application file is available directly in the root di
 
 - **Hardened Backend**: Deployed on Render with **Helmet.js**, **Express Rate Limiting**, and **JWT Signature Verification**.
 - **The 15s Rule**: AI requests automatically failover to backups if the primary engine takes more than 15 seconds.
+- **Input Validation**: Server-side validation for required fields, positive numbers, and type constraints on all CRUD endpoints.
 - **Row Level Security (RLS)**: Your financial data is strictly yours, enforced at the database level.
 
 ---
@@ -96,7 +99,7 @@ The `flowmint.apk` Android application file is available directly in the root di
 ## 📂 Documentation Deep-Dive
 
 - [📖 Detailed Documentation](./DOCUMENTATION.md) — Technical specs & internal architecture.
-- [🗺️ API Integration Map](./API_INTEGRATION_MAP.md) — Current state of all 68+ API points.
+- [🗺️ API Integration Map](./API_INTEGRATION_MAP.md) — Current state of all 83+ API points.
 - [🧠 Knowledge Base](./KNOWLEDGEBASE.md) — UI Tokens, Design System, and Troubleshooting.
 - [🎯 Product Requirements (PRD)](./PRD.md) — The vision & roadmap.
 - [🤖 LLM Strategy](./CUSTOM_LLM_STRATEGY.md) — How our Llama/Gemini hybrid works.

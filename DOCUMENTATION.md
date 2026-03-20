@@ -1,6 +1,6 @@
 # FlowMint Documentation
 
-> **Version:** 2.1 • **Last Updated:** 20 March 2026 • **Status:** MVP Phase 1 Complete
+> **Version:** 2.2 • **Last Updated:** 20 March 2026 • **Status:** MVP Phase 1 Complete + Tier 1 Data Integration
 
 ---
 
@@ -10,9 +10,10 @@
 
 ### Key Highlights
 
-- **15 major components** built and functional
-- **78 API integration points** identified and mapped (18 integrated, 12 ongoing, 48 pending)
-- **AI-powered insights** via Google Gemini (Flash + Pro models)
+- **15+ major components** built and functional (including Toast notifications & Skeleton loaders)
+- **83 API integration points** identified and mapped (37 integrated, 10 ongoing, 36 pending)
+- **AI-powered insights** via Groq (Llama 3.3) with Gemini 2.0 Flash fallback
+- **Core Data CRUD**: Real Supabase-backed transactions, expenses, bills, goals, payments
 - **Dual authentication** — Google OAuth + Mobile OTP with JWT sessions
 - **Dark/Light theme** with CSS variable-based theming system
 - **PWA-ready** with auto-updating service worker
@@ -57,8 +58,8 @@
 # FlowMint — Engineering & Technical Documentation
 
 > **Project:** FlowMint — Financial Super-App with AI Wealth Management  
-> **Version:** 2.1  
-> **Last Updated:** 20 March 2026 — Biometric Security Enhancements & Android Build Update.
+> **Version:** 2.2  
+> **Last Updated:** 20 March 2026 — Tier 1 Data Integration, Toast/Skeleton Systems, 15 New CRUD Routes.
 
 ---
 
@@ -268,9 +269,13 @@ flowmint---financial-super-app/
 │
 ├── services/                   # Frontend service layer
 │   ├── geminiService.ts        # Gemini AI integration (insights + plans)
-│   ├── apiService.ts           # Mock data service (transactions, bills, goals, loans)
+│   ├── apiService.ts           # Real Supabase data service (transactions, bills, goals, expenses, payments)
 │   ├── supabase.ts             # Supabase client initialization
 │   └── BiometricService.ts     # Interface for the biometric native plugin
+│
+├── components/                 # Shared UI components
+│   ├── Toast.tsx               # Glassmorphic toast notification system (useToast hook)
+│   └── Skeleton.tsx            # Shimmer skeleton loaders (7 variants + EmptyState)
 │
 ├── plugins/                    # Custom Capacitor plugins
 │   ├── GoogleAuth.ts           # Native Google Sign-In bridge (Credential Manager)
@@ -369,19 +374,23 @@ In development, Vite proxies API requests to the Express backend:
 | `app_users` | `id`, `mobile`, `name`, `email`, `google_id`, `avatar`, `created_at` | Auth (Express server)       |
 | `profiles`  | `id`, `name`, `avatar_url`                                           | App.tsx (session hydration) |
 
-### Required Tables (Not Yet Created)
+### Core Data Tables (✅ Created)
+
+| Table                   | Purpose                              | Status        |
+| ----------------------- | ------------------------------------ | ------------- |
+| `transactions`          | All income/expense/transfer records  | ✅ Created     |
+| `expenses`              | Detailed expense tracking            | ✅ Created     |
+| `bills`                 | Bill reminders with due dates        | ✅ Created     |
+| `goals`                 | Savings goals with AI plans          | ✅ Created     |
+| `payments`              | Payment history (UPI, bill payments) | ✅ Created     |
+| `dashboard_summary`     | Aggregated SQL view (SECURITY INVOKER) | ✅ Created  |
+
+### Future Tables
 
 | Table                   | Purpose                              | Priority    |
 | ----------------------- | ------------------------------------ | ----------- |
-| `transactions`          | Financial transactions for dashboard | 🔴 Critical |
-| `expenses`              | User expense records                 | 🔴 Critical |
-| `bills`                 | Bill reminders with due dates        | 🔴 Critical |
-| `goals`                 | Savings goals tracking               | 🟡 Medium   |
-| `wishes`                | AI wish tracker items                | 🟡 Medium   |
-| `payments`              | FlowPay payment history              | 🟡 Medium   |
 | `loan_products`         | Loan marketplace catalog             | 🟢 Low      |
 | `user_settings`         | Theme, notification preferences      | 🟢 Low      |
-| `chat_history`          | AI chat conversation persistence     | 🟢 Low      |
 | `sustainability_scores` | Eco impact tracking                  | 🟢 Low      |
 
 ---
@@ -406,7 +415,28 @@ In development, Vite proxies API requests to the Express backend:
 | DiceBear Avatars    | `https://api.dicebear.com/7.x/avataaars/svg?seed=`                  | Auth.tsx, InitialSetup.tsx |
 | Google Gemini AI    | via `@google/genai` SDK                                             | geminiService.ts           |
 
-> 📄 For the complete 78-API integration registry, see **`API_INTEGRATION_MAP.md`**.
+> 📄 For the complete 83-API integration registry, see **`API_INTEGRATION_MAP.md`**.
+
+### Core Data CRUD Endpoints (`server/index.js`)
+
+| Method  | Endpoint              | Auth   | Description                                              |
+| ------- | --------------------- | ------ | -------------------------------------------------------- |
+| `GET`   | `/api/dashboard`      | 🔒 JWT | Full dashboard summary (5× parallel Supabase queries)     |
+| `GET`   | `/api/transactions`   | 🔒 JWT | Paginated transactions with category/type filters         |
+| `POST`  | `/api/transactions`   | 🔒 JWT | Create transaction with validation                        |
+| `GET`   | `/api/expenses`       | 🔒 JWT | Fetch expenses with category filter                       |
+| `POST`  | `/api/expenses`       | 🔒 JWT | Create expense + auto-create linked transaction           |
+| `DELETE`| `/api/expenses/:id`   | 🔒 JWT | Delete expense                                            |
+| `GET`   | `/api/expenses/summary`| 🔒 JWT | Monthly/category aggregation                             |
+| `GET`   | `/api/bills`          | 🔒 JWT | Bills with status filter (paid/unpaid/overdue)            |
+| `POST`  | `/api/bills`          | 🔒 JWT | Create bill                                               |
+| `PATCH` | `/api/bills/:id/pay`  | 🔒 JWT | Mark paid + auto-create payment & transaction             |
+| `GET`   | `/api/goals`          | 🔒 JWT | Fetch all goals                                           |
+| `POST`  | `/api/goals`          | 🔒 JWT | Create goal with validation                               |
+| `PATCH` | `/api/goals/:id`      | 🔒 JWT | Update progress / AI plan / status                        |
+| `DELETE`| `/api/goals/:id`      | 🔒 JWT | Delete goal                                               |
+| `GET`   | `/api/payments`       | 🔒 JWT | Fetch payment history                                     |
+| `POST`  | `/api/payments`       | 🔒 JWT | Record payment + auto-create transaction                  |
 
 ---
 
@@ -471,8 +501,9 @@ To build manually:
 
 ### Security Gaps to Address
 
-- [ ] Rate limiting on auth endpoints
+- [x] Rate limiting on auth endpoints
+- [x] Supabase Row Level Security (RLS) policies on all tables
+- [x] Input validation on CRUD endpoints (server-side)
 - [ ] CSRF protection for cookie-based auth
 - [ ] Input sanitization on all user inputs
-- [ ] Supabase Row Level Security (RLS) policies on all tables
 - [ ] OWASP Top 10 security audit before production launch

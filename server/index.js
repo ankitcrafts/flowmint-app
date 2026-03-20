@@ -1165,6 +1165,559 @@ app.get('/api/ai/profile', authenticateToken, async (req, res) => {
   res.json({ exists: true, ...profile });
 });
 
+/* ══════════════════════════════════════════════════════════════
+   FlowMint CRUD Routes — Core Data Layer (Tier 1)
+   
+   Endpoints for: Transactions, Expenses, Bills, Goals, Payments
+   All routes are JWT-protected and use Supabase Admin client.
+   ══════════════════════════════════════════════════════════════ */
+
+// ─── Helper: Get Supabase Auth user_id from request ───────
+function getAuthUserId(req) {
+  // Prefer Supabase auth UID (from signInWithIdToken flow)
+  if (req.user?.supabase_id) return req.user.supabase_id;
+  // Fallback to Express JWT user ID
+  return req.user?.id;
+}
+
+// ─── Validation Helpers ───────────────────────────────────
+function validateRequired(fields, body) {
+  const missing = fields.filter(f => body[f] === undefined || body[f] === null || body[f] === '');
+  if (missing.length > 0) {
+    return `Missing required fields: ${missing.join(', ')}`;
+  }
+  return null;
+}
+
+function validatePositiveNumber(value, fieldName) {
+  const num = Number(value);
+  if (isNaN(num) || num < 0) {
+    return `${fieldName} must be a valid positive number`;
+  }
+  return null;
+}
+
+// ─── TRANSACTIONS ─────────────────────────────────────────
+
+// GET /api/transactions — Fetch user's transactions (paginated)
+app.get('/api/transactions', authenticateToken, async (req, res) => {
+  const userId = getAuthUserId(req);
+  const { limit = 20, offset = 0, category, type } = req.query;
+
+  try {
+    let query = supabase
+      .from('transactions')
+      .select('*', { count: 'exact' })
+      .eq('user_id', userId)
+      .order('date', { ascending: false })
+      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+
+    if (category) query = query.eq('category', category);
+    if (type) query = query.eq('type', type);
+
+    const { data, error, count } = await query;
+    if (error) throw error;
+
+    res.json({ transactions: data || [], total: count, hasMore: (data?.length || 0) === parseInt(limit) });
+  } catch (err) {
+    console.error('Transactions GET error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch transactions', detail: err.message });
+  }
+});
+
+// POST /api/transactions — Create a new transaction
+app.post('/api/transactions', authenticateToken, async (req, res) => {
+  const userId = getAuthUserId(req);
+  const { title, amount, category, type, date, is_recurring, merchant, notes } = req.body;
+
+  const validationError = validateRequired(['title', 'amount', 'category', 'type'], req.body);
+  if (validationError) return res.status(400).json({ error: validationError });
+
+  const amountError = validatePositiveNumber(amount, 'Amount');
+  if (amountError) return res.status(400).json({ error: amountError });
+
+  if (!['income', 'expense', 'transfer'].includes(type)) {
+    return res.status(400).json({ error: 'Type must be one of: income, expense, transfer' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('transactions')
+      .insert([{
+        user_id: userId, title: title.trim(), amount: Number(amount),
+        category: category.trim(), type, date: date || new Date().toISOString(),
+        is_recurring: is_recurring || false, merchant: merchant?.trim(), notes: notes?.trim(),
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.status(201).json({ transaction: data, message: 'Transaction recorded' });
+  } catch (err) {
+    console.error('Transactions POST error:', err.message);
+    res.status(500).json({ error: 'Failed to save transaction', detail: err.message });
+  }
+});
+
+// ─── EXPENSES ─────────────────────────────────────────────
+
+// GET /api/expenses — Fetch user's expenses
+app.get('/api/expenses', authenticateToken, async (req, res) => {
+  const userId = getAuthUserId(req);
+  const { limit = 30, category } = req.query;
+
+  try {
+    let query = supabase
+      .from('expenses')
+      .select('*')
+      .eq('user_id', userId)
+      .order('date', { ascending: false })
+      .limit(parseInt(limit));
+
+    if (category) query = query.eq('category', category);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    res.json({ expenses: data || [] });
+  } catch (err) {
+    console.error('Expenses GET error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch expenses', detail: err.message });
+  }
+});
+
+// POST /api/expenses — Create a new expense
+app.post('/api/expenses', authenticateToken, async (req, res) => {
+  const userId = getAuthUserId(req);
+  const { title, amount, category, date, notes, is_recurring } = req.body;
+
+  const validationError = validateRequired(['title', 'amount', 'category'], req.body);
+  if (validationError) return res.status(400).json({ error: validationError });
+
+  const amountError = validatePositiveNumber(amount, 'Amount');
+  if (amountError) return res.status(400).json({ error: amountError });
+
+  try {
+    const { data, error } = await supabase
+      .from('expenses')
+      .insert([{
+        user_id: userId, title: title.trim(), amount: Number(amount),
+        category: category.trim(), date: date || new Date().toISOString(),
+        notes: notes?.trim(), is_recurring: is_recurring || false,
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Also create a corresponding transaction record to keep the dashboard summary in sync
+    await supabase.from('transactions').insert([{
+      user_id: userId, title: title.trim(), amount: Number(amount),
+      category: category.trim(), type: 'expense', date: date || new Date().toISOString(),
+    }]).catch(e => console.warn('Auto-transaction creation failed (non-fatal):', e.message));
+
+    res.status(201).json({ expense: data, message: 'Expense saved' });
+  } catch (err) {
+    console.error('Expenses POST error:', err.message);
+    res.status(500).json({ error: 'Failed to save expense', detail: err.message });
+  }
+});
+
+// DELETE /api/expenses/:id
+app.delete('/api/expenses/:id', authenticateToken, async (req, res) => {
+  const userId = getAuthUserId(req);
+  try {
+    const { error } = await supabase
+      .from('expenses')
+      .delete()
+      .eq('id', req.params.id)
+      .eq('user_id', userId);
+
+    if (error) throw error;
+    res.json({ message: 'Expense deleted' });
+  } catch (err) {
+    console.error('Expenses DELETE error:', err.message);
+    res.status(500).json({ error: 'Failed to delete expense', detail: err.message });
+  }
+});
+
+// GET /api/expenses/summary — Monthly aggregation
+app.get('/api/expenses/summary', authenticateToken, async (req, res) => {
+  const userId = getAuthUserId(req);
+  const { months = 4 } = req.query;
+
+  try {
+    const since = new Date();
+    since.setMonth(since.getMonth() - parseInt(months));
+
+    const { data, error } = await supabase
+      .from('expenses')
+      .select('date, amount, category')
+      .eq('user_id', userId)
+      .gte('date', since.toISOString());
+
+    if (error) throw error;
+
+    // Aggregate by month
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const monthly = {};
+    const categories = {};
+
+    (data || []).forEach(row => {
+      const d = new Date(row.date);
+      const monthKey = monthNames[d.getMonth()];
+      monthly[monthKey] = (monthly[monthKey] || 0) + Number(row.amount);
+      categories[row.category] = (categories[row.category] || 0) + Number(row.amount);
+    });
+
+    res.json({
+      monthly: Object.entries(monthly).map(([month, total]) => ({ month, total })),
+      categories: Object.entries(categories)
+        .map(([category, total]) => ({ category, total }))
+        .sort((a, b) => b.total - a.total),
+      totalExpenses: (data || []).reduce((s, r) => s + Number(r.amount), 0),
+    });
+  } catch (err) {
+    console.error('Expenses summary error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch expense summary', detail: err.message });
+  }
+});
+
+// ─── BILLS ────────────────────────────────────────────────
+
+// GET /api/bills
+app.get('/api/bills', authenticateToken, async (req, res) => {
+  const userId = getAuthUserId(req);
+  const { status } = req.query; // 'paid', 'unpaid', 'overdue'
+
+  try {
+    let query = supabase
+      .from('bills')
+      .select('*')
+      .eq('user_id', userId)
+      .order('due_date', { ascending: true });
+
+    if (status === 'paid') query = query.eq('is_paid', true);
+    if (status === 'unpaid') query = query.eq('is_paid', false);
+    if (status === 'overdue') {
+      const today = new Date().toISOString().split('T')[0];
+      query = query.eq('is_paid', false).lt('due_date', today);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    // Calculate summary
+    const today = new Date().toISOString().split('T')[0];
+    const allBills = data || [];
+    const unpaid = allBills.filter(b => !b.is_paid);
+    const overdue = unpaid.filter(b => b.due_date < today);
+
+    res.json({
+      bills: allBills,
+      summary: {
+        totalDue: unpaid.reduce((s, b) => s + Number(b.amount), 0),
+        unpaidCount: unpaid.length,
+        overdueCount: overdue.length,
+      },
+    });
+  } catch (err) {
+    console.error('Bills GET error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch bills', detail: err.message });
+  }
+});
+
+// POST /api/bills
+app.post('/api/bills', authenticateToken, async (req, res) => {
+  const userId = getAuthUserId(req);
+  const { title, amount, due_date, type, is_recurring, icon } = req.body;
+
+  const validationError = validateRequired(['title', 'amount', 'due_date'], req.body);
+  if (validationError) return res.status(400).json({ error: validationError });
+
+  try {
+    const { data, error } = await supabase
+      .from('bills')
+      .insert([{
+        user_id: userId, title: title.trim(), amount: Number(amount),
+        due_date, type: type || 'Utility', is_recurring: is_recurring || false,
+        icon: icon || 'receipt',
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.status(201).json({ bill: data, message: 'Bill added' });
+  } catch (err) {
+    console.error('Bills POST error:', err.message);
+    res.status(500).json({ error: 'Failed to create bill', detail: err.message });
+  }
+});
+
+// PATCH /api/bills/:id/pay — Mark a bill as paid
+app.patch('/api/bills/:id/pay', authenticateToken, async (req, res) => {
+  const userId = getAuthUserId(req);
+
+  try {
+    const { data, error } = await supabase
+      .from('bills')
+      .update({ is_paid: true, paid_at: new Date().toISOString() })
+      .eq('id', req.params.id)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (!data) return res.status(404).json({ error: 'Bill not found' });
+
+    // Record as a payment + transaction
+    await Promise.allSettled([
+      supabase.from('payments').insert([{
+        user_id: userId, recipient: data.title, amount: data.amount,
+        method: 'UPI', status: 'completed', notes: `Bill payment: ${data.title}`,
+      }]),
+      supabase.from('transactions').insert([{
+        user_id: userId, title: `Bill: ${data.title}`, amount: data.amount,
+        category: data.type || 'Bills', type: 'expense',
+      }]),
+    ]);
+
+    res.json({ bill: data, message: `${data.title} marked as paid` });
+  } catch (err) {
+    console.error('Bills PATCH error:', err.message);
+    res.status(500).json({ error: 'Failed to update bill', detail: err.message });
+  }
+});
+
+// ─── GOALS ────────────────────────────────────────────────
+
+// GET /api/goals
+app.get('/api/goals', authenticateToken, async (req, res) => {
+  const userId = getAuthUserId(req);
+
+  try {
+    const { data, error } = await supabase
+      .from('goals')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json({ goals: data || [] });
+  } catch (err) {
+    console.error('Goals GET error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch goals', detail: err.message });
+  }
+});
+
+// POST /api/goals
+app.post('/api/goals', authenticateToken, async (req, res) => {
+  const userId = getAuthUserId(req);
+  const { name, target_amount, deadline, category } = req.body;
+
+  const validationError = validateRequired(['name', 'target_amount'], req.body);
+  if (validationError) return res.status(400).json({ error: validationError });
+
+  const amountError = validatePositiveNumber(target_amount, 'Target amount');
+  if (amountError) return res.status(400).json({ error: amountError });
+
+  try {
+    const { data, error } = await supabase
+      .from('goals')
+      .insert([{
+        user_id: userId, name: name.trim(),
+        target_amount: Number(target_amount), current_amount: 0,
+        deadline, category: category || 'General', status: 'active',
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.status(201).json({ goal: data, message: 'Goal created! Let\'s get saving 💪' });
+  } catch (err) {
+    console.error('Goals POST error:', err.message);
+    res.status(500).json({ error: 'Failed to create goal', detail: err.message });
+  }
+});
+
+// PATCH /api/goals/:id — Update progress or AI plan
+app.patch('/api/goals/:id', authenticateToken, async (req, res) => {
+  const userId = getAuthUserId(req);
+  const { add_amount, ai_plan, status } = req.body;
+
+  try {
+    // Get current goal
+    const { data: current, error: fetchError } = await supabase
+      .from('goals')
+      .select('*')
+      .eq('id', req.params.id)
+      .eq('user_id', userId)
+      .single();
+
+    if (fetchError || !current) return res.status(404).json({ error: 'Goal not found' });
+
+    const updates = {};
+    if (add_amount) {
+      const newAmount = Number(current.current_amount) + Number(add_amount);
+      updates.current_amount = newAmount;
+      if (newAmount >= Number(current.target_amount)) {
+        updates.status = 'completed';
+      }
+    }
+    if (ai_plan) updates.ai_plan = ai_plan;
+    if (status && ['active', 'completed', 'paused'].includes(status)) updates.status = status;
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: 'No valid fields to update' });
+    }
+
+    const { data, error } = await supabase
+      .from('goals')
+      .update(updates)
+      .eq('id', req.params.id)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json({ goal: data, message: updates.status === 'completed' ? '🎉 Goal achieved!' : 'Goal updated' });
+  } catch (err) {
+    console.error('Goals PATCH error:', err.message);
+    res.status(500).json({ error: 'Failed to update goal', detail: err.message });
+  }
+});
+
+// DELETE /api/goals/:id
+app.delete('/api/goals/:id', authenticateToken, async (req, res) => {
+  const userId = getAuthUserId(req);
+  try {
+    const { error } = await supabase
+      .from('goals')
+      .delete()
+      .eq('id', req.params.id)
+      .eq('user_id', userId);
+
+    if (error) throw error;
+    res.json({ message: 'Goal removed' });
+  } catch (err) {
+    console.error('Goals DELETE error:', err.message);
+    res.status(500).json({ error: 'Failed to delete goal', detail: err.message });
+  }
+});
+
+// ─── PAYMENTS ─────────────────────────────────────────────
+
+// GET /api/payments
+app.get('/api/payments', authenticateToken, async (req, res) => {
+  const userId = getAuthUserId(req);
+  const { limit = 20 } = req.query;
+
+  try {
+    const { data, error } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(parseInt(limit));
+
+    if (error) throw error;
+    res.json({ payments: data || [] });
+  } catch (err) {
+    console.error('Payments GET error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch payments', detail: err.message });
+  }
+});
+
+// POST /api/payments
+app.post('/api/payments', authenticateToken, async (req, res) => {
+  const userId = getAuthUserId(req);
+  const { recipient, amount, method, upi_id, notes } = req.body;
+
+  const validationError = validateRequired(['recipient', 'amount'], req.body);
+  if (validationError) return res.status(400).json({ error: validationError });
+
+  try {
+    const referenceId = 'FM' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substr(2, 4).toUpperCase();
+
+    const { data, error } = await supabase
+      .from('payments')
+      .insert([{
+        user_id: userId, recipient: recipient.trim(), amount: Number(amount),
+        method: method || 'UPI', status: 'completed',
+        upi_id: upi_id?.trim(), reference_id: referenceId, notes: notes?.trim(),
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Auto-create transaction record
+    await supabase.from('transactions').insert([{
+      user_id: userId, title: `Payment to ${recipient.trim()}`, amount: Number(amount),
+      category: 'Payment', type: 'expense',
+    }]).catch(e => console.warn('Auto-transaction for payment failed (non-fatal):', e.message));
+
+    res.status(201).json({ payment: data, message: `₹${Number(amount).toLocaleString('en-IN')} sent to ${recipient}` });
+  } catch (err) {
+    console.error('Payments POST error:', err.message);
+    res.status(500).json({ error: 'Failed to process payment', detail: err.message });
+  }
+});
+
+// ─── DASHBOARD SUMMARY ───────────────────────────────────
+
+// GET /api/dashboard
+app.get('/api/dashboard', authenticateToken, async (req, res) => {
+  const userId = getAuthUserId(req);
+
+  try {
+    // Run all queries in parallel for maximum performance
+    const [summaryResult, recentTxResult, billsResult, goalsResult, profileResult] = await Promise.allSettled([
+      supabase.from('dashboard_summary').select('*').eq('user_id', userId).maybeSingle(),
+      supabase.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false }).limit(5),
+      supabase.from('bills').select('*').eq('user_id', userId).eq('is_paid', false).order('due_date', { ascending: true }),
+      supabase.from('goals').select('*').eq('user_id', userId).eq('status', 'active'),
+      supabase.from('user_financial_profiles').select('credit_score, spending_personality, savings_rate').eq('user_id', userId).maybeSingle(),
+    ]);
+
+    const summary = summaryResult.status === 'fulfilled' ? summaryResult.value.data : null;
+    const recentTx = recentTxResult.status === 'fulfilled' ? recentTxResult.value.data : [];
+    const bills = billsResult.status === 'fulfilled' ? billsResult.value.data : [];
+    const goals = goalsResult.status === 'fulfilled' ? goalsResult.value.data : [];
+    const profile = profileResult.status === 'fulfilled' ? profileResult.value.data : null;
+
+    const today = new Date().toISOString().split('T')[0];
+    const overdueBills = (bills || []).filter(b => b.due_date < today);
+
+    res.json({
+      balance: summary?.net_balance ? Number(summary.net_balance) : 0,
+      income: summary?.total_income ? Number(summary.total_income) : 0,
+      expenses: summary?.total_expenses ? Number(summary.total_expenses) : 0,
+      spendingThisMonth: summary?.spending_this_month ? Number(summary.spending_this_month) : 0,
+      spendingThisWeek: summary?.spending_this_week ? Number(summary.spending_this_week) : 0,
+      transactionsThisMonth: summary?.transactions_this_month || 0,
+      recentTransactions: recentTx || [],
+      creditScore: profile?.credit_score || null,
+      spendingPersonality: profile?.spending_personality || null,
+      savingsRate: profile?.savings_rate ? Number(profile.savings_rate) : null,
+      bills: {
+        totalDue: (bills || []).reduce((s, b) => s + Number(b.amount), 0),
+        unpaidCount: (bills || []).length,
+        overdueCount: overdueBills.length,
+        upcoming: (bills || []).slice(0, 3),
+      },
+      goals: {
+        activeCount: (goals || []).length,
+        totalTarget: (goals || []).reduce((s, g) => s + Number(g.target_amount), 0),
+        totalSaved: (goals || []).reduce((s, g) => s + Number(g.current_amount), 0),
+      },
+    });
+  } catch (err) {
+    console.error('Dashboard error:', err.message);
+    res.status(500).json({ error: 'Failed to load dashboard data', detail: err.message });
+  }
+});
+
 // ─── Start Server ─────────────────────────────────────────
 
 app.listen(PORT, () => {

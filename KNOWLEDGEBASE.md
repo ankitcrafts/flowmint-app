@@ -1,6 +1,6 @@
 # FlowMint Knowledgebase & Design System
 
-> **Version:** 2.1 • **Last Updated:** 20 March 2026
+> **Version:** 2.2 • **Last Updated:** 20 March 2026
 
 ---
 
@@ -56,7 +56,7 @@ FlowMint adopts a **"Cyber-Finance"** aesthetic — a premium, dark-mode-first d
 
 ---
 
-## 2. Component Library (15 Components)
+## 2. Component Library (17+ Components)
 
 ### App Shell (`App.tsx`)
 
@@ -82,8 +82,8 @@ FlowMint adopts a **"Cyber-Finance"** aesthetic — a premium, dark-mode-first d
   - AI Insight — Gemini-generated spending personality
   - Recent Transactions — list from apiService
   - Sustainability Card — embedded component
-- **Real API Calls:** `apiService.getTransactions()`, `getSpendingInsights()` (Gemini)
-- **Mock Data:** Balance, credit score, EMI data, wealth history, spending charts
+- **Real API Calls:** `apiService.getTransactions()` (Supabase), `dashboardService.getSummary()` (parallel queries), `getSpendingInsights()` (Groq AI)
+- **Loading State:** Uses `Skeleton` components while data loads
 
 ### Auth (`Auth.tsx`) — 632 lines
 
@@ -133,21 +133,21 @@ FlowMint adopts a **"Cyber-Finance"** aesthetic — a premium, dark-mode-first d
 ### FlowGoals (`FlowGoals.tsx`) — 133 lines
 
 - **Features:** Goal cards (Tokyo Trip, MacBook Pro), AI savings plan generator, recommended plan suggestions
-- **Real API:** `getWishTrackerPlan()` → Gemini Pro with thinking mode
-- **Mock Data:** Goals themselves are hardcoded inline
+- **Real API:** `getWishTrackerPlan()` → Groq (Llama 3.3) with thinking mode
+- **Data Source:** `goalService.getAll()` from Supabase `goals` table. Full CRUD: create, update progress, delete.
 
 ### ExpenseTracker (`ExpenseTracker.tsx`) — 393 lines
 
 - **Features:** Expense list with category icons, add expense modal, anomaly detection alert, monthly trend bar chart, category breakdown with progress bars, filter chips
 - **Smart Feature:** `suggestCategory()` — auto-suggests category based on title keywords (regex matching)
-- **Mock Data:** `MOCK_EXPENSES` (10 items), `MONTHLY_DATA` (4 months)
-- **Gap:** New expenses added to local state only, not persisted
+- **Data Source:** `expenseService.getAll()` from Supabase `expenses` table. New expenses persist via `expenseService.create()`.
+- **Toast Feedback:** Success/error toasts on create and delete operations.
 
 ### BillReminders (`BillReminders.tsx`) — 222 lines
 
 - **Features:** Overdue alert banner, summary cards (total due + EMI stress), EMI-to-income ratio meter, filter tabs (All/Upcoming/Overdue/Paid), bill list with pay button, AI late fee advisory
-- **Mock Data:** `MOCK_BILLS` (8 bills with various statuses)
-- **Gap:** `markPaid()` updates local state only
+- **Data Source:** `billService.getAll()` from Supabase `bills` table. `markPaid()` persists to Supabase + auto-creates a payment record.
+- **Toast Feedback:** Confirmation toast on bill payment.
 
 ### AIWishTracker (`AIWishTracker.tsx`)
 
@@ -206,17 +206,41 @@ getWishTrackerPlan(goal, amount, savings) → string  // Uses gemini-3-pro-previ
 - Output: Short, actionable, culturally relevant (Indian context)
 - Model selection: Flash for speed, Pro+Thinking for complex plans
 
-### `apiService.ts` — Mock Data Service
+### `apiService.ts` — Real Supabase Data Service
 
 ```typescript
-// Four mock endpoints with artificial delays (200ms):
-apiService.getTransactions()  → Transaction[]   // 6 mock transactions
-apiService.getBills()         → Bill[]           // 4 mock bills
-apiService.getGoals()         → WishGoal[]       // 3 mock goals
-apiService.getLoanOffers()    → LoanOffer[]      // 3 mock loan offers
+// Supabase-backed services with FlowMintError handling:
+transactionService.getAll(limit, offset)    → Transaction[]   // Real Supabase query
+transactionService.getRecent(limit)         → Transaction[]   // Recent transactions
+transactionService.create(tx)               → Transaction     // Insert to DB
+transactionService.getByCategory(days)      → CategoryData[]  // Aggregated breakdown
+transactionService.getDailySpending(days)   → DailyData[]     // Per-day aggregation
+
+expenseService.getAll(limit)                → Expense[]       // Real Supabase query
+expenseService.create(expense)              → Expense         // Insert + auto-transaction
+expenseService.delete(id)                   → void            // Delete by ID
+expenseService.getMonthlySummary(months)    → MonthlyData[]   // Monthly aggregation
+
+billService.getAll()                        → Bill[]          // Real Supabase query
+billService.create(bill)                    → Bill            // Insert to DB
+billService.markPaid(id)                    → Bill            // Update + auto-payment
+billService.getOverdue()                    → Bill[]          // Overdue filter
+billService.getSummary()                    → BillSummary     // Aggregated counts
+
+goalService.getAll()                        → Goal[]          // Real Supabase query
+goalService.create(goal)                    → Goal            // Insert to DB
+goalService.updateProgress(id, amount)      → Goal            // Increment + auto-complete
+goalService.delete(id)                      → void            // Delete by ID
+
+paymentService.getAll(limit)                → Payment[]       // Real Supabase query
+paymentService.create(payment)              → Payment         // Insert + auto-transaction
+
+dashboardService.getSummary()               → DashboardData   // 5× parallel Supabase queries
 ```
 
-**Note:** Only `getTransactions()` is actually called (by Dashboard.tsx). The others exist but are unused — components use their own inline hardcoded data instead.
+**Error Handling:** All methods throw `FlowMintError` with classified codes (`AUTH_EXPIRED`, `NETWORK_ERROR`, `PERMISSION_DENIED`, `DUPLICATE`, `UNKNOWN`). Each error has a `userMessage` suitable for toast display.
+
+**Backward Compatibility:** The legacy `apiService` wrapper falls back to mock data if Supabase tables are empty.
 
 ### `supabase.ts` — Database Client
 

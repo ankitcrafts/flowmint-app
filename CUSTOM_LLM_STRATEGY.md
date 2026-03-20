@@ -1,6 +1,6 @@
 # FlowMint AI — Custom LLM Strategy
 
-> **Version:** 2.2 | **Updated:** 20 March 2026  
+> **Version:** 2.3 | **Updated:** 20 March 2026  
 > **Stack:** Llama 3.3 70B (Groq) → Gemini 2.0 Flash (Fallback) → Express → React  
 > **Vision:** A resilient, multi-model AI system optimized for Indian financial context.
 
@@ -81,19 +81,37 @@ FlowMint AI is currently in **Public Beta**. All AI features are available witho
 | `ai_messages`             | Multi-turn chat          | ✅ Active |
 | `user_financial_profiles` | Auto-built user profiles | ✅ Active |
 | `ai_usage`                | Tracking & Quotas        | ✅ Active |
+| `transactions`            | Financial transaction log | ✅ Active |
+| `expenses`                | Detailed expense records | ✅ Active |
+| `bills`                   | Bill reminders & due dates | ✅ Active |
+| `goals`                   | Savings goals tracking   | ✅ Active |
+| `payments`                | Payment history ledger   | ✅ Active |
+| `dashboard_summary`       | Aggregated view (SECURITY INVOKER) | ✅ Active |
 
-Migration: `supabase/migrations/001_ai_tables.sql` (Implemented with RLS).
+Migrations: `001_ai_tables.sql`, `create_core_data_tables` (All with RLS + indexes).
 
 ---
 
 ## 🔌 API Endpoints
 
-| Method | Endpoint                   | Auth   | Model Target           |
-| ------ | -------------------------- | ------ | ---------------------- |
-| `POST` | `/api/ai/wish-plan`        | ✅ JWT | Llama 3.3 / Gemini 2.0 |
-| `POST` | `/api/ai/spending-insight` | ✅ JWT | Llama 3.3 / Gemini 2.0 |
-| `POST` | `/api/ai/chat`             | ✅ JWT | Llama 3.3 / Gemini 2.0 |
-| `GET`  | `/api/ai/history`          | ✅ JWT | PostgreSQL Query       |
+| Method  | Endpoint                   | Auth   | Model Target           |
+| ------- | -------------------------- | ------ | ---------------------- |
+| `POST`  | `/api/ai/wish-plan`        | ✅ JWT | Llama 3.3 / Gemini 2.0 |
+| `POST`  | `/api/ai/spending-insight` | ✅ JWT | Llama 3.3 / Gemini 2.0 |
+| `POST`  | `/api/ai/chat`             | ✅ JWT | Llama 3.3 / Gemini 2.0 |
+| `GET`   | `/api/ai/history`          | ✅ JWT | PostgreSQL Query       |
+| `GET`   | `/api/dashboard`           | ✅ JWT | 5× Parallel Supabase    |
+| `GET`   | `/api/transactions`        | ✅ JWT | PostgreSQL Query       |
+| `POST`  | `/api/transactions`        | ✅ JWT | PostgreSQL Insert      |
+| `GET`   | `/api/expenses`            | ✅ JWT | PostgreSQL Query       |
+| `POST`  | `/api/expenses`            | ✅ JWT | PostgreSQL Insert      |
+| `GET`   | `/api/bills`               | ✅ JWT | PostgreSQL Query       |
+| `PATCH` | `/api/bills/:id/pay`       | ✅ JWT | PostgreSQL Update      |
+| `GET`   | `/api/goals`               | ✅ JWT | PostgreSQL Query       |
+| `POST`  | `/api/goals`               | ✅ JWT | PostgreSQL Insert      |
+| `PATCH` | `/api/goals/:id`           | ✅ JWT | PostgreSQL Update      |
+| `GET`   | `/api/payments`            | ✅ JWT | PostgreSQL Query       |
+| `POST`  | `/api/payments`            | ✅ JWT | PostgreSQL Insert      |
 
 ---
 

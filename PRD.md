@@ -1,6 +1,6 @@
 # FlowMint — Product Requirements Document (PRD)
 
-> **Version:** 2.1 • **Last Updated:** 20 March 2026
+> **Version:** 2.2 • **Last Updated:** 20 March 2026
 
 ### 3.3. FlowCredit — Credit Health Intelligence
 
@@ -16,7 +16,7 @@
 
 ### 3.4. FlowGoals — Smart Savings with AI
 
-> **Component:** `FlowGoals.tsx` • **Status:** ✅ AI Working (Mock Goals)
+> **Component:** `FlowGoals.tsx` • **Status:** ✅ AI + Supabase CRUD Working
 
 - **Wish Tracker:** Goal cards with progress bars (Tokyo Trip 50%, MacBook Pro 25%)
 - **AI Plan Generator:** One-tap Gemini AI analysis that creates a detailed 3-step saving strategy
@@ -25,7 +25,7 @@
 
 ### 3.5. Expense Tracker — Track Every Rupee
 
-> **Component:** `ExpenseTracker.tsx` • **Status:** 🔄 UI Built (Local State)
+> **Component:** `ExpenseTracker.tsx` • **Status:** ✅ Supabase CRUD Integrated
 
 - **Expense List:** 10 items with category icons, recurring detection, and date grouping
 - **Add Expense:** Bottom sheet modal with smart category auto-suggestion (regex-based)
@@ -36,7 +36,7 @@
 
 ### 3.6. Bill Reminders — Never Miss a Payment
 
-> **Component:** `BillReminders.tsx` • **Status:** 🔄 UI Built (Local State)
+> **Component:** `BillReminders.tsx` • **Status:** ✅ Supabase CRUD Integrated
 
 - **Overdue Alert:** Prominent red banner with late fee calculation
 - **Summary Cards:** Total due amount + EMI-to-income stress ratio
@@ -124,10 +124,10 @@
 
 | Metric                        | Count    |
 | ----------------------------- | -------- |
-| Total API Points Identified   | **78**   |
-| ✅ Integrated (Real, Working) | 18 (23%) |
-| 🔄 Ongoing (Mock/Partial)     | 12 (15%) |
-| ❌ Pending (Not Built)        | 48 (62%) |
+| Total API Points Identified   | **83**   |
+| ✅ Integrated (Real, Working) | 37 (45%) |
+| 🔄 Ongoing (Mock/Partial)     | 10 (12%) |
+| ❌ Pending (Not Built)        | 36 (43%) |
 
 > 📄 See **`API_INTEGRATION_MAP.md`** for the complete 78-API registry with methods, endpoints, and explanations.
 
@@ -167,15 +167,18 @@
 - [x] Capacitor Android project configured
 - [x] Biometric Security Enhancements (Face ID/Fingerprint Step-up, local AES-GCM Vault)
 
-### Phase 2: Data Integration 🔄 (Next Sprint)
+### Phase 2: Data Integration ✅ (Tier 1 Complete)
 
-- [ ] **Supabase Tables:** Create `transactions`, `expenses`, `bills`, `goals`, `wishes`, `payments` tables
-- [ ] **CRUD Operations:** Replace all mock data with real Supabase queries
+- [x] **Supabase Tables:** Created `transactions`, `expenses`, `bills`, `goals`, `payments` + `dashboard_summary` view
+- [x] **CRUD Operations:** Real Supabase queries replacing all mock data in apiService.ts
+- [x] **API Routes:** Built 15 Express `/api/*` routes for core data operations
+- [x] **Supabase RLS:** Row Level Security policies on all 5 new tables (20 policies)
+- [x] **Toast System:** Glassmorphic, animated toast notifications with useToast() hook
+- [x] **Skeleton Loaders:** 7 shimmer variants for loading states
+- [x] **Error Handling:** FlowMintError class with classified error codes
 - [ ] **Profile Persistence:** Save InitialSetup data to `profiles` table
 - [ ] **SMS OTP:** Integrate Twilio/MSG91 for real mobile verification
 - [ ] **Apple Sign-In:** Implement via Apple JS SDK + Supabase Apple provider
-- [ ] **Supabase RLS:** Row Level Security policies on all tables
-- [ ] **API Routes:** Build Express `/api/*` routes for business logic
 
 ### Phase 3: External APIs 📡 (Integrations Sprint)
 
