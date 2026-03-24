@@ -495,7 +495,28 @@ export interface DashboardData {
   goalsCount: number;
 }
 
+import { getApiBase } from '../utils/platform';
+
 export const dashboardService = {
+  async fetchCreditScore(): Promise<{ creditScore: number, riskLevel: string, approvalLikelihood: string } | null> {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) return null;
+
+      const response = await fetch(`${getApiBase()}/api/credit-score`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) return null;
+      return await response.json();
+    } catch {
+      return null;
+    }
+  },
+
   async getSummary(): Promise<DashboardData> {
     const userId = await getUserId();
 

@@ -1767,6 +1767,57 @@ app.delete('/api/goals/:id', authenticateToken, async (req, res) => {
 
 // ─── PAYMENTS ─────────────────────────────────────────────
 
+// GET /api/credit-score (Apify Actor vivid_astronaut/credit-score Integration)
+app.get('/api/credit-score', authenticateToken, async (req, res) => {
+  const userId = getAuthUserId(req);
+  try {
+    const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
+    if (!APIFY_TOKEN) {
+      console.warn('APIFY_API_TOKEN missing. Returning cached or mock score.');
+      const { data } = await supabase.from('user_financial_profiles').select('credit_score').eq('user_id', userId).single();
+      return res.json({ creditScore: data?.credit_score || 782, cached: true });
+    }
+
+    // Call vivid_astronaut/credit-score actor synchronously
+    const response = await fetch(`https://api.apify.com/v2/acts/vivid_astronaut~credit-score/run-sync-get-dataset-items?token=${APIFY_TOKEN}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint: "/api/v1/process", data: {} }) // Default generic payload
+    });
+
+    if (!response.ok) throw new Error(`Apify failed: ${response.statusText}`);
+    const apifyData = await response.json();
+
+    if (!apifyData || apifyData.length === 0 || !apifyData[0].result) {
+      throw new Error("No risk assessment result provided by Actor");
+    }
+
+    const assessment = apifyData[0].result;
+    
+    // Transform risk_score (0-100 logic) to CIBIL/FICO standard 300-900 scale
+    // Apify risk_score: 30 (Lower risk is better score) => 850 - (30 * 2.5) = 775
+    const riskScore = assessment.risk_score || 50;
+    const computedCreditScore = Math.max(300, Math.min(900, Math.round(850 - (riskScore * 2.5))));
+
+    // Cache the credit score into Supabase
+    await supabase.from('user_financial_profiles')
+      .update({ credit_score: computedCreditScore, updated_at: new Date().toISOString() })
+      .eq('user_id', userId);
+
+    res.json({
+      creditScore: computedCreditScore,
+      riskLevel: assessment.risk_level,
+      approvalLikelihood: assessment.approval_likelihood,
+      debtToIncomeRatio: assessment.debt_to_income_ratio,
+      source: 'apify'
+    });
+
+  } catch (err) {
+    console.error('Apify Credit Score API error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch credit score', detail: err.message });
+  }
+});
+
 // GET /api/payments
 app.get('/api/payments', authenticateToken, async (req, res) => {
   const userId = getAuthUserId(req);

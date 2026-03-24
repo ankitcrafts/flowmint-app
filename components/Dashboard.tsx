@@ -16,7 +16,7 @@ import {
   Gamepad2, Music, Plane, Home, BookOpen, Dumbbell, Pill
 } from 'lucide-react';
 import { llmService } from '../services/llmService';
-import { apiService } from '../services/apiService';
+import { apiService, dashboardService } from '../services/apiService';
 import { Transaction } from '../types';
 
 
@@ -163,6 +163,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
   const [loading, setLoading] = useState(true);
   const [showBalance, setShowBalance] = useState(true);
   const [chartView, setChartView] = useState<'daily' | 'trend'>('daily');
+  const [creditScore, setCreditScore] = useState<number>(782); // default mock/cache
 
   // ─── Theme-Aware Brand Colors (Matches index.css) ──────────
   const brandPrimary = theme === 'light' ? '#D4A017' : '#00ffa3';
@@ -171,8 +172,14 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const [txs] = await Promise.all([apiService.getTransactions()]);
+      const [txs, scoreData] = await Promise.all([
+        apiService.getTransactions(),
+        dashboardService.fetchCreditScore().catch(() => null)
+      ]);
       setTransactions(txs);
+      if (scoreData?.creditScore) {
+        setCreditScore(scoreData.creditScore);
+      }
       try {
         const insightData = await llmService.getSpendingInsight({
           transactions: txs.slice(0, 15).map(t => ({
@@ -228,8 +235,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
     }
   };
 
-  // Simulated data
-  const creditScore = 782;
+  // Simulated data where backend links are pending
   const emiToIncome = 36;
   const monthlyIncome = 50000;
   const totalEMI = 17999;
