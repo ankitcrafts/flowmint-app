@@ -238,7 +238,7 @@ const App: FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full max-w-md mx-auto relative theme-transition overflow-x-hidden flex flex-col bg-bg">
+    <div className="min-h-screen w-full max-w-md mx-auto relative theme-transition flex flex-col bg-bg">
       <div className="noise-overlay" />
       <header className="sticky top-0 z-50 px-[var(--card-padding)] py-4 glass flex items-center justify-between theme-transition" 
               style={{ 
@@ -278,7 +278,7 @@ const App: FC = () => {
         </div>
       </header>
 
-      <main className="px-[var(--card-padding)] py-4 flex-grow">
+      <main className="px-[var(--card-padding)] py-4 flex-grow overflow-x-hidden">
 
         <ErrorBoundary>
           <AnimatePresence mode="wait">

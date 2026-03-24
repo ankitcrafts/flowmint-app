@@ -12,6 +12,29 @@ dist
 dist-ssr
 *.local
 
+# ═══ Environment & Secrets (CRITICAL — never commit) ═══
+.env
+.env.*
+.env.local
+.env.production
+.env.staging
+.env.development
+!.env.example
+
+# ═══ Server secrets ═══
+server/.env
+server/.env.*
+
+# ═══ Build artifacts ═══
+*.apk
+*.aab
+*.ipa
+
+# ═══ Test scripts with secrets ═══
+/tmp/
+test_*.mjs
+server/test_*.mjs
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

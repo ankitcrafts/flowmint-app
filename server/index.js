@@ -112,8 +112,50 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 // Google Client
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// JWT Secret
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-replace-in-prod';
+// ─── JWT Configuration (Production-Grade) ────────────────────
+// CRITICAL: No fallback — server MUST crash if secret is missing
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('\n🚨 FATAL: JWT_SECRET environment variable is not set!');
+  console.error('   Generate one with: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"');
+  console.error('   Then add it to .env.local (dev) or your hosting dashboard (production).\n');
+  process.exit(1);
+}
+if (JWT_SECRET.length < 64) {
+  console.error('\n🚨 FATAL: JWT_SECRET is too short (minimum 64 characters for 256-bit security).');
+  console.error(`   Current length: ${JWT_SECRET.length} characters.`);
+  console.error('   Generate a proper secret: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"\n');
+  process.exit(1);
+}
+
+// Optional: Previous secret for zero-downtime key rotation
+// Set JWT_SECRET_PREVIOUS to the old key when rotating, remove it after all old tokens expire
+const JWT_SECRET_PREVIOUS = process.env.JWT_SECRET_PREVIOUS || null;
+
+// Strict JWT signing/verification options
+const JWT_SIGN_OPTIONS = {
+  algorithm: 'HS256',
+  issuer: 'flowmint-server',
+  audience: 'flowmint-app',
+  expiresIn: '15m', // Short-lived access tokens (15 minutes)
+};
+const JWT_VERIFY_OPTIONS = {
+  algorithms: ['HS256'],
+  issuer: 'flowmint-server',
+  audience: 'flowmint-app',
+};
+const JWT_COOKIE_MAX_AGE = 15 * 60 * 1000; // 15 minutes (matches token expiry)
+const REFRESH_TOKEN_EXPIRY = '7d'; // Long-lived refresh tokens
+const REFRESH_COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+// Token monitoring counters (reset every hour)
+let tokenMonitor = { invalid: 0, expired: 0, rotated: 0, lastReset: Date.now() };
+setInterval(() => {
+  if (tokenMonitor.invalid > 0 || tokenMonitor.expired > 0) {
+    console.warn(`🔐 JWT Monitor (last hour): ${tokenMonitor.invalid} invalid, ${tokenMonitor.expired} expired, ${tokenMonitor.rotated} rotated`);
+  }
+  tokenMonitor = { invalid: 0, expired: 0, rotated: 0, lastReset: Date.now() };
+}, 60 * 60 * 1000);
 
 // Groq API (Llama 3.3 70B) — Primary AI provider
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
@@ -159,18 +201,59 @@ function safeParseJSON(raw) {
   return {};
 }
 
+// ─── JWT Helper: Verify with rotation support ────────────────
+function verifyTokenWithRotation(token) {
+  // Try current secret first
+  try {
+    return jwt.verify(token, JWT_SECRET, JWT_VERIFY_OPTIONS);
+  } catch (err) {
+    // If verification fails and we have a previous secret (rotation in progress),
+    // try the old key — this prevents downtime during key rotation
+    if (JWT_SECRET_PREVIOUS && err.name !== 'TokenExpiredError') {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET_PREVIOUS, JWT_VERIFY_OPTIONS);
+        tokenMonitor.rotated++;
+        console.log('Auth: 🔄 Token verified with previous secret (rotation in progress)');
+        return decoded;
+      } catch {
+        // Both secrets failed
+      }
+    }
+    throw err; // Re-throw the original error
+  }
+}
+
+// ─── HTTPS Enforcement (Production) ──────────────────────────
+if (process.env.NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    // Render/Railway set x-forwarded-proto behind their load balancers
+    if (req.headers['x-forwarded-proto'] !== 'https') {
+      return res.redirect(301, `https://${req.hostname}${req.originalUrl}`);
+    }
+    // HSTS header — browsers remember to always use HTTPS (1 year)
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+    next();
+  });
+}
+
 // Auth Middleware — supports JWT cookie + Supabase Bearer token
 const authenticateToken = async (req, res, next) => {
   // Strategy 1: Express JWT from cookie (web, after /auth/google or /auth/mobile)
   const cookieToken = req.cookies.access_token;
   if (cookieToken) {
     try {
-      const user = jwt.verify(cookieToken, JWT_SECRET);
+      const user = verifyTokenWithRotation(cookieToken);
       req.user = user;
       return next();
     } catch (err) {
+      if (err.name === 'TokenExpiredError') {
+        tokenMonitor.expired++;
+        // Don't log every expired token — it's normal, handled by refresh flow
+      } else {
+        tokenMonitor.invalid++;
+        console.warn(`Auth: ⚠️ Suspicious cookie token — ${err.name}: ${err.message}`);
+      }
       // Cookie token invalid — fall through to other strategies
-      console.log('Auth: Cookie token invalid, trying other strategies');
     }
   }
 
@@ -179,7 +262,7 @@ const authenticateToken = async (req, res, next) => {
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const supabaseToken = authHeader.slice(7);
     
-    // Strategy 2a: Verify via Supabase Admin API
+    // Strategy 2a: Verify via Supabase Admin API (most reliable)
     try {
       const { data: { user }, error } = await supabase.auth.getUser(supabaseToken);
       if (user && !error) {
@@ -199,10 +282,12 @@ const authenticateToken = async (req, res, next) => {
     }
 
     // Strategy 2b: Verify Supabase JWT directly (fallback)
-    // NOTE: Supabase uses a specific secret for JWTs (found in Project Settings > API)
-    // We use the JWT_SECRET from our env which should match the Supabase JWT Secret.
+    // NOTE: Supabase uses its own JWT secret (Project Settings → API → JWT Secret).
+    // If you are using Supabase Auth JWTs, the Supabase secret is different from JWT_SECRET.
+    // The Supabase client (strategy 2a) handles this transparently.
+    // This fallback only works if JWT_SECRET is set to match the Supabase JWT Secret.
     try {
-      const decoded = jwt.verify(supabaseToken, JWT_SECRET);
+      const decoded = jwt.verify(supabaseToken, JWT_SECRET, { algorithms: ['HS256'] });
       if (decoded && decoded.sub) {
         req.user = {
           id: decoded.sub,
@@ -210,16 +295,16 @@ const authenticateToken = async (req, res, next) => {
           name: decoded.user_metadata?.full_name || decoded.email || 'User',
           supabase_id: decoded.sub,
         };
-        console.log('Auth: ✅ Verified via Supabase JWT signature for:', decoded.email);
         return next();
       }
     } catch (err) {
-      console.log('Auth: JWT signature verification failed:', err.message);
+      // This is expected to fail if JWT_SECRET ≠ Supabase JWT Secret
+      // Not a security concern — Strategy 2a is the primary path
     }
   }
 
   // No valid auth found
-  console.log('Auth: ❌ No valid auth — headers present:', !!authHeader, '| cookie present:', !!cookieToken);
+  tokenMonitor.invalid++;
   return res.status(401).json({ error: 'Please sign in to use FlowMint AI' });
 };
 
@@ -285,19 +370,29 @@ app.post('/auth/google', async (req, res) => {
         }
     }
 
-    // 3. Create JWT
-    const accessToken = jwt.sign(
-      { id: user.id, email: user.email, name: user.name },
+    // 3. Create short-lived access token + long-lived refresh token
+    const tokenPayload = { id: user.id, email: user.email, name: user.name };
+    const accessToken = jwt.sign(tokenPayload, JWT_SECRET, JWT_SIGN_OPTIONS);
+    const refreshToken = jwt.sign(
+      { id: user.id, type: 'refresh' },
       JWT_SECRET,
-      { expiresIn: '1h' }
+      { algorithm: 'HS256', issuer: 'flowmint-server', audience: 'flowmint-app', expiresIn: REFRESH_TOKEN_EXPIRY }
     );
 
-    // 4. Set HttpOnly Cookie
+    // 4. Set HttpOnly Cookies (access=15min, refresh=7d)
+    const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('access_token', accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'Strict' : 'Lax',
-      maxAge: 3600000 // 1 hour
+      secure: isProduction,
+      sameSite: isProduction ? 'Strict' : 'Lax',
+      maxAge: JWT_COOKIE_MAX_AGE,
+    });
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'Strict' : 'Lax',
+      path: '/auth', // Only sent to auth routes (minimizes exposure)
+      maxAge: REFRESH_COOKIE_MAX_AGE,
     });
 
     // 5. Return User
@@ -348,19 +443,29 @@ app.post('/auth/mobile', async (req, res) => {
         user = newUser;
      }
 
-     // 2. Create JWT
-     const accessToken = jwt.sign(
-       { id: user.id, mobile: user.mobile },
+     // 2. Create short-lived access token + long-lived refresh token
+     const tokenPayload = { id: user.id, mobile: user.mobile };
+     const accessToken = jwt.sign(tokenPayload, JWT_SECRET, JWT_SIGN_OPTIONS);
+     const refreshToken = jwt.sign(
+       { id: user.id, type: 'refresh' },
        JWT_SECRET,
-       { expiresIn: '1h' }
+       { algorithm: 'HS256', issuer: 'flowmint-server', audience: 'flowmint-app', expiresIn: REFRESH_TOKEN_EXPIRY }
      );
 
-     // 3. Set Cookie
+     // 3. Set HttpOnly Cookies
+     const isProduction = process.env.NODE_ENV === 'production';
      res.cookie('access_token', accessToken, {
        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'Strict' : 'Lax',
-       maxAge: 3600000
+       secure: isProduction,
+       sameSite: isProduction ? 'Strict' : 'Lax',
+       maxAge: JWT_COOKIE_MAX_AGE,
+     });
+     res.cookie('refresh_token', refreshToken, {
+       httpOnly: true,
+       secure: isProduction,
+       sameSite: isProduction ? 'Strict' : 'Lax',
+       path: '/auth',
+       maxAge: REFRESH_COOKIE_MAX_AGE,
      });
 
      res.json({ user, message: 'Mobile login successful' });
@@ -379,9 +484,64 @@ app.get('/auth/me', authenticateToken, async (req, res) => {
    res.json({ user });
 });
 
+// ─── Token Refresh ────────────────────────────────────────
+// Client calls this when access_token expires (401) to get a new one
+// without requiring the user to re-login (silent refresh)
+app.post('/auth/refresh', async (req, res) => {
+  const refreshToken = req.cookies.refresh_token;
+  if (!refreshToken) {
+    return res.status(401).json({ error: 'No refresh token — please sign in again' });
+  }
+
+  try {
+    // Verify the refresh token
+    const decoded = verifyTokenWithRotation(refreshToken);
+    if (decoded.type !== 'refresh') {
+      tokenMonitor.invalid++;
+      return res.status(403).json({ error: 'Invalid token type' });
+    }
+
+    // Fetch fresh user data from DB
+    const { data: user, error } = await supabase
+      .from('app_users')
+      .select('*')
+      .eq('id', decoded.id)
+      .single();
+
+    if (error || !user) {
+      return res.status(404).json({ error: 'User not found — please sign in again' });
+    }
+
+    // Issue new access token (short-lived)
+    const newPayload = { id: user.id, email: user.email, name: user.name, mobile: user.mobile };
+    const newAccessToken = jwt.sign(newPayload, JWT_SECRET, JWT_SIGN_OPTIONS);
+
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.cookie('access_token', newAccessToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'Strict' : 'Lax',
+      maxAge: JWT_COOKIE_MAX_AGE,
+    });
+
+    res.json({ user, message: 'Token refreshed' });
+  } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      tokenMonitor.expired++;
+      res.clearCookie('access_token');
+      res.clearCookie('refresh_token', { path: '/auth' });
+      return res.status(401).json({ error: 'Session expired — please sign in again' });
+    }
+    tokenMonitor.invalid++;
+    console.warn(`Auth: ⚠️ Suspicious refresh attempt — ${err.name}: ${err.message}`);
+    return res.status(403).json({ error: 'Invalid refresh token' });
+  }
+});
+
 // Logout
 app.post('/auth/logout', (req, res) => {
   res.clearCookie('access_token');
+  res.clearCookie('refresh_token', { path: '/auth' });
   res.json({ message: 'Logged out' });
 });
 
