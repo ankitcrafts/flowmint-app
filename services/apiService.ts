@@ -493,18 +493,19 @@ export interface DashboardData {
   recentTransactions: Transaction[];
   billsSummary: { total: number; unpaid: number; overdue: number };
   goalsCount: number;
+  creditScore?: number | null;
 }
 
 import { getApiBase } from '../utils/platform';
 
 export const dashboardService = {
-  async fetchCreditScore(): Promise<{ creditScore: number, riskLevel: string, approvalLikelihood: string } | null> {
+  async fetchCreditScore(refresh: boolean = false): Promise<{ creditScore: number, riskLevel?: string, approvalLikelihood?: string, nextRefreshAvailable?: string, message?: string } | null> {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (!token) return null;
 
-      const response = await fetch(`${getApiBase()}/api/credit-score`, {
+      const response = await fetch(`${getApiBase()}/api/credit-score${refresh ? '?refresh=true' : ''}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -521,17 +522,19 @@ export const dashboardService = {
     const userId = await getUserId();
 
     // Parallel fetches for performance
-    const [txResult, recentTx, billsSummary, goals] = await Promise.allSettled([
+    const [txResult, recentTx, billsSummary, goals, profileFetch] = await Promise.allSettled([
       supabase.from('dashboard_summary').select('*').eq('user_id', userId).maybeSingle(),
       transactionService.getRecent(5),
       billService.getSummary(),
       goalService.getAll(),
+      supabase.from('user_financial_profiles').select('credit_score').eq('user_id', userId).maybeSingle()
     ]);
 
     const summary = txResult.status === 'fulfilled' ? txResult.value.data : null;
     const recent = recentTx.status === 'fulfilled' ? recentTx.value : [];
     const bills = billsSummary.status === 'fulfilled' ? billsSummary.value : { total: 0, unpaid: 0, overdue: 0 };
     const goalsList = goals.status === 'fulfilled' ? goals.value : [];
+    const profileData = profileFetch.status === 'fulfilled' ? profileFetch.value.data : null;
 
     return {
       balance: summary?.net_balance ? Number(summary.net_balance) : 0,
@@ -543,6 +546,7 @@ export const dashboardService = {
       recentTransactions: recent,
       billsSummary: bills,
       goalsCount: goalsList.filter(g => g.status === 'active').length,
+      creditScore: profileData?.credit_score || null,
     };
   },
 };

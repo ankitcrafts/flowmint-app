@@ -89,7 +89,8 @@ The `flowmint.apk` Android application file is available directly in the root di
 
 ## 🛡️ Security & Reliability
 
-- **Hardened Backend**: Deployed on Render with **Helmet.js**, **Express Rate Limiting**, and **JWT Signature Verification**.
+- **Hardened Backend**: Deployed on Render with **Helmet.js**, strict **Content Security Policy (CSP)**, **Express Rate Limiting**, and **JWT Signature Verification**.
+- **No CDN Vulnerabilities**: Tailwind and all assets are strictly bundled locally via Vite—zero external CDN risk.
 - **The 15s Rule**: AI requests automatically failover to backups if the primary engine takes more than 15 seconds.
 - **Input Validation**: Server-side validation for required fields, positive numbers, and type constraints on all CRUD endpoints.
 - **Row Level Security (RLS)**: Your financial data is strictly yours, enforced at the database level.

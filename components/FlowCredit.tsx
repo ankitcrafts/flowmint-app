@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, Tooltip } from 'recharts';
 
+import { dashboardService } from '../services/apiService';
+
 const SCORE_HISTORY = [
   { month: 'Jul', score: 720 }, { month: 'Aug', score: 735 }, { month: 'Sep', score: 730 },
   { month: 'Oct', score: 755 }, { month: 'Nov', score: 770 }, { month: 'Dec', score: 782 },
@@ -25,8 +27,10 @@ interface CreditTip {
 
 const FlowCredit: React.FC = () => {
   const [brandColor, setBrandColor] = useState('#00FFA3');
-  const [baseScore] = useState(782);
+  const [baseScore, setBaseScore] = useState<number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [nextRefresh, setNextRefresh] = useState<string | null>(null);
+  const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
   
   // Simulation State
   const [payAmount, setPayAmount] = useState(0);
@@ -37,15 +41,38 @@ const FlowCredit: React.FC = () => {
   useEffect(() => {
     const color = getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim();
     if (color) setBrandColor(color);
+    
+    // Fetch real credit score on mount
+    fetchScore();
   }, []);
 
-  const handleRefresh = () => {
+  const fetchScore = async (force: boolean = false) => {
+    try {
+      const data = await dashboardService.fetchCreditScore(force);
+      if (data) {
+        if (data.creditScore) setBaseScore(data.creditScore);
+        if (data.nextRefreshAvailable) setNextRefresh(data.nextRefreshAvailable);
+        if (data.message) setRefreshMessage(data.message);
+      }
+    } catch (e) {
+      console.warn("Failed to fetch fresh credit score");
+    }
+  };
+
+  const handleRefresh = async () => {
+    if (isRefreshing) return; // Essential: prevents duplicate API hits while Apify is fetching
     setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 2000);
+    setRefreshMessage(null);
+    try {
+      await fetchScore(true);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   // Simulation Logic
   const predictedScore = useMemo(() => {
+    if (baseScore === null) return null;
     let score = baseScore;
     score += Math.min(35, Math.floor((payAmount / 25000) * 35));
     if (newCard) score -= 8;
@@ -54,7 +81,7 @@ const FlowCredit: React.FC = () => {
     return Math.min(900, Math.max(300, score));
   }, [baseScore, payAmount, newCard, onTimeStreak, closeOldAccount]);
 
-  const scoreDelta = predictedScore - baseScore;
+  const scoreDelta = (predictedScore !== null && baseScore !== null) ? predictedScore - baseScore : 0;
 
   const creditTips: CreditTip[] = [
     {
@@ -87,7 +114,7 @@ const FlowCredit: React.FC = () => {
   const totalLength = (2 * Math.PI * radius * arcDegrees) / 360;
   
   // Calculate dash offset based on score (300-900)
-  const scoreRatio = (baseScore - 300) / 600;
+  const scoreRatio = baseScore !== null ? (baseScore - 300) / 600 : 0;
   const currentProgress = totalLength * scoreRatio;
   const dashOffset = totalLength - currentProgress;
 
@@ -152,21 +179,41 @@ const FlowCredit: React.FC = () => {
 
             {/* Inner Content */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pt-8">
-              <span className={`text-6xl font-black tracking-tighter transition-all duration-500 ${isRefreshing ? 'scale-90 opacity-50' : 'scale-100'}`} style={{ color: 'var(--text-color)' }}>
-                {isRefreshing ? '---' : baseScore}
-              </span>
-              <div className="mt-2 px-4 py-1.5 rounded-full border border-brand/30 bg-brand/10 flex items-center gap-2 shadow-[0_0_15px_rgba(0,255,163,0.1)]">
-                <CheckCircle2 className="w-3.5 h-3.5 text-brand" />
-                <span className="text-[10px] font-black text-brand tracking-[0.1em] uppercase">Excellent</span>
-              </div>
+              {baseScore === null && !isRefreshing ? (
+                <button 
+                  onClick={handleRefresh}
+                  className="flex flex-col items-center justify-center gap-1.5 group cursor-pointer transition-transform hover:scale-105"
+                >
+                  <span className="text-lg font-black text-center text-gray-500 group-hover:text-brand transition-colors leading-[1.1] mt-3">
+                    Know Your<br/>CIBIL Score
+                  </span>
+                  <div className="mt-1 px-3 py-1.5 rounded-full border border-brand/30 bg-brand/10 flex items-center shadow-[0_0_15px_rgba(0,255,163,0.15)] group-hover:bg-brand/20 transition-all">
+                    <span className="text-[9px] font-black text-brand tracking-[0.1em] uppercase">Click Here</span>
+                  </div>
+                </button>
+              ) : (
+                <>
+                  <span className={`text-6xl font-black tracking-tighter transition-all duration-500 ${isRefreshing ? 'scale-90 opacity-50' : 'scale-100'} ${baseScore === null ? 'text-4xl text-gray-500' : ''}`} style={{ color: baseScore === null ? undefined : 'var(--text-color)' }}>
+                    {isRefreshing ? '---' : (baseScore !== null ? baseScore : 'N/A')}
+                  </span>
+                  <div className="mt-2 px-4 py-1.5 rounded-full border border-brand/30 bg-brand/10 flex items-center gap-2 shadow-[0_0_15px_rgba(0,255,163,0.1)]">
+                    {baseScore !== null && <CheckCircle2 className="w-3.5 h-3.5 text-brand" />}
+                    <span className="text-[10px] font-black text-brand tracking-[0.1em] uppercase">
+                      {baseScore !== null ? 'Excellent' : 'Sync Required'}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
           <div className="mt-4 w-full flex flex-col items-center gap-6">
-            <div className="rounded-2xl px-6 py-2.5 flex items-center gap-3 border theme-transition" style={{ backgroundColor: 'var(--card-subtle)', borderColor: 'var(--glass-border)' }}>
-              <TrendingUp className="w-4 h-4 text-brand" />
-              <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">+12 Points <span className="opacity-30 ml-1">vs Nov</span></span>
-            </div>
+            {baseScore !== null && (
+              <div className="rounded-2xl px-6 py-2.5 flex items-center gap-3 border theme-transition" style={{ backgroundColor: 'var(--card-subtle)', borderColor: 'var(--glass-border)' }}>
+                <TrendingUp className="w-4 h-4 text-brand" />
+                <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">+12 Points <span className="opacity-30 ml-1">vs Nov</span></span>
+              </div>
+            )}
             
             <button className="flex items-center gap-2 text-brand text-[11px] font-black uppercase tracking-widest hover:translate-x-1 transition-transform">
               View Detailed Analysis <ChevronRight className="w-4 h-4" />
@@ -185,10 +232,26 @@ const FlowCredit: React.FC = () => {
         <p className="text-[8px] font-black text-gray-500 uppercase tracking-[0.4em] text-center mt-3">6-Month Score Trajectory</p>
       </div>
 
-      {/* Manual/Estimated Score Label */}
-      <div className="flex items-center justify-center gap-2 py-2">
-        <Info className="w-3 h-3 text-gray-500" />
-        <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Manual / Estimated Score – Bureau integration coming soon</span>
+      {/* Fetch Status & Next Refresh Label */}
+      <div className="flex flex-col items-center justify-center gap-3 py-6 text-center">
+        {refreshMessage && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }} 
+            animate={{ opacity: 1, y: 0 }}
+            className="px-4 py-2 rounded-xl bg-brand/10 border border-brand/20 text-[9px] font-black text-brand uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-brand/5"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            {refreshMessage}
+          </motion.div>
+        )}
+        <div className="flex items-center gap-2 opacity-50">
+          <Info className="w-3.5 h-3.5 text-gray-400" />
+          <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-relaxed">
+            {nextRefresh && new Date(nextRefresh) > new Date()
+               ? `Next Bureau Sync Available in ${Math.max(1, Math.ceil((new Date(nextRefresh).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} Days` 
+               : "Real Bureau Integration Active"}
+          </span>
+        </div>
       </div>
 
       {/* Credit Behavior Indicators */}
@@ -226,7 +289,7 @@ const FlowCredit: React.FC = () => {
           <div className="text-right">
             <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest leading-none">Predicted</p>
             <div className="flex items-center justify-end gap-2 mt-1.5">
-              <h2 className="text-3xl font-black transition-all" style={{ color: 'var(--text-color)' }}>{predictedScore}</h2>
+              <h2 className="text-3xl font-black transition-all" style={{ color: 'var(--text-color)' }}>{predictedScore !== null ? predictedScore : '---'}</h2>
               {scoreDelta !== 0 && (
                 <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${scoreDelta > 0 ? 'bg-brand/10 text-brand' : 'bg-red-500/10 text-red-500'}`}>
                   {scoreDelta > 0 ? '+' : ''}{scoreDelta}

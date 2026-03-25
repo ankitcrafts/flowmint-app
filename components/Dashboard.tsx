@@ -16,7 +16,7 @@ import {
   Gamepad2, Music, Plane, Home, BookOpen, Dumbbell, Pill
 } from 'lucide-react';
 import { llmService } from '../services/llmService';
-import { apiService, dashboardService } from '../services/apiService';
+import { apiService, dashboardService, transactionService, DashboardData } from '../services/apiService';
 import { Transaction } from '../types';
 
 
@@ -163,7 +163,12 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
   const [loading, setLoading] = useState(true);
   const [showBalance, setShowBalance] = useState(true);
   const [chartView, setChartView] = useState<'daily' | 'trend'>('daily');
-  const [creditScore, setCreditScore] = useState<number>(782); // default mock/cache
+  const [creditScore, setCreditScore] = useState<number | null>(null); // default mock/cache
+
+  // Real data state
+  const [summary, setSummary] = useState<DashboardData | null>(null);
+  const [dailyStats, setDailyStats] = useState<{name: string, value: number}[]>(DAILY_STATS);
+  const [wealthHistory, setWealthHistory] = useState<{date: string, balance: number}[]>(WEALTH_HISTORY);
 
   // ─── Theme-Aware Brand Colors (Matches index.css) ──────────
   const brandPrimary = theme === 'light' ? '#D4A017' : '#00ffa3';
@@ -172,13 +177,26 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const [txs, scoreData] = await Promise.all([
+      const [txs, summaryData, dailyData] = await Promise.all([
         apiService.getTransactions(),
-        dashboardService.fetchCreditScore().catch(() => null)
+        dashboardService.getSummary().catch(() => null),
+        transactionService.getDailySpending(7).catch(() => []),
       ]);
       setTransactions(txs);
-      if (scoreData?.creditScore) {
-        setCreditScore(scoreData.creditScore);
+      
+      if (summaryData) {
+        setSummary(summaryData);
+        if (summaryData.creditScore) {
+          setCreditScore(summaryData.creditScore);
+        }
+        setWealthHistory(prev => {
+          const newHistory = [...prev];
+          newHistory[newHistory.length - 1] = { date: 'Today', balance: summaryData.balance };
+          return newHistory;
+        });
+      }
+      if (dailyData?.length > 0) {
+        setDailyStats(dailyData.map(d => ({ name: d.day, value: d.amount })));
       }
       try {
         const insightData = await llmService.getSpendingInsight({
@@ -235,13 +253,17 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
     }
   };
 
-  // Simulated data where backend links are pending
-  const emiToIncome = 36;
-  const monthlyIncome = 50000;
-  const totalEMI = 17999;
-  const loanReadiness = 72;
-  const upcomingBills = 3;
-  const totalDue = 7599;
+  // Real Computed Data
+  const monthlyIncome = summary?.income || 0;
+  const upcomingBills = summary?.billsSummary?.unpaid || 0;
+  const totalDue = summary?.billsSummary?.total || 0;
+  
+  // Estimate EMI Stress (total bills vs monthly income)
+  const emiToIncome = monthlyIncome > 0 ? Math.min(100, Math.round((totalDue / monthlyIncome) * 100)) : 0;
+  
+  // Estimate Loan Readiness based on credit score (300-900 scale)
+  const loanReadiness = creditScore ? Math.max(0, Math.min(100, Math.round(((creditScore - 300) / 600) * 100))) : 0;
+  const currentBalance = summary?.balance || 0;
 
   // ─── Category Configuration for Transaction Icons ────────────
   const getCategoryConfig = (category: string, type: string) => {
@@ -351,7 +373,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
               className="text-4xl font-black mt-2 tracking-tighter"
               style={{ color: 'var(--text-color)' }}
             >
-              ₹<AnimatedCounter value={59823} /><span className="text-xl opacity-40">.59</span>
+              ₹<AnimatedCounter value={currentBalance} /><span className="text-xl opacity-40">.00</span>
             </motion.h2>
           </AnimatePresence>
         </div>
@@ -363,7 +385,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
           transition={{ delay: 0.8, duration: 1 }}
         >
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={WEALTH_HISTORY} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+            <AreaChart data={wealthHistory} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
               <defs><linearGradient id="wealthGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={brandPrimary} stopOpacity={0.3}/><stop offset="95%" stopColor={brandPrimary} stopOpacity={0}/></linearGradient></defs>
               <Area type="monotone" dataKey="balance" stroke={brandPrimary} strokeWidth={3} fillOpacity={1} fill="url(#wealthGrad)" />
             </AreaChart>
@@ -385,23 +407,29 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 + i * 0.08, type: 'spring', stiffness: 200 }}
-            whileHover={{ scale: 1.08, y: -4 }}
-            whileTap={{ scale: 0.92 }}
-            className="flex flex-col items-center gap-2 p-[calc(var(--card-padding)*0.8)] glass rounded-2xl border theme-transition hover:border-brand/30 transition-all relative"
+            whileHover={{ scale: 1.05, y: -4 }}
+            whileTap={{ scale: 0.95 }}
+            className="group flex flex-col items-center justify-center p-2 min-h-[90px] w-full glass rounded-[1.2rem] border theme-transition hover:border-brand/40 hover:shadow-[0_4px_20px_var(--brand-glow)] transition-all relative z-10"
             style={{ borderColor: 'var(--glass-border)' }}
           >
-            {action.badge && (
+            {typeof action.badge === 'number' && action.badge > 0 && (
               <motion.span 
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.8, type: 'spring', stiffness: 500 }}
-                className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[8px] font-black text-white flex items-center justify-center"
+                initial={{ scale: 0, rotate: -45 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: 0.8, type: 'spring', stiffness: 500, damping: 15 }}
+                className="absolute -top-1.5 -right-1.5 w-[22px] h-[22px] bg-red-500/90 backdrop-blur-md border border-white/20 rounded-full text-[9px] font-black text-white flex items-center justify-center shadow-lg shadow-red-500/40 z-20"
               >
                 {action.badge}
               </motion.span>
             )}
-            <div className="text-brand">{action.icon}</div>
-            <span className="text-[8px] font-black text-gray-500 uppercase tracking-wider">{action.label}</span>
+            <motion.div 
+               className="text-brand mb-1.5"
+               whileHover={{ rotate: [0, -15, 15, -10, 10, 0], scale: 1.15 }}
+               transition={{ duration: 0.5 }}
+            >
+              {action.icon}
+            </motion.div>
+            <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest text-center leading-[1.2] group-hover:text-gray-300 transition-colors">{action.label}</span>
           </motion.button>
         ))}
       </motion.div>
@@ -427,23 +455,36 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
             </motion.div>
             <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Credit Health</span>
           </motion.div>
-          <h3 className="text-3xl font-black tracking-tighter text-brand">
-            <AnimatedCounter value={creditScore} duration={2} />
-          </h3>
-          <motion.div 
-            className="flex items-center gap-1 mt-1"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.5 }}
-          >
-            <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>
-              <TrendingUp className="w-3 h-3 text-brand" />
-            </motion.div>
-            <span className="text-[9px] font-black text-brand uppercase">+12 pts</span>
-          </motion.div>
-          <div className="mt-3">
-            <AnimatedProgressBar progress={((creditScore - 300) / 600) * 100} delay={0.8} height="h-1.5" />
-          </div>
+          {creditScore === null ? (
+            <>
+              <h3 className="text-lg font-black tracking-tighter text-gray-500 mt-2 mb-2 leading-tight">
+                Unlock your<br/>CIBIL Score
+              </h3>
+              <div className="mt-4">
+                <AnimatedProgressBar progress={0} delay={0.8} height="h-1.5" />
+              </div>
+            </>
+          ) : (
+            <>
+              <h3 className="text-3xl font-black tracking-tighter text-brand">
+                <AnimatedCounter value={creditScore} duration={2} />
+              </h3>
+              <motion.div 
+                className="flex items-center gap-1 mt-1"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.5 }}
+              >
+                <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>
+                  <TrendingUp className="w-3 h-3 text-brand" />
+                </motion.div>
+                <span className="text-[9px] font-black text-brand uppercase">+12 pts</span>
+              </motion.div>
+              <div className="mt-3">
+                <AnimatedProgressBar progress={((creditScore - 300) / 600) * 100} delay={0.8} height="h-1.5" />
+              </div>
+            </>
+          )}
         </motion.div>
 
         {/* EMI Stress */}
@@ -711,7 +752,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
           >
             <ResponsiveContainer width="100%" height="100%">
               {chartView === 'daily' ? (
-                <BarChart data={DAILY_STATS} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <BarChart data={dailyStats} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor={brandPrimary} stopOpacity={1} />
@@ -721,8 +762,8 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#6B7280' }} dy={10} />
                   <Tooltip cursor={{ fill: 'var(--card-subtle)', radius: 12 }} content={<CustomTooltip />} />
                   <Bar dataKey="value" radius={[8, 8, 8, 8]} barSize={28}>
-                    {DAILY_STATS.map((entry, index) => {
-                      const isMax = entry.value === Math.max(...DAILY_STATS.map(d => d.value));
+                    {dailyStats.map((entry, index) => {
+                      const isMax = entry.value === Math.max(...dailyStats.map(d => d.value));
                       return (
                         <Cell 
                           key={`c-${index}`} 

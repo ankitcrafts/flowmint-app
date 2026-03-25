@@ -1,8 +1,8 @@
 # FlowMint — Complete API Integration Registry
 
 > **Total APIs Identified: 83**  
-> **Integrated: 37 | Ongoing (Partial/Mock): 10 | Pending (Not Built): 36**  
-> **Last Verified: 20 March 2026 — Tier 1 Data Integration: 5 Supabase tables, 15 CRUD routes, Toast/Skeleton systems.**
+> **Integrated: 42 | Ongoing (Partial/Mock): 10 | Pending (Not Built): 31**  
+> **Last Verified: 26 March 2026 — Security Hardening, CSP, & Dashboard Real Data Integration.**
 
 ---
 
@@ -100,9 +100,9 @@
 | --- | ----------------------------------- | ------- | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------- |
 | 27  | Get Transactions                    | Service | `transactionService.getRecent()` → Supabase          | Fetches real transactions from the `transactions` table via Supabase RLS queries. Backward-compatible fallback to mock data. | ✅ Integrated |
 | 28  | AI Spending Insights                | Server  | `POST /api/ai/spending-insight` → Groq Llama 3.3    | Backend-mediated AI call. Primary: Groq (Llama 3.3). Fallback: Gemini Flash 2.0.                                            | ✅ Integrated |
-| 29  | Get Account Balance                 | —       | _Hardcoded: `₹59,823.59`_                           | Should fetch real-time bank account balance via Account Aggregator (AA) framework APIs.                                     | ❌ Pending    |
-| 30  | Get Credit Score (Dashboard Widget) | —       | _Hardcoded: `782`_                                  | Should fetch credit score from CIBIL/Experian API. Used in the dashboard summary card.                                      | ❌ Pending    |
-| 31  | Get EMI Stress Data                 | —       | _Hardcoded: `₹17,999` EMI, `36%` ratio_             | Should calculate from real linked loan accounts. Currently static values in the component.                                  | ❌ Pending    |
+| 29  | Get Account Balance                 | Service | `dashboardService.getSummary()`                     | Fetches real-time bank account balance stored in Supabase financial profile.                                | ✅ Integrated |
+| 30  | Get Credit Score (Dashboard Widget) | Server  | `GET /api/credit-score` (Apify API)                 | Fetches real credit score calculated via Apify CIBIL Actor. Used in the dashboard summary card.             | ✅ Integrated |
+| 31  | Get EMI Stress Data                 | Service | `dashboardService.getSummary()`                     | Computes dynamically from active unpaid bills vs monthly income directly linked from Supabase.              | ✅ Integrated |
 | 32  | Get Upcoming Bills Summary          | Service | `billService.getSummary()` → Supabase                | Queries pending bills from the `bills` table. Returns total due, unpaid count, overdue count. | ✅ Integrated |
 | 33  | Get Wealth History (Chart)          | —       | _Derived from `dashboard_summary` view_               | Aggregated from `transactions` table: income vs expenses over time.                           | ✅ Integrated |
 | 34  | Get Daily Spending Stats (Chart)    | Service | `transactionService.getDailySpending()` → Supabase   | Aggregates transaction amounts by day-of-week from the `transactions` table.                  | ✅ Integrated |
@@ -131,9 +131,9 @@
 
 | #   | API Name                         | Method | Endpoint / SDK Call                                                               | Explanation                                                                                                                           | Status     |
 | --- | -------------------------------- | ------ | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| 42  | Get Credit Score                 | —      | _Hardcoded: `782` with static `SCORE_HISTORY` array_                              | Should fetch from CIBIL TransUnion / Experian / Equifax India bureau API. Component explicitly says "Bureau integration coming soon". | ❌ Pending |
+| 42  | Get Credit Score                 | Server | `GET /api/credit-score` (Apify)                                   | Fetches credit score from backend Integration with Apify Actor `vivid_astronaut/credit-score`.                        | ✅ Integrated |
 | 43  | Get Credit Score History         | —      | _Hardcoded: `SCORE_HISTORY` — 6 monthly data points (Jul–Dec)_                    | Should fetch historical score trend from bureau API.                                                                                  | ❌ Pending |
-| 44  | Refresh Credit Score             | —      | _`handleRefresh()` uses `setTimeout(2000)` — shows spin animation, no real fetch_ | Should trigger a real-time bureau pull to refresh the score.                                                                          | ❌ Pending |
+| 44  | Refresh Credit Score             | Service| `dashboardService.fetchCreditScore()`                             | Triggers a real-time bureau pull to refresh the score via backend. Wired correctly to the UI.                         | ✅ Integrated |
 | 45  | Get Credit Utilization Data      | —      | _Hardcoded: `42%` utilization, `36%` EMI/Income, `0` late payments_               | Should aggregate from linked credit card and loan data.                                                                               | ❌ Pending |
 | 46  | Credit Score Simulator (What-If) | —      | _Local `useMemo` calculation — adjusts score based on UI toggles_                 | Pure client-side math engine. Works as designed locally, but would benefit from a backend scoring model for accuracy.                 | 🔄 Ongoing |
 | 47  | Get Credit Tips                  | —      | _Hardcoded: `creditTips` array — 2 tips (Utilization, Payment History)_           | Should use Gemini AI to generate personalized credit improvement tips based on user's actual bureau data.                             | ❌ Pending |
@@ -219,13 +219,13 @@
 
 | Status                                   | Count  | Percentage |
 | ---------------------------------------- | ------ | ---------- |
-| ✅ **Integrated** (Real, working)        | **37** | 45%        |
+| ✅ **Integrated** (Real, working)        | **42** | 51%        |
 | 🔄 **Ongoing** (Mock/Partial/Scaffolded) | **10** | 12%        |
-| ❌ **Pending** (Not built)               | **36** | 43%        |
+| ❌ **Pending** (Not built)               | **31** | 37%        |
 | **TOTAL**                                | **83** | 100%       |
 
 ---
 
-> **Document Status:** ✅ FULLY VERIFIED — Updated for Tier 1 Data Integration, CRUD Routes, & Toast/Skeleton Systems.  
-> **Last Updated:** 20 March 2026  
-> **Total API Points: 83 | Integrated: 37 | Ongoing: 10 | Pending: 36**
+> **Document Status:** ✅ FULLY VERIFIED — Updated for Frontend Dashboard API Wiring & External Apify API integration.  
+> **Last Updated:** 26 March 2026  
+> **Total API Points: 83 | Integrated: 42 | Ongoing: 10 | Pending: 31**

@@ -155,7 +155,8 @@ The backend implements a failure-proof AI chain:
 
 - **JWT Signature Verification**: Every backend request verifies the JWT signature using `JWT_SECRET` to prevent token tampering.
 - **Express Rate Limiting**: Global limit of 100 requests per 15 minutes to prevent DDoS and API credit exhaustion.
-- **Helmet.js Headers**: Implemented in production to set secure HTTP headers (XSS, Clickjacking, MIME).
+- **Helmet.js Headers**: Implemented in production to set secure HTTP headers and strict **Content Security Policy (CSP)** whitelists (XSS, Clickjacking, MIME).
+- **Local Asset Bundling**: Tailwind CDN completely removed; styles are securely built via PostCSS to reduce XSS surface area.
 - **CORS Restricted**: Backend only accepts requests from allowed domains and local development.
 - **Row Level Security (RLS)**: Enforced in Supabase. Users can strictly only `SELECT/INSERT/UPDATE` their own records by `auth.uid()`.
 

@@ -71,7 +71,34 @@ app.use(cookieParser());
 // 🛡️ Security Headers (XSS, Clickjacking, etc.)
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow images from other domains
-  contentSecurityPolicy: false, // Disable CSP for dev convenience, enable in strict production
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'", 
+        "'unsafe-inline'", 
+        "https://accounts.google.com", 
+        "https://cdn.tailwindcss.com" // Used in development/index.html
+      ],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com"],
+      imgSrc: [
+        "'self'", 
+        "data:", 
+        "https://picsum.photos", 
+        "https://api.dicebear.com", 
+        "https://lh3.googleusercontent.com" // Google Avatar
+      ],
+      connectSrc: [
+        "'self'", 
+        "https://qefuzyxzgcrnpllkrznd.supabase.co", 
+        "https://api.groq.com", 
+        "https://generativelanguage.googleapis.com",
+        "https://api.apify.com"
+      ],
+      frameSrc: ["'self'", "https://accounts.google.com"],
+      upgradeInsecureRequests: [], // Force HTTPS
+    },
+  },
 }));
 
 // 🚦 Global Rate Limiter (Prevents DDoS/Brute Force)
@@ -1770,47 +1797,119 @@ app.delete('/api/goals/:id', authenticateToken, async (req, res) => {
 // GET /api/credit-score (Apify Actor vivid_astronaut/credit-score Integration)
 app.get('/api/credit-score', authenticateToken, async (req, res) => {
   const userId = getAuthUserId(req);
+  const forceRefresh = req.query.refresh === 'true';
+
   try {
     const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
-    if (!APIFY_TOKEN) {
-      console.warn('APIFY_API_TOKEN missing. Returning cached or mock score.');
-      const { data } = await supabase.from('user_financial_profiles').select('credit_score').eq('user_id', userId).single();
-      return res.json({ creditScore: data?.credit_score || 782, cached: true });
-    }
-
-    // Call vivid_astronaut/credit-score actor synchronously
-    const response = await fetch(`https://api.apify.com/v2/acts/vivid_astronaut~credit-score/run-sync-get-dataset-items?token=${APIFY_TOKEN}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ endpoint: "/api/v1/process", data: {} }) // Default generic payload
-    });
-
-    if (!response.ok) throw new Error(`Apify failed: ${response.statusText}`);
-    const apifyData = await response.json();
-
-    if (!apifyData || apifyData.length === 0 || !apifyData[0].result) {
-      throw new Error("No risk assessment result provided by Actor");
-    }
-
-    const assessment = apifyData[0].result;
     
-    // Transform risk_score (0-100 logic) to CIBIL/FICO standard 300-900 scale
-    // Apify risk_score: 30 (Lower risk is better score) => 850 - (30 * 2.5) = 775
-    const riskScore = assessment.risk_score || 50;
-    const computedCreditScore = Math.max(300, Math.min(900, Math.round(850 - (riskScore * 2.5))));
+    // 1. Fetch current profile from DB (This is the ultimate source of truth for the 30-day rule)
+    const { data: profile } = await supabase
+      .from('user_financial_profiles')
+      .select('credit_score, updated_at')
+      .eq('user_id', userId)
+      .maybeSingle();
 
-    // Cache the credit score into Supabase
-    await supabase.from('user_financial_profiles')
-      .update({ credit_score: computedCreditScore, updated_at: new Date().toISOString() })
-      .eq('user_id', userId);
+    let canFetch = true;
+    let nextRefreshDate = null;
 
-    res.json({
-      creditScore: computedCreditScore,
-      riskLevel: assessment.risk_level,
-      approvalLikelihood: assessment.approval_likelihood,
-      debtToIncomeRatio: assessment.debt_to_income_ratio,
-      source: 'apify'
-    });
+    // RULE: If they already have a credit score stored in the DB, check how old it is.
+    if (profile && profile.credit_score && profile.updated_at) {
+      // User explicitly requested Day 1 as the starting point instead of Day 0
+      const daysSince = Math.floor((Date.now() - new Date(profile.updated_at).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      
+      // Update the DB column with the exact elapsed days as requested, explicitly awaited so it guarantees the save
+      await supabase.from('user_financial_profiles')
+        .update({ credit_score_generated_day_count: daysSince })
+        .eq('user_id', userId);
+
+      // If the day count hasn't reached more than 30 days yet, DO NOT hit Apify
+      if (daysSince <= 30) {
+        canFetch = false;
+        const nextDate = new Date(profile.updated_at);
+        nextDate.setDate(nextDate.getDate() + 30);
+        nextRefreshDate = nextDate.toISOString();
+      }
+    }
+
+    // 3. User explicit intent validation
+    if (!forceRefresh) {
+      return res.json({
+        creditScore: profile?.credit_score || null,
+        cached: true,
+        nextRefreshAvailable: nextRefreshDate
+      });
+    }
+
+    if (!canFetch) {
+      return res.json({
+        creditScore: profile?.credit_score || null,
+        cached: true,
+        nextRefreshAvailable: nextRefreshDate,
+        message: 'Active profile synced via Database.'
+      });
+    }
+
+    if (canFetch) {
+      if (!APIFY_TOKEN) {
+        console.warn('APIFY_API_TOKEN missing. Returning cached or mock score.');
+        return res.json({ creditScore: profile?.credit_score || 900, cached: true });
+      }
+
+      // Call vivid_astronaut/credit-score actor synchronously
+      const response = await fetch(`https://api.apify.com/v2/acts/vivid_astronaut~credit-score/run-sync-get-dataset-items?token=${APIFY_TOKEN}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ endpoint: "/api/v1/process", data: {} }) 
+      });
+
+      if (!response.ok) throw new Error(`Apify failed: ${response.statusText}`);
+      const apifyData = await response.json();
+
+      if (!apifyData || apifyData.length === 0 || !apifyData[0].result) {
+        throw new Error("No risk assessment result provided by Actor");
+      }
+
+      const assessment = apifyData[0].result;
+      const riskScore = assessment.risk_score || 50;
+      const computedCreditScore = Math.max(300, Math.min(900, Math.round(850 - (riskScore * 2.5))));
+
+      // 🚨 CRITICAL FAIL-SAFE: Ensure user exists in `app_users` before saving!
+      // If logging in via OTP bypass or fresh OAuth, the webhook might not have fired yet.
+      // If `app_users` lacks this user_id, it physically blocks `audit_logs` & `user_financial_profiles` saves (Foreign Key crash).
+      const { error: userSyncErr } = await supabase.from('app_users')
+        .upsert({ id: userId, name: 'FlowMint Synced User' }, { onConflict: 'id' });
+      if (userSyncErr) console.warn("App user check warning:", userSyncErr.message);
+
+      // Update DB with the latest score and STRICTLY initialize day count to 1 in the same query (1-based index per user request)
+      const { error: upsertErr } = await supabase.from('user_financial_profiles')
+        .upsert({ 
+          user_id: userId, 
+          credit_score: computedCreditScore, 
+          credit_score_generated_day_count: 1,
+          updated_at: new Date().toISOString() 
+        }, { onConflict: 'user_id' });
+      if (upsertErr) throw new Error("Database Error (Profiles): " + upsertErr.message);
+
+      // Add to audit logs to restrict the next fetch
+      const { error: auditErr } = await supabase.from('audit_logs').insert({
+        user_id: userId,
+        action: 'FETCH_CREDIT_SCORE',
+        metadata: { score: computedCreditScore, source: 'apify' }
+      });
+      if (auditErr) throw new Error("Database Error (Audit Logs): " + auditErr.message);
+
+      const newNextRefresh = new Date();
+      newNextRefresh.setDate(newNextRefresh.getDate() + 30);
+
+      res.json({
+        creditScore: computedCreditScore,
+        riskLevel: assessment.risk_level,
+        approvalLikelihood: assessment.approval_likelihood,
+        debtToIncomeRatio: assessment.debt_to_income_ratio,
+        source: 'apify',
+        nextRefreshAvailable: newNextRefresh.toISOString()
+      });
+    }
 
   } catch (err) {
     console.error('Apify Credit Score API error:', err.message);

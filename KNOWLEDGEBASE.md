@@ -127,8 +127,7 @@ FlowMint adopts a **"Cyber-Finance"** aesthetic — a premium, dark-mode-first d
 
 - **Features:** SVG arc gauge (credit score 782), score history chart, credit behavior indicators (3 cards), credit education accordion, What-If simulator, actionable tips
 - **Simulator Logic:** `useMemo` adjusts predicted score based on: debt repayment slider (up to +35), new card toggle (-8), loyalty streak (+12), close old account (-15)
-- **Mock Data:** All — score, history, utilization, tips are hardcoded
-- **Label:** Explicitly shows "Manual / Estimated Score – Bureau integration coming soon"
+- **Real API Calls:** `fetchCreditScore()` via Apify CIBIL integration for the base score. History, utilization, and tips are still simulated/hardcoded.
 
 ### FlowGoals (`FlowGoals.tsx`) — 133 lines
 
