@@ -19,45 +19,64 @@
 }
 
 /* ═══════════════════════════════════════════
-   LIGHT THEME — Neumorphic Mobile Banking
-   Reference: soft UI, #E0E5EC bg,
-   dual shadow pairs, no visible borders,
-   recessed tracks, raised platforms
+   LIGHT THEME — Premium Neumorphic
+   Final Palette:
+     Background:    #F6F7FB
+     Surface:       #FFFFFF
+     Soft Surface:  #EEF1F6
+     Primary:       #FFC107   Hover: #E6AC00
+     Secondary:     #3B82F6   (alt: #14B8A6)
+     Text Primary:  #1A1D1F
+     Text Secondary:#6B7280
+     Success:       #22C55E
+     Error:         #EF4444
+     Warning:       #F59E0B
+   Shadows:
+     Light:  #FFFFFF  (top-left highlight)
+     Dark:   #D1D9E6  (bottom-right)
    ═══════════════════════════════════════════ */
 .light {
-  --bg-color: #E0E5EC;
-  --text-color: #2D3436;
-  --glass-bg: #E0E5EC;
-  --glass-border: #C8CDD5;
-  --card-subtle: #D5DAE1;
-  --nav-bg: #E0E5EC;
+  --bg-color: #F6F7FB;
+  --text-color: #1A1D1F;
+  --glass-bg: #FFFFFF;
+  --glass-border: #EEF1F6;
+  --card-subtle: #EEF1F6;
+  --nav-bg: #F6F7FB;
 
-  /* Brand Colors — Golden (readable on #E0E5EC) */
-  --brand-primary: #D4A017;
-  --brand-secondary: #C69200;
-  --brand-glow: rgba(255, 223, 0, 0.35);
-  --brand-on-primary: #2D3436;
+  /* Brand Colors — Warm Golden Yellow */
+  --brand-primary: #FFC107;
+  --brand-secondary: #E6AC00;
+  --brand-glow: rgba(255, 193, 7, 0.22);
+  --brand-on-primary: #1A1D1F;
 
-  /* Neumorphic Shadow System (from reference) */
+  /* Accent & Semantic Colors */
+  --accent-blue: #3B82F6;
+  --accent-teal: #14B8A6;
+  --color-success: #22C55E;
+  --color-error: #EF4444;
+  --color-warning: #F59E0B;
+  --text-secondary: #6B7280;
+
+  /* Neumorphic Shadow System — Premium #D1D9E6 / #FFFFFF */
   --neu-raised:
-    8px 8px 16px #A3B1C6,
-    -8px -8px 16px #FFFFFF;
+    6px 6px 12px #D1D9E6,
+    -6px -6px 12px #FFFFFF;
   --neu-raised-sm:
-    4px 4px 8px #A3B1C6,
-    -4px -4px 8px #FFFFFF;
-  --neu-inset:
-    inset 4px 4px 8px #A3B1C6,
-    inset -4px -4px 8px #FFFFFF;
-  --neu-inset-sm:
-    inset 2px 2px 5px #A3B1C6,
-    inset -2px -2px 5px #FFFFFF;
-  --neu-flat:
-    3px 3px 6px #A3B1C6,
+    3px 3px 6px #D1D9E6,
     -3px -3px 6px #FFFFFF;
+  --neu-inset:
+    inset 3px 3px 6px #D1D9E6,
+    inset -3px -3px 6px #FFFFFF;
+  --neu-inset-sm:
+    inset 2px 2px 4px #D1D9E6,
+    inset -2px -2px 4px #FFFFFF;
+  --neu-flat:
+    2px 2px 4px #D1D9E6,
+    -2px -2px 4px #FFFFFF;
 
-  /* Surface gradients for convex/concave feel */
-  --neu-convex: linear-gradient(145deg, #E8EDF2, #D1D9E6);
-  --neu-concave: linear-gradient(145deg, #D1D9E6, #E8EDF2);
+  /* Surface gradients */
+  --neu-convex: linear-gradient(145deg, #FFFFFF, #EEF1F6);
+  --neu-concave: linear-gradient(145deg, #E8EBF0, #FFFFFF);
 }
 
 /* ═══════════════════════════════════════════
@@ -153,8 +172,8 @@ body::before {
 
 .light .glass:hover {
   box-shadow:
-    10px 10px 20px #A3B1C6,
-    -10px -10px 20px #FFFFFF;
+    8px 8px 16px #D1D9E6,
+    -8px -8px 16px #FFFFFF;
 }
 
 /* ─── Neumorphic Inset (inputs, recessed areas) ─── */
@@ -173,7 +192,7 @@ body::before {
 .light select:focus {
   box-shadow:
     var(--neu-inset),
-    0 0 0 2px rgba(255, 223, 0, 0.3);
+    0 0 0 2px rgba(255, 193, 7, 0.35);
   outline: none;
 }
 
@@ -237,13 +256,13 @@ body::before {
 }
 
 .light .mint-gradient {
-  background: linear-gradient(135deg, #FFDF00 0%, #FFB800 50%, #FF9500 100%);
+  background: linear-gradient(135deg, #FFC107 0%, #FFD54F 40%, #E6AC00 100%);
   border: none;
   box-shadow:
-    4px 4px 8px #A3B1C6,
-    -4px -4px 8px #FFFFFF,
-    inset 0 2px 0 rgba(255,255,255,0.4),
-    inset 0 -2px 0 rgba(0,0,0,0.06);
+    3px 3px 6px #D1D9E6,
+    -3px -3px 6px #FFFFFF,
+    inset 0 2px 0 rgba(255,255,255,0.45),
+    inset 0 -2px 0 rgba(0,0,0,0.04);
 }
 
 /* ═══════════════════════════════════════════
@@ -252,11 +271,11 @@ body::before {
 .text-brand { color: var(--brand-primary); }
 .bg-brand { background-color: var(--brand-primary); }
 
-/* Gold text matches the readable --brand-primary */
-.light .text-brand { color: #B8860B; }
+/* Gold text: readable on #F6F7FB surface */
+.light .text-brand { color: #E6AC00; }
 
 .light .bg-brand {
-  background-color: #FFDF00;
+  background-color: #FFC107;
   border: none;
   box-shadow: var(--neu-raised-sm);
 }
@@ -269,8 +288,8 @@ body::before {
   border: none;
   border-radius: 24px 24px 0 0;
   box-shadow:
-    0 -8px 16px #A3B1C6,
-    inset 0 1px 0 rgba(255,255,255,0.6);
+    0 -6px 12px #D1D9E6,
+    inset 0 1px 0 rgba(255,255,255,0.8);
 }
 
 .light header.glass {
@@ -278,20 +297,20 @@ body::before {
   border: none;
   border-radius: 0 0 24px 24px;
   box-shadow:
-    0 8px 16px #A3B1C6,
-    inset 0 -1px 0 rgba(255,255,255,0.6);
+    0 6px 12px #D1D9E6,
+    inset 0 -1px 0 rgba(255,255,255,0.8);
 }
 
 /* ─── Progress bar tracks (recessed neumorphic channel) ─── */
 .light .rounded-full.overflow-hidden {
   box-shadow: var(--neu-inset-sm);
-  background-color: #D5DAE1 !important;
+  background-color: #EEF1F6 !important;
 }
 
 .light .bg-brand.h-full,
 .light .h-full.bg-brand,
 .light .bg-brand.rounded-full {
-  background-color: #FFDF00 !important;
+  background-color: #FFC107 !important;
   box-shadow: none;
   border: none;
 }
@@ -329,12 +348,12 @@ body::before {
 }
 
 .light .neu-dot.active {
-  background: linear-gradient(145deg, #FFDF00, #FFB800);
+  background: linear-gradient(145deg, #FFC107, #E6AC00);
   box-shadow: var(--neu-raised-sm);
 }
 
 /* ═══════════════════════════════════════════
-   ANIMATIONS
+   ANIMATIONS — Core
    ═══════════════════════════════════════════ */
 @keyframes float {
   0% { transform: translateY(0px) rotate(0deg); }
@@ -364,14 +383,139 @@ body::before {
 }
 
 @keyframes neuPulse {
-  0%, 100% { box-shadow: 8px 8px 16px #A3B1C6, -8px -8px 16px #FFFFFF; }
-  50% { box-shadow: 4px 4px 8px #A3B1C6, -4px -4px 8px #FFFFFF; }
+  0%, 100% { box-shadow: 6px 6px 12px #D1D9E6, -6px -6px 12px #FFFFFF; }
+  50% { box-shadow: 3px 3px 6px #D1D9E6, -3px -3px 6px #FFFFFF; }
 }
 
+/* ═══════════════════════════════════════════
+   ANIMATIONS — New Interactive & Engagement
+   ═══════════════════════════════════════════ */
+
+/* Bounce-in entrance for cards and elements */
+@keyframes bounceIn {
+  0% { opacity: 0; transform: scale(0.3) translateY(40px); }
+  50% { opacity: 0.9; transform: scale(1.05) translateY(-8px); }
+  70% { transform: scale(0.97) translateY(3px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Playful wiggle for attention-grabbing elements */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  15% { transform: rotate(6deg); }
+  30% { transform: rotate(-5deg); }
+  45% { transform: rotate(4deg); }
+  60% { transform: rotate(-3deg); }
+  75% { transform: rotate(2deg); }
+}
+
+/* Smooth slide-up reveal */
+@keyframes slideUp {
+  0% { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Pop-scale for tap feedback & celebrations */
+@keyframes scalePop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+/* Ripple glow — subtle radiance on important buttons */
+@keyframes rippleGlow {
+  0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4); }
+  70% { box-shadow: 0 0 0 12px rgba(255, 193, 7, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+}
+
+/* Breathing card — subtle scale pulse for live elements */
+@keyframes cardBreathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.008); }
+}
+
+/* Coin flip for reward celebrations */
+@keyframes coinFlip {
+  0% { transform: rotateY(0deg) scale(1); }
+  25% { transform: rotateY(90deg) scale(0.9); }
+  50% { transform: rotateY(180deg) scale(1); }
+  75% { transform: rotateY(270deg) scale(0.9); }
+  100% { transform: rotateY(360deg) scale(1); }
+}
+
+/* Gradient background shift — for hero sections */
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Gentle horizontal sway */
+@keyframes sway {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(6px); }
+}
+
+/* Sparkle twinkle */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+/* ═══════════════════════════════════════════
+   ANIMATION UTILITIES
+   ═══════════════════════════════════════════ */
 .animate-float { animation: float 4s ease-in-out infinite; }
 .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+.animate-bounce-in { animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; }
+.animate-wiggle { animation: wiggle 0.6s ease-in-out; }
+.animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
+.animate-scale-pop { animation: scalePop 0.35s ease-in-out; }
+.animate-ripple-glow { animation: rippleGlow 1.5s ease-out infinite; }
+.animate-breathe { animation: cardBreathe 4s ease-in-out infinite; }
+.animate-coin-flip { animation: coinFlip 1s ease-in-out; }
+.animate-gradient-shift { 
+  background-size: 200% 200%; 
+  animation: gradientShift 6s ease infinite; 
+}
+.animate-sway { animation: sway 3s ease-in-out infinite; }
+.animate-twinkle { animation: twinkle 2s ease-in-out infinite; }
+
+/* Light-specific animation overrides */
 .light .animate-pulse-glow { animation: neuPulse 3s ease-in-out infinite; }
 
+/* Staggered entrance delays for lists */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.10s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.20s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.30s; }
+.stagger-7 { animation-delay: 0.35s; }
+.stagger-8 { animation-delay: 0.40s; }
+
+/* Interactive hover micro-animations */
+.light .hover-lift {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.light .hover-lift:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    8px 8px 16px #D1D9E6,
+    -8px -8px 16px #FFFFFF;
+}
+
+/* Tap feedback — press-in effect */
+.light .tap-press:active {
+  transform: scale(0.96);
+  box-shadow: var(--neu-inset-sm);
+  transition: transform 0.1s ease;
+}
+
+/* ═══════════════════════════════════════════
+   SHIMMER & GLOW EFFECTS
+   ═══════════════════════════════════════════ */
 .currency-particle {
   position: absolute;
   pointer-events: none;
@@ -393,12 +537,12 @@ body::before {
 }
 
 .light .shimmer-bar::after {
-  background: linear-gradient(90deg, transparent 0%, rgba(255,223,0,0.15) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(255,193,7,0.12) 50%, transparent 100%);
 }
 
 /* Gold shimmer text */
 .light .gold-shimmer {
-  background: linear-gradient(90deg, #B8960F 0%, #FFDF00 40%, #FFB800 60%, #B8960F 100%);
+  background: linear-gradient(90deg, #E6AC00 0%, #FFC107 40%, #FFD54F 60%, #E6AC00 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;

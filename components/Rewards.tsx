@@ -14,58 +14,68 @@ const containerVariants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: { staggerChildren: 0.08, delayChildren: 0.1 }
+    transition: { staggerChildren: 0.07, delayChildren: 0.08 }
   }
 };
 
 const cardSlideUp = {
-  hidden: { opacity: 0, y: 30, scale: 0.97 },
+  hidden: { opacity: 0, y: 35, scale: 0.96 },
   show: {
     opacity: 1, y: 0, scale: 1,
-    transition: { type: 'spring' as const, stiffness: 250, damping: 22 }
+    transition: { type: 'spring' as const, stiffness: 280, damping: 24 }
   }
 };
 
-const coinBounce = {
-  initial: { scale: 0, rotate: -180 },
-  animate: { scale: 1, rotate: 0 },
-  transition: { type: 'spring' as const, stiffness: 300, damping: 15, delay: 0.5 }
+const cardBounce = {
+  hidden: { opacity: 0, y: 50, scale: 0.9 },
+  show: {
+    opacity: 1, y: 0, scale: 1,
+    transition: { type: 'spring' as const, stiffness: 200, damping: 18, mass: 0.8 }
+  }
+};
+
+const listItemSlide = {
+  hidden: { opacity: 0, x: -25 },
+  show: (i: number) => ({
+    opacity: 1, x: 0,
+    transition: { delay: i * 0.04, type: 'spring' as const, stiffness: 300, damping: 25 }
+  })
 };
 
 // ─── Tier Colors & Config ───────────────────────
 const TIER_CONFIG: Record<string, { gradient: string; glow: string; text: string; icon: string; badge: string }> = {
   bronze: {
-    gradient: 'linear-gradient(135deg, #CD7F32, #8B4513)',
-    glow: 'rgba(205, 127, 50, 0.4)',
+    gradient: 'linear-gradient(135deg, #CD7F32, #A0522D)',
+    glow: 'rgba(205, 127, 50, 0.3)',
     text: '#CD7F32',
     icon: '🥉',
     badge: 'BRONZE'
   },
   silver: {
-    gradient: 'linear-gradient(135deg, #C0C0C0, #808080)',
-    glow: 'rgba(192, 192, 192, 0.4)',
-    text: '#C0C0C0',
+    gradient: 'linear-gradient(135deg, #9CA3AF, #6B7280)',
+    glow: 'rgba(156, 163, 175, 0.3)',
+    text: '#6B7280',
     icon: '🥈',
     badge: 'SILVER'
   },
   gold: {
-    gradient: 'linear-gradient(135deg, #FFD700, #DAA520)',
-    glow: 'rgba(255, 215, 0, 0.4)',
-    text: '#FFD700',
+    gradient: 'linear-gradient(135deg, #FFC107, #E6AC00)',
+    glow: 'rgba(255, 193, 7, 0.3)',
+    text: '#E6AC00',
     icon: '🥇',
     badge: 'GOLD'
   },
   platinum: {
-    gradient: 'linear-gradient(135deg, #E5E4E2, #B0B0B0)',
-    glow: 'rgba(229, 228, 226, 0.4)',
-    text: '#E5E4E2',
+    gradient: 'linear-gradient(135deg, #6366F1, #4F46E5)',
+    glow: 'rgba(99, 102, 241, 0.3)',
+    text: '#6366F1',
     icon: '💎',
     badge: 'PLATINUM'
   },
   diamond: {
-    gradient: 'linear-gradient(135deg, #B9F2FF, #48D1CC)',
-    glow: 'rgba(185, 242, 255, 0.5)',
-    text: '#B9F2FF',
+    gradient: 'linear-gradient(135deg, #3B82F6, #1D4ED8)',
+    glow: 'rgba(59, 130, 246, 0.3)',
+    text: '#3B82F6',
     icon: '👑',
     badge: 'DIAMOND'
   },
@@ -74,13 +84,13 @@ const TIER_CONFIG: Record<string, { gradient: string; glow: string; text: string
 // ─── Challenge Labels & Icons ───────────────────
 const CHALLENGE_META: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
   daily_login: { label: 'Daily Login', icon: <Flame className="w-4 h-4" />, color: '#F59E0B' },
-  log_expense: { label: 'Log an Expense', icon: <Receipt className="w-4 h-4" />, color: '#F97316' },
+  log_expense: { label: 'Log an Expense', icon: <Receipt className="w-4 h-4" />, color: '#EF4444' },
   pay_bill: { label: 'Pay a Bill', icon: <CreditCard className="w-4 h-4" />, color: '#3B82F6' },
-  check_credit: { label: 'Check Credit Score', icon: <Shield className="w-4 h-4" />, color: '#10B981' },
+  check_credit: { label: 'Check Credit Score', icon: <Shield className="w-4 h-4" />, color: '#22C55E' },
   invite_friend: { label: 'Invite a Friend', icon: <Users className="w-4 h-4" />, color: '#8B5CF6' },
   save_goal: { label: 'Save Towards Goal', icon: <Target className="w-4 h-4" />, color: '#EC4899' },
   streak_7: { label: '7-Day Streak', icon: <Flame className="w-4 h-4" />, color: '#EF4444' },
-  streak_30: { label: '30-Day Streak', icon: <Crown className="w-4 h-4" />, color: '#FFD700' },
+  streak_30: { label: '30-Day Streak', icon: <Crown className="w-4 h-4" />, color: '#E6AC00' },
 };
 
 // ─── Tab Type ───────────────────────────────────
@@ -387,13 +397,7 @@ const Rewards: FC = () => {
             <motion.button
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => {
-                if (transferEligibility.eligible) {
-                  setShowTransferModal(true);
-                } else {
-                  setActiveTab('earn');
-                }
-              }}
+              onClick={() => setActiveTab('transfer')}
               className="flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition-all"
               style={{ borderColor: 'var(--glass-border)', backgroundColor: 'var(--card-subtle)' }}
             >
@@ -630,23 +634,23 @@ const Rewards: FC = () => {
 
                 <div className="space-y-3">
                   {[
-                    { icon: <Flame className="w-5 h-5" />, title: 'Daily Login', coins: COIN_REWARDS.daily_login, desc: 'Open the app every day', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
-                    { icon: <Receipt className="w-5 h-5" />, title: 'Log Expenses', coins: COIN_REWARDS.log_expense, desc: 'Track your spending', color: '#F97316', bg: 'rgba(249,115,22,0.12)' },
-                    { icon: <CreditCard className="w-5 h-5" />, title: 'Pay Bills', coins: COIN_REWARDS.pay_bill, desc: 'Pay bills on time', color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
-                    { icon: <Target className="w-5 h-5" />, title: 'Complete Goals', coins: COIN_REWARDS.save_goal, desc: 'Save towards your goals', color: '#EC4899', bg: 'rgba(236,72,153,0.12)' },
-                    { icon: <Users className="w-5 h-5" />, title: 'Invite Friends', coins: COIN_REWARDS.invite_friend, desc: 'Refer & earn together', color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' },
-                    { icon: <Shield className="w-5 h-5" />, title: 'Check Credit', coins: COIN_REWARDS.check_credit, desc: 'Monitor your credit score', color: '#10B981', bg: 'rgba(16,185,129,0.12)' },
-                    { icon: <Flame className="w-5 h-5" />, title: '7-Day Streak', coins: COIN_REWARDS.streak_7, desc: 'Login 7 days in a row', color: '#EF4444', bg: 'rgba(239,68,68,0.12)' },
-                    { icon: <Crown className="w-5 h-5" />, title: '30-Day Streak', coins: COIN_REWARDS.streak_30, desc: 'Login 30 days in a row', color: '#FFD700', bg: 'rgba(255,215,0,0.12)' },
+                    { icon: <Flame className="w-5 h-5" />, title: 'Daily Login', coins: COIN_REWARDS.daily_login, desc: 'Open the app every day', color: '#F59E0B', bg: 'rgba(245,158,11,0.10)' },
+                    { icon: <Receipt className="w-5 h-5" />, title: 'Log Expenses', coins: COIN_REWARDS.log_expense, desc: 'Track your spending', color: '#EF4444', bg: 'rgba(239,68,68,0.10)' },
+                    { icon: <CreditCard className="w-5 h-5" />, title: 'Pay Bills', coins: COIN_REWARDS.pay_bill, desc: 'Pay bills on time', color: '#3B82F6', bg: 'rgba(59,130,246,0.10)' },
+                    { icon: <Target className="w-5 h-5" />, title: 'Complete Goals', coins: COIN_REWARDS.save_goal, desc: 'Save towards your goals', color: '#EC4899', bg: 'rgba(236,72,153,0.10)' },
+                    { icon: <Users className="w-5 h-5" />, title: 'Invite Friends', coins: COIN_REWARDS.invite_friend, desc: 'Refer & earn together', color: '#8B5CF6', bg: 'rgba(139,92,246,0.10)' },
+                    { icon: <Shield className="w-5 h-5" />, title: 'Check Credit', coins: COIN_REWARDS.check_credit, desc: 'Monitor your credit score', color: '#22C55E', bg: 'rgba(34,197,94,0.10)' },
+                    { icon: <Flame className="w-5 h-5" />, title: '7-Day Streak', coins: COIN_REWARDS.streak_7, desc: 'Login 7 days in a row', color: '#EF4444', bg: 'rgba(239,68,68,0.10)' },
+                    { icon: <Crown className="w-5 h-5" />, title: '30-Day Streak', coins: COIN_REWARDS.streak_30, desc: 'Login 30 days in a row', color: '#E6AC00', bg: 'rgba(230,172,0,0.10)' },
                   ].map((item, i) => (
                     <motion.div
                       key={i}
                       className="flex items-center justify-between p-3.5 rounded-2xl border"
                       style={{ borderColor: 'var(--glass-border)', backgroundColor: 'var(--card-subtle)' }}
-                      initial={{ opacity: 0, x: -20 }}
+                      initial={{ opacity: 0, x: -25 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      whileHover={{ x: 3, borderColor: item.color + '40' }}
+                      transition={{ delay: i * 0.04, type: 'spring', stiffness: 300, damping: 25 }}
+                      whileHover={{ x: 4, scale: 1.01, borderColor: item.color + '40' }}
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: item.bg }}>
