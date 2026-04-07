@@ -95,3 +95,12 @@ export interface DashboardSummary {
     totalSaved: number;
   };
 }
+
+// Rewards System
+export interface RewardWalletSummary {
+  flow_coins: number;
+  cash_balance: number;
+  tier: 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond';
+  current_streak: number;
+  transfer_eligible: boolean;
+}

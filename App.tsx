@@ -19,7 +19,8 @@ import {
   X,
   ChevronRight,
   Upload,
-  Settings
+  Settings,
+  Gift
 } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import FlowPay from './components/FlowPay';
@@ -38,6 +39,7 @@ import UserProfile from './components/UserProfile';
 import CreditDashboard from './pages/CreditDashboard';
 import CreditUpload from './pages/CreditUpload';
 import SettingsPanel from './components/SettingsPanel';
+import Rewards from './components/Rewards';
 import { supabase } from './services/supabase';
 import { BiometricService } from './services/BiometricService';
 
@@ -61,6 +63,7 @@ enum Tab {
   CreditCore = 'credit_core',
   CreditUpload = 'credit_upload',
   Profile = 'profile',
+  Rewards = 'rewards',
 }
 
 const App: FC = () => {
@@ -233,6 +236,7 @@ const App: FC = () => {
       case Tab.CreditCore: return <CreditDashboard />;
       case Tab.CreditUpload: return <CreditUpload />;
       case Tab.Profile: return <UserProfile userProfile={userProfile} theme={theme} />;
+      case Tab.Rewards: return <Rewards />;
       default: return <Dashboard theme={theme} userProfile={userProfile} onNavigate={handleNavigate} />;
     }
   };
@@ -341,6 +345,7 @@ const App: FC = () => {
                 <MoreMenuItem icon={<Upload className="w-5 h-5" />} label="Upload Statement" color="text-emerald-400" onTap={() => handleNavigate('credit_upload')} />
                 <MoreMenuItem icon={<ShieldCheck className="w-5 h-5" />} label="Basic Score" color="text-brand" onTap={() => handleNavigate('credit')} />
                 <MoreMenuItem icon={<Target className="w-5 h-5" />} label="Goals" color="text-amber-500" onTap={() => handleNavigate('goals')} />
+                <MoreMenuItem icon={<Gift className="w-5 h-5" />} label="Rewards" color="text-yellow-400" onTap={() => handleNavigate('rewards')} />
                 <MoreMenuItem icon={<LayoutDashboard className="w-5 h-5" />} label="Dashboard" color="text-brand" onTap={() => handleNavigate('dashboard')} />
               </div>
             </motion.div>
@@ -378,10 +383,10 @@ const App: FC = () => {
             </button>
           </div>
           <NavButton
-            active={activeTab === Tab.Credit}
-            onClick={() => setActiveTab(Tab.Credit)}
-            icon={<ShieldCheck className="w-5 h-5" />}
-            label="Credit"
+            active={activeTab === Tab.Rewards}
+            onClick={() => setActiveTab(Tab.Rewards)}
+            icon={<Gift className="w-5 h-5" />}
+            label="Rewards"
           />
           <NavButton
             active={activeTab === Tab.AI}

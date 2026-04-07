@@ -1,6 +1,7 @@
-import { FC } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Edit3, Shield, Star, Award, ChevronRight, CheckCircle2, TrendingUp, CreditCard, Activity } from 'lucide-react';
+import { rewardService } from '../services/rewardService';
 
 interface UserProfileProps {
   userProfile: any;
@@ -21,6 +22,12 @@ const itemVariants = {
 };
 
 const UserProfile: FC<UserProfileProps> = ({ userProfile, theme }) => {
+  const [flowCoins, setFlowCoins] = useState(0);
+
+  useEffect(() => {
+    rewardService.getWallet().then(w => setFlowCoins(w.flow_coins)).catch(() => {});
+  }, []);
+
   return (
     <motion.div 
       variants={containerVariants}
@@ -88,7 +95,7 @@ const UserProfile: FC<UserProfileProps> = ({ userProfile, theme }) => {
       {/* Stats Grid */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 gap-4 mb-8">
         <StatCard icon={<TrendingUp className="text-emerald-400" />} label="Flow Score" value="842" trend="+12 pts" trendColor="text-emerald-400" />
-        <StatCard icon={<Star className="text-yellow-400" />} label="Rewards" value="2,450" trend="Flow Coins" trendColor="text-yellow-400" />
+        <StatCard icon={<Star className="text-yellow-400" />} label="Rewards" value={flowCoins.toLocaleString()} trend="Flow Coins" trendColor="text-yellow-400" />
       </motion.div>
 
       {/* Account Details / Actions */}
