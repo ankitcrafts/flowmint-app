@@ -1,7 +1,7 @@
 <div align="center">
   <img width="1200" height="475" alt="FlowMint Banner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 
-  <h1>💎 FlowMint</h1>
+  <h1>FlowMint</h1>
   <p><strong>The Future of "Cyber-Finance" — Intelligent Wealth Management for India.</strong></p>
 
     <img src="https://img.shields.io/badge/Version-2.2.0-cyan?style=for-the-badge" alt="Version 2.2.0" />
@@ -14,11 +14,11 @@
 
 ---
 
-## ⚡ What is FlowMint?
+## What is FlowMint?
 
 FlowMint is a premium, **"Cyber-Finance"** dashboard and financial super-app designed for the next generation of Indian investors. It combines high-fidelity glassmorphic UI with ultra-fast AI insights to turn complex financial data into actionable wealth-building blocks.
 
-### 🌟 Key Features
+### Key Features
 
 - **Real Data Dashboard**: 11+ widgets powered by live Supabase queries — transactions, bills, goals, and spending charts.
 - **AI Savings Blueprint**: Generate step-by-step plans to buy your next "Wish" (iPhone, Car, Trip) using Llama 3.3.
@@ -41,7 +41,7 @@ FlowMint is a premium, **"Cyber-Finance"** dashboard and financial super-app des
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Requirements
 
@@ -87,7 +87,7 @@ The `flowmint.apk` Android application file is available directly in the root di
 
 ---
 
-## 🛡️ Security & Reliability
+## Security & Reliability
 
 - **Hardened Backend**: Deployed on Render with **Helmet.js**, strict **Content Security Policy (CSP)**, **Express Rate Limiting**, and **JWT Signature Verification**.
 - **No CDN Vulnerabilities**: Tailwind and all assets are strictly bundled locally via Vite—zero external CDN risk.
@@ -97,14 +97,14 @@ The `flowmint.apk` Android application file is available directly in the root di
 
 ---
 
-## 📂 Documentation Deep-Dive
+## Documentation Deep-Dive
 
-- [📖 Detailed Documentation](./DOCUMENTATION.md) — Technical specs & internal architecture.
-- [🗺️ API Integration Map](./API_INTEGRATION_MAP.md) — Current state of all 83+ API points.
-- [🧠 Knowledge Base](./KNOWLEDGEBASE.md) — UI Tokens, Design System, and Troubleshooting.
-- [🎯 Product Requirements (PRD)](./PRD.md) — The vision & roadmap.
-- [🤖 LLM Strategy](./CUSTOM_LLM_STRATEGY.md) — How our Llama/Gemini hybrid works.
+- [Detailed Documentation](./DOCUMENTATION.md) — Technical specs & internal architecture.
+- [API Integration Map](./API_INTEGRATION_MAP.md) — Current state of all 83+ API points.
+- [Knowledge Base](./KNOWLEDGEBASE.md) — UI Tokens, Design System, and Troubleshooting.
+- [Product Requirements (PRD)](./PRD.md) — The vision & roadmap.
+- [LLM Strategy](./CUSTOM_LLM_STRATEGY.md) — How our Llama/Gemini hybrid works.
 
 ---
 
-<p align="center">Made with 💙 for the Indian Financial Revolution.</p>
+<p align="center">Made with for the Indian Financial Revolution.</p>
