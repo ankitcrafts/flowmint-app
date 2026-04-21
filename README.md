@@ -21,8 +21,11 @@ FlowMint is a premium, **"Cyber-Finance"** dashboard and financial super-app des
 ### Key Features
 
 - **Real Data Dashboard**: 11+ widgets powered by live Supabase queries — transactions, bills, goals, and spending charts.
+- **P2P Smart Lending Ecosystem**: A fully interactive marketplace for peer-to-peer lending with Swipe-to-Fund mechanics.
+- **Guardian Restricted Mode**: Intelligent age-gating that strictly limits minors (< 18) to 25% of guardian-approved limits.
+- **Gamified Reputation Engine**: Borrowers boost their dynamic Reputation Score (out of 900) by actively repaying EMIs.
 - **AI Savings Blueprint**: Generate step-by-step plans to buy your next "Wish" (iPhone, Car, Trip) using Llama 3.3.
-- **Core Data CRUD**: Full create/read/update/delete for transactions, expenses, bills, goals, and payments — all persisted in Supabase.
+- **Core Data CRUD**: Full create/read/update/delete for transactions, expenses, bills, goals, loans, and payments — all persisted in Supabase.
 - **Resilient AI Chain**: Primary power from **Groq (Llama 3.3)** with a seamless fallback to **Gemini 2.0 Flash**.
 - **Financial Identity & Biometrics**: Integrated Aadhaar/PAN validation and native Biometric Auth (Face ID/Fingerprint).
 - **Professional UX**: Glassmorphic Toast notifications, shimmer skeleton loaders, and animated empty states.

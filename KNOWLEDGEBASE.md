@@ -168,11 +168,12 @@ FlowMint adopts a **"Cyber-Finance"** aesthetic — a premium, dark-mode-first d
 - **Mock Data:** `LOAN_PRODUCTS` (6), all eligibility scores hardcoded
 - **Label:** "Simulated Mode" disclosure at bottom
 
-### FlowLend (`FlowLend.tsx`) — 87 lines
+### P2PMarketplace (`P2PMarketplace.tsx`) — 350+ lines
 
-- **Features:** Pre-approved offer card, 3 lending partner cards (HDFC, Muthoot, ICICI), regulated access disclaimer
-- **Mock Data:** All data hardcoded
-- **Gap:** "Get Instant Cash" button has no action handler
+- **Features:** Dual Invest/Borrow interface, Swipe-to-fund framer motion interactions, Gamified Reputation Score gauge, EMI payment simulation.
+- **Smart Constraints:** Implements the "Guardian Restricted Mode" for minors, dynamically capping borrow limits to 25% of guardian limits and sending NDA alerts.
+- **Real API Calls:** Pushes real rows to `p2p_loans`, `p2p_investments`, and `agreements` in Supabase upon successful user actions.
+- **Gamification:** Paying EMIs triggers real-time visual boosts to the Reputation Score gauge.
 
 ### SustainabilityCard (`SustainabilityCard.tsx`) — 117 lines
 

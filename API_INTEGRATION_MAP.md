@@ -191,6 +191,19 @@
 
 ---
 
+### PHASE 11 — P2P Marketplace (Lending & Borrowing)
+
+> **Component:** `P2PMarketplace.tsx` • **Trigger:** User navigates to Loan Market / Lend tab
+
+| #   | API Name                 | Method | Endpoint / SDK Call                               | Explanation                                                                                  | Status        |
+| --- | ------------------------ | ------ | ------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------------- |
+| 71  | Submit P2P Loan Request  | SDK    | `supabase.from('p2p_loans').insert()`             | Pushes a loan request. Automatically intercepts requests over minor limits.                  | ✅ Integrated |
+| 72  | Submit Guardian NDA      | SDK    | `supabase.from('agreements').insert()`            | If borrower is a minor, automatically creates a guardian consent agreement link.               | ✅ Integrated |
+| 73  | Fund P2P Loan            | SDK    | `supabase.from('p2p_investments').insert()`       | Processes an investor's swipe-to-fund action, inserting an active investment.                | ✅ Integrated |
+| 74  | Repay EMI (Gamified)     | —      | _Local Gamified State (`setReputationScore`)_     | Simulates EMI repayment and dynamically boosts Reputation Score.                               | 🔄 Ongoing    |
+
+---
+
 ### PHASE 13 — AI Advisor (Insights + Chat)
 
 > **Component:** `AIInsights.tsx` • **Trigger:** User navigates to AI tab

@@ -4,7 +4,8 @@
 - **Gen-Z and Millennials (India):** Tech-savvy users looking for a modern, premium financial management experience.
 - **Credit Builders:** Users who want to improve their credit scores, track them, and simulate future financial decisions.
 - **Goal-Oriented Savers:** Individuals aiming to save for specific lifestyle goals (e.g., travel, gadgets) with AI guidance.
-- **Loan Seekers:** Users looking for pre-approved loans, credit cards, or borrowing opportunities from trusted NBFCs/Banks.
+- **Loan Seekers & P2P Participants:** Users looking for pre-approved loans from banks, or engaging in the peer-to-peer lending ecosystem.
+- **Minors & Guardians:** Minors building financial literacy safely under strict guardian-approved constraints within the P2P ecosystem.
 
 ## 2. 🎁 Value Propositions
 - **Centralized "Cyber-Finance" Hub:** A singular financial command center (super-app) combining banking, credit, and lifestyle tracking in a high-fidelity glassmorphic UI.
@@ -26,6 +27,7 @@
 
 ## 5. 💰 Revenue Streams
 - **Lead Generation & Affiliate Fees:** Commission from NBFCs/Banks through the Loan Marketplace (FlowLend) when users convert on credit or loan offers.
+- **P2P Marketplace Processing Fees:** Micro-transaction fees taken on successful P2P loan disbursements and EMIs.
 - **Premium Subscription (FlowMint Black):** Subscription fees for advanced AI features, lower transaction fees, and exclusive experiences.
 - **Interchange Fees (Future Phase):** Transaction fees via FlowPay (UPI/Payments) or co-branded credit cards.
 

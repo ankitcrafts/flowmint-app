@@ -76,7 +76,7 @@ interface InitialSetupProps {
   initialStep?: SetupStep;
 }
 
-type SetupStep = 'name' | 'city' | 'vibe' | 'field' | 'income' | 'savings' | 'identity-choice' | 'details-review' | 'ekyc' | 'card-details' | 'celebration';
+type SetupStep = 'name' | 'dob' | 'guardian-linking' | 'city' | 'vibe' | 'field' | 'income' | 'savings' | 'identity-choice' | 'details-review' | 'ekyc' | 'card-details' | 'celebration';
 
 const FIELD_OPTIONS: Record<string, { label: string, icon: React.ReactNode }[]> = {
   Student: [
@@ -113,6 +113,11 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme, initialS
   const [step, setStep] = useState<SetupStep>(initialStep);
   const [name, setName] = useState('');
   const [nameError, setNameError] = useState('');
+  const [dob, setDob] = useState('');
+  const [dobError, setDobError] = useState('');
+  const [isMinor, setIsMinor] = useState(false);
+  const [guardianId, setGuardianId] = useState('');
+  const [guardianError, setGuardianError] = useState('');
   const [city, setCity] = useState('');
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState('');
@@ -156,7 +161,9 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme, initialS
     let text = "";
     switch (step) {
       case 'name': text = "Hey there! I'm Flowy. What should I call you?"; break;
-      case 'city': text = `Nice to meet you, ${name}! Where are you based?`; break;
+      case 'dob': text = `Nice to meet you, ${name}! When were you born?`; break;
+      case 'guardian-linking': text = "Since you're under 18, please link a Guardian's FlowMint ID or Phone Number."; break;
+      case 'city': text = `Got it! Where are you based?`; break;
       case 'vibe': text = `To build your flow, I need to know your current path:`; break;
       case 'field': text = `Which industry are you focused on?`; break;
       case 'income': text = vibe === 'Student' ? "How much pocket money do you get every month?" : "How much do you bring in every month (after tax)?"; break;
@@ -276,6 +283,50 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme, initialS
     if (!trimmed) { setNameError("Name cannot be empty"); return false; }
     if (!/^[A-Za-z\s]+$/.test(trimmed)) { setNameError("Letters only, please"); return false; }
     setNameError(''); return true;
+  };
+
+  const validateDobAndProceed = () => {
+    if (!dob) { setDobError("Date of Birth is required"); return; }
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    if (age < 18) {
+      setIsMinor(true);
+      setStep('guardian-linking');
+    } else {
+      setIsMinor(false);
+      setStep('city');
+    }
+  };
+
+  const confirmGuardianAndProceed = async () => {
+    if (!guardianId.trim()) { setGuardianError("Guardian/Parent Mobile is required"); return; }
+    
+    // Attempt lookup by mobile number
+    const { data, error } = await supabase.from('app_users')
+      .select('id')
+      .eq('mobile', guardianId.trim())
+      .maybeSingle();
+      
+    if (data && data.id) {
+       setGuardianId(data.id); // Save UUID to state
+       setGuardianError('');
+       setStep('city');
+    } else {
+       // Validate if it is already a UUID format just in case
+       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+       if (uuidRegex.test(guardianId.trim())) {
+          setGuardianError('');
+          setStep('city');
+       } else {
+          setGuardianError("Guardian not found. Make sure they are registered on FlowMint.");
+       }
+    }
   };
 
   const detectLocation = () => {
@@ -452,6 +503,9 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme, initialS
       avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name || 'default'}`,
       verified: isEkycComplete,
       email: 'user@flowmint.com',
+      dob,
+      isMinor,
+      guardianId
     };
 
     // TODO: Save profile to backend when user session is available
@@ -525,8 +579,69 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme, initialS
                 className={`w-full bg-transparent border-b-2 py-4 text-3xl font-black focus:outline-none transition-all placeholder:text-gray-700 ${nameError ? 'border-red-500' : 'border-brand/20 focus:border-brand'}`}
                 style={{ color: 'var(--text-color)' }}
               />
-              <PremiumButton disabled={!name} onClick={() => validateName() && setStep('city')} label="CONTINUE" />
+              <PremiumButton disabled={!name} onClick={() => validateName() && setStep('dob')} label="CONTINUE" />
             </div>
+          )}
+
+          {step === 'dob' && (
+            <div className="space-y-8">
+              <div className="relative">
+                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-brand" />
+                <input 
+                  type="date"
+                  value={dob}
+                  max={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => {
+                    setDob(e.target.value);
+                    setDobError('');
+                  }}
+                  className="w-full bg-white/5 border-2 border-white/5 rounded-2xl pl-12 pr-4 py-5 text-xl font-black focus:outline-none focus:border-brand/50 transition-all custom-date-input"
+                  style={{ 
+                    color: 'var(--text-color)',
+                    borderColor: dobError ? '#EF4444' : 'var(--glass-border)'
+                  }}
+                />
+              </div>
+              {dobError && (
+                <div className="flex items-center gap-2 px-2 text-red-500 animate-in fade-in">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">{dobError}</span>
+                </div>
+              )}
+              <PremiumButton disabled={!dob} onClick={validateDobAndProceed} label="CONTINUE" />
+            </div>
+          )}
+
+          {step === 'guardian-linking' && (
+             <div className="space-y-6">
+               <div className="glass border border-brand/30 rounded-[1.5rem] p-5 mb-4 shadow-[0_0_20px_var(--brand-glow)] animate-in fade-in">
+                  <div className="flex items-start gap-4">
+                     <div className="w-10 h-10 rounded-xl bg-brand/20 flex items-center justify-center shrink-0 text-brand">
+                        <ShieldCheck className="w-5 h-5" />
+                     </div>
+                     <div>
+                        <h4 className="font-black tracking-tight" style={{ color: 'var(--text-color)' }}>Restricted Mode Active</h4>
+                        <p className="text-[10px] mt-1 text-gray-400 font-bold leading-tight">By law, users under 18 must be linked to a Guardian account. They will approve your maximum lending limits.</p>
+                     </div>
+                  </div>
+               </div>
+
+               <input 
+                 type="text"
+                 placeholder="Guardian FlowMint ID or Phone Number"
+                 value={guardianId}
+                 onChange={(e) => { setGuardianId(e.target.value); setGuardianError(''); }}
+                 className="w-full bg-transparent border-b-2 py-4 text-xl font-black focus:outline-none border-brand/20 focus:border-brand transition-all placeholder:text-gray-600"
+                 style={{ color: 'var(--text-color)' }}
+               />
+               {guardianError && (
+                 <div className="flex items-center gap-2 px-2 text-red-500">
+                   <AlertCircle className="w-3.5 h-3.5" />
+                   <span className="text-[10px] font-black uppercase tracking-widest">{guardianError}</span>
+                 </div>
+               )}
+               <PremiumButton disabled={!guardianId} onClick={confirmGuardianAndProceed} label="LINK GUARDIAN" />
+             </div>
           )}
 
           {step === 'city' && (
@@ -1023,7 +1138,7 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme, initialS
       {step !== 'name' && step !== 'celebration' && (
         <button 
           onClick={() => {
-            const steps: SetupStep[] = ['name', 'city', 'vibe', 'field', 'income', 'savings', 'identity-choice', 'details-review', 'ekyc', 'card-details', 'celebration'];
+            const steps: SetupStep[] = ['name', 'dob', 'guardian-linking', 'city', 'vibe', 'field', 'income', 'savings', 'identity-choice', 'details-review', 'ekyc', 'card-details', 'celebration'];
             const idx = steps.indexOf(step);
             if (idx > 0) setStep(steps[idx - 1]);
           }}
@@ -1037,6 +1152,9 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme, initialS
       <style>{`
         ::-webkit-scrollbar { display: none; }
         * { -ms-overflow-style: none; scrollbar-width: none; }
+        .custom-date-input::-webkit-calendar-picker-indicator {
+          filter: invert(0.5); /* Helps visibility on dark themes */
+        }
         .slider-premium::-webkit-slider-thumb {
           -webkit-appearance: none;
           height: 24px; width: 24px;

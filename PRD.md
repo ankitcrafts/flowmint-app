@@ -211,7 +211,7 @@
 
 - [ ] **Gamification Engine:** Points, badges ("Saver", "Investor", "Credit Master"), leaderboards
 - [ ] **FlowCoins Reward System:** Earn coins for financial discipline, redeem for experiences
-- [ ] **P2P Lending:** Peer-to-peer lending marketplace
+- [x] **P2P Lending:** Peer-to-peer lending marketplace
 - [ ] **Investment Module:** Fractional stocks, mutual fund collections
 - [ ] **Cross-border Payments:** International transfer capability
 - [ ] **Community Features:** Financial challenges with friends

@@ -1,6 +1,6 @@
 # FlowMint AI — Custom LLM Strategy
 
-> **Version:** 2.3 | **Updated:** 20 March 2026  
+> **Version:** 2.3 | **Updated:** 22 April 2026  
 > **Stack:** Llama 3.3 70B (Groq) → Gemini 2.0 Flash (Fallback) → Express → React  
 > **Vision:** A resilient, multi-model AI system optimized for Indian financial context.
 
@@ -122,6 +122,7 @@ Migrations: `001_ai_tables.sql`, `create_core_data_tables` (All with RLS + index
 1. **Financial Document RAG**: Ability to upload bank statements and ask questions.
 2. **Context Injection**: Automatically feed small snippets of `transactions` data into prompts.
 3. **Sentiment Analysis**: Alert user when emotional spending is detected.
+4. **P2P Reputation Scoring**: Analyze behavioral repayment patterns and guardian approval limits to dynamically adjust lending risk profiles.
 
 ### Phase 4: Self-Hosted LoRA (Q4 2026)
 

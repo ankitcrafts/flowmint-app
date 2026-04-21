@@ -27,6 +27,7 @@ import FlowPay from './components/FlowPay';
 import FlowCredit from './components/FlowCredit';
 import FlowGoals from './components/FlowGoals';
 import FlowLend from './components/FlowLend';
+import P2PMarketplace from './components/P2PMarketplace';
 import ExpenseTracker from './components/ExpenseTracker';
 import BillReminders from './components/BillReminders';
 import AIWishTracker from './components/AIWishTracker';
@@ -47,6 +48,9 @@ interface UserProfile {
   name: string;
   email: string;
   avatar: string;
+  dob?: string;
+  isMinor?: boolean;
+  guardianId?: string;
 }
 
 enum Tab {
@@ -159,6 +163,20 @@ const App: FC = () => {
     
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
+      if (profile) {
+        const updatePayload: any = {
+          name: profile.name,
+          avatar_url: profile.avatar,
+          updated_at: new Date().toISOString()
+        };
+        if (profile.dob) updatePayload.dob = profile.dob;
+        if (profile.isMinor !== undefined) updatePayload.is_minor = profile.isMinor;
+        if (profile.guardianId) updatePayload.guardian_id = profile.guardianId;
+
+        await supabase.from('profiles').update(updatePayload).eq('id', session.user.id);
+        await supabase.from('app_users').update(updatePayload).eq('id', session.user.id);
+      }
+
       const status = await BiometricService.checkUserEnrollment(session.user.id);
       if (status.isEnrolled && !status.isInvalidated) {
         try {
@@ -227,7 +245,7 @@ const App: FC = () => {
       case Tab.Pay: return <FlowPay />;
       case Tab.Credit: return <FlowCredit />;
       case Tab.Goals: return <FlowGoals />;
-      case Tab.Lend: return <FlowLend />;
+      case Tab.Lend: return <P2PMarketplace userProfile={userProfile} />;
       case Tab.Expenses: return <ExpenseTracker />;
       case Tab.Bills: return <BillReminders />;
       case Tab.Wishes: return <AIWishTracker />;
@@ -339,6 +357,7 @@ const App: FC = () => {
                 <MoreMenuItem icon={<Bell className="w-5 h-5" />} label="Bill Reminders" color="text-yellow-400" onTap={() => handleNavigate('bills')} />
                 <MoreMenuItem icon={<Heart className="w-5 h-5" />} label="Wish Tracker" color="text-pink-400" onTap={() => handleNavigate('wishes')} />
                 <MoreMenuItem icon={<Calculator className="w-5 h-5" />} label="Loan Market" color="text-blue-400" onTap={() => handleNavigate('loans')} />
+                <MoreMenuItem icon={<ShieldCheck className="w-5 h-5" />} label="P2P Market" color="text-emerald-400" onTap={() => handleNavigate('lend')} />
                 <MoreMenuItem icon={<Sparkles className="w-5 h-5" />} label="AI Advisor" color="text-brand" onTap={() => handleNavigate('ai')} />
                 <MoreMenuItem icon={<Wallet className="w-5 h-5" />} label="UPI Pay" color="text-cyan-400" onTap={() => handleNavigate('pay')} />
                 <MoreMenuItem icon={<ShieldCheck className="w-5 h-5 shadow-[0_0_10px_rgba(6,182,212,0.4)]" />} label="Credit Center" color="text-cyan-400" onTap={() => handleNavigate('credit_core')} />

@@ -227,7 +227,7 @@ flowmint/
 | **0.9**   | Cloud Deployment & Security Hardening      | ✅ Done    |
 | **1.0**   | Real Bank Integration (Account Aggregator) | 🔄 Ongoing |
 | **1.1**   | Credit Bureau Real-time Pull               | ❌ Pending |
-| **1.2**   | P2P Smart Lending Engine                   | ❌ Pending |
+| **1.2**   | P2P Smart Lending Engine                   | ✅ Implemented |
 
 ### Running on Mobile (iOS) — _macOS Only_
 
@@ -261,7 +261,7 @@ flowmint---financial-super-app/
 │   ├── ExpenseTracker.tsx      # Expense logging with category breakdown
 │   ├── FlowCredit.tsx          # Credit score gauge, simulator, tips
 │   ├── FlowGoals.tsx           # Savings goals with AI plan generation
-│   ├── FlowLend.tsx            # Lending partners marketplace
+│   ├── P2PMarketplace.tsx      # Peer-to-peer lending marketplace with reputation scoring
 │   ├── FlowPay.tsx             # UPI payments, QR scan, P2P transfer
 │   ├── InitialSetup.tsx        # Multi-step onboarding/KYC wizard
 │   ├── LoanMarketplace.tsx     # Loan products with EMI calculator
