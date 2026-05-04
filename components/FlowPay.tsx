@@ -109,7 +109,7 @@ const FlowPay: React.FC = () => {
         </div>
         <div className="space-y-3">
           <BillCard
-            icon={<Smartphone className="w-5 h-5 text-blue-400" />}
+            icon={<Smartphone className="w-5 h-5 text-brand" />}
             title="iPhone 15 EMI"
             dueDate="In 2 days"
             amount={5499}

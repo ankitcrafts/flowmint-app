@@ -63,8 +63,8 @@ const SustainabilityCard = ({
             CO2 Saved
           </span>
         </div>
-        <div className="flex-1 glass rounded-2xl p-3 flex flex-col items-center justify-center gap-2 border border-white/5 bg-blue-500/5">
-          <Droplets className="w-5 h-5 text-blue-300" />
+        <div className="flex-1 glass rounded-2xl p-3 flex flex-col items-center justify-center gap-2 border border-white/5 bg-brand/5">
+          <Droplets className="w-5 h-5 text-brand" />
           <span className="text-xs font-bold text-gray-400">340L</span>
           <span className="text-[9px] font-black uppercase text-gray-600">
             Water Saved

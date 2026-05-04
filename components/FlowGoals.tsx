@@ -36,7 +36,7 @@ const FlowGoals: React.FC = () => {
 
       <div className="space-y-4">
         <GoalCard 
-          icon={<Plane className="w-6 h-6 text-blue-400" />}
+          icon={<Plane className="w-6 h-6 text-brand" />}
           name="Tokyo Trip 2025"
           current={125000}
           target={250000}

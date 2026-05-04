@@ -29,7 +29,7 @@ const LOAN_PRODUCTS: LoanProduct[] = [
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   briefcase: <Briefcase className="w-5 h-5 text-orange-400" />,
-  phone: <Smartphone className="w-5 h-5 text-blue-400" />,
+  phone: <Smartphone className="w-5 h-5 text-brand" />,
   bike: <Bike className="w-5 h-5 text-red-400" />,
   gem: <Gem className="w-5 h-5 text-yellow-400" />,
   edu: <GraduationCap className="w-5 h-5 text-amber-500" />,

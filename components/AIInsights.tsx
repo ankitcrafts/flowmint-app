@@ -37,7 +37,7 @@ const AI_INSIGHTS: InsightCard[] = [
     severity: 'success', action: 'Check Score',
   },
   {
-    id: '4', category: 'Loan Readiness', icon: <Calculator className="w-5 h-5 text-blue-400" />,
+    id: '4', category: 'Loan Readiness', icon: <Calculator className="w-5 h-5 text-brand" />,
     title: 'Pre-Approved Window Open',
     message: 'Based on your credit score (782) and steady income, you qualify for pre-approved personal loans up to ₹5L at 9.25%. Best rates available now.',
     severity: 'info', action: 'Explore Loans',

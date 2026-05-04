@@ -105,7 +105,7 @@ const UserProfile: FC<UserProfileProps> = ({ userProfile, theme }) => {
         </div>
         
         <ActionRow icon={<Shield className="text-emerald-400" />} title="Biometric Security" subtitle="Face ID & Touch ID enabled" active />
-        <ActionRow icon={<CreditCard className="text-blue-400" />} title="Payment Methods" subtitle="2 Cards, 1 Bank Account" />
+        <ActionRow icon={<CreditCard className="text-brand" />} title="Payment Methods" subtitle="2 Cards, 1 Bank Account" />
         <ActionRow icon={<Activity className="text-purple-400" />} title="Recent Activity" subtitle="Login from new device today" />
         
       </motion.div>

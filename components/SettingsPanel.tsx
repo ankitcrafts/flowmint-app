@@ -49,7 +49,7 @@ const SettingsPanel: FC<SettingsPanelProps> = ({ onClose, onLogout, userProfile,
           {/* Settings Options */}
           <div className="space-y-3">
             <SettingsOption icon={<User className="text-brand" />} title="Personal Information" subtitle="Update your profile details" />
-            <SettingsOption icon={<Bell className="text-blue-400" />} title="Notifications" subtitle="Push, email & SMS settings" />
+            <SettingsOption icon={<Bell className="text-brand" />} title="Notifications" subtitle="Push, email & SMS settings" />
             <SettingsOption icon={<Shield className="text-emerald-400" />} title="Security" subtitle="PIN, Biometrics & Limits" />
           </div>
 

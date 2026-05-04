@@ -42,7 +42,7 @@ const FlowLend: React.FC = () => {
             type="Gold Loan"
           />
           <PartnerOffer 
-            icon={<GraduationCap className="w-5 h-5 text-blue-400" />}
+            icon={<GraduationCap className="w-5 h-5 text-brand" />}
             partner="ICICI Bank"
             maxAmount="₹40 Lakhs"
             interest="10.5%"

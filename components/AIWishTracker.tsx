@@ -33,7 +33,7 @@ interface Wish {
 // ─── Constants ────────────────────────────────────────────
 
 const ICON_MAP: Record<string, React.ReactNode> = {
-  phone: <Smartphone className="w-6 h-6 text-blue-400" />,
+  phone: <Smartphone className="w-6 h-6 text-brand" />,
   plane: <Plane className="w-6 h-6 text-cyan-400" />,
   bike: <Bike className="w-6 h-6 text-red-400" />,
   education: <GraduationCap className="w-6 h-6 text-yellow-400" />,
@@ -1017,7 +1017,7 @@ const AIWishTracker: React.FC = () => {
                   <div className="flex items-center gap-1.5 pl-9">
                     <span className="text-[7px] font-black uppercase tracking-wider text-orange-400">Llama 3.3</span>
                     <ArrowRight className="w-2.5 h-2.5 text-gray-600" />
-                    <span className="text-[7px] font-black uppercase tracking-wider text-blue-400">Gemini</span>
+                    <span className="text-[7px] font-black uppercase tracking-wider text-brand">Gemini</span>
                     <ArrowRight className="w-2.5 h-2.5 text-gray-600" />
                     <span className="text-[7px] font-black uppercase tracking-wider text-gray-400">Smart Math</span>
                   </div>

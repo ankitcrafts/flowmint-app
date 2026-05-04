@@ -493,7 +493,7 @@ const SimulatorToggle: React.FC<{ active: boolean, onToggle: () => void, label: 
 
 // Fix for DetailedTipCard props by using React.FC to allow 'key' prop when used in map
 const DetailedTipCard: React.FC<{ tip: CreditTip }> = ({ tip }) => {
-  const impactColor = tip.impact === 'High' ? 'text-orange-500' : 'text-blue-400';
+  const impactColor = tip.impact === 'High' ? 'text-orange-500' : 'text-brand';
   const statusIcon = tip.status === 'done' ? <CheckCircle2 className="w-5 h-5 text-brand" /> : <AlertCircle className="w-5 h-5 text-red-500 animate-pulse" />;
 
   return (

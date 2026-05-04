@@ -35,12 +35,12 @@ const getIcon = (icon: string) => {
   const map: Record<string, React.ReactNode> = {
     zap: <Zap className="w-5 h-5 text-yellow-400" />,
     home: <Home className="w-5 h-5 text-red-400" />,
-    phone: <Smartphone className="w-5 h-5 text-blue-400" />,
+    phone: <Smartphone className="w-5 h-5 text-brand" />,
     wifi: <Wifi className="w-5 h-5 text-cyan-400" />,
     trending: <TrendingUp className="w-5 h-5 text-brand" />,
     card: <CreditCard className="w-5 h-5 text-amber-500" />,
     flame: <Flame className="w-5 h-5 text-orange-400" />,
-    water: <Droplets className="w-5 h-5 text-blue-300" />,
+    water: <Droplets className="w-5 h-5 text-brand" />,
   };
   return map[icon] || <Bell className="w-5 h-5 text-gray-400" />;
 };

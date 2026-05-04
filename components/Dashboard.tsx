@@ -2,11 +2,11 @@
 import { useState, useEffect, useRef, type FC } from 'react';
 import { motion, AnimatePresence, useInView, useMotionValue, useTransform, animate } from 'framer-motion';
 import {
-  BarChart, Bar, ResponsiveContainer, Cell, XAxis, Tooltip,
+  BarChart, Bar, ResponsiveContainer, Cell, XAxis, YAxis, Tooltip,
   AreaChart, Area, CartesianGrid
 } from 'recharts';
 import {
-  ArrowDownLeft, Sparkles,
+  ArrowDownLeft, Sparkles, Download,
   Coffee, Zap, TrendingDown, Info,
   Eye, EyeOff, ArrowUpRight, Landmark, CreditCard,
   BarChart2, Activity, ShieldAlert, ChevronRight,
@@ -30,6 +30,21 @@ const TREND_STATS = [
   { name: 'W2', spent: 18000, limit: 15000 },
   { name: 'W3', spent: 9000, limit: 15000 },
   { name: 'W4', spent: 14000, limit: 15000 },
+];
+
+const PERFORMANCE_DATA = [
+  { month: 'Jan', usdc: 2100000, token: 2300000 },
+  { month: 'Feb', usdc: 1400000, token: 2000000 },
+  { month: 'Mar', usdc: 1600000, token: 2050000 },
+  { month: 'Apr', usdc: 1450000, token: 1750000 },
+  { month: 'May', usdc: 1550000, token: 1850000 },
+  { month: 'Jun', usdc: 1850000, token: 2000000 },
+  { month: 'Jul', usdc: 2000000, token: 1700000 },
+  { month: 'Aug', usdc: 2450000, token: 2000000 },
+  { month: 'Sep', usdc: 2700000, token: 1850000 },
+  { month: 'Oct', usdc: 2200000, token: 1350000 },
+  { month: 'Nov', usdc: 2550000, token: 1550000 },
+  { month: 'Dec', usdc: 3050000, token: 1820000 },
 ];
 
 const WEALTH_HISTORY = [
@@ -143,14 +158,21 @@ const AnimatedCircularProgress: FC<{ progress: number; size?: number; strokeWidt
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
+    // Ensure Token Price (Green) appears above USDC (Gold)
+    const sortedPayload = [...payload].sort((a, b) => a.dataKey === 'token' ? -1 : 1);
     return (
-      <div className="glass p-3 rounded-2xl border border-white/10 shadow-xl backdrop-blur-xl">
-        <p className="text-[10px] font-black uppercase tracking-widest text-brand mb-1">{label}</p>
-        {payload.map((p: any, i: number) => (
-          <p key={i} className="text-sm font-black" style={{ color: p.color || 'var(--text-color)' }}>
-            ₹{p.value.toLocaleString()}
-          </p>
-        ))}
+      <div className="bg-white dark:bg-[#161B22] p-4 rounded-[1.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-gray-100 dark:border-white/5">
+        <p className="text-[11px] font-black uppercase tracking-widest text-[#C9A227] mb-2">{label}</p>
+        <div className="space-y-1">
+          {sortedPayload.map((p: any, i: number) => {
+            const color = p.dataKey === 'token' ? '#22C55E' : '#C9A227';
+            return (
+              <p key={i} className="text-[17px] font-black leading-tight" style={{ color }}>
+                ₹{p.value.toLocaleString()}
+              </p>
+            );
+          })}
+        </div>
       </div>
     );
   }
@@ -171,8 +193,8 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
   const [wealthHistory, setWealthHistory] = useState<{date: string, balance: number}[]>(WEALTH_HISTORY);
 
   // ─── Theme-Aware Brand Colors (Matches index.css) ──────────
-  const brandPrimary = theme === 'light' ? '#D4A017' : '#00ffa3';
-  const brandGlow = theme === 'light' ? 'rgba(212, 160, 23, 0.35)' : 'rgba(0, 255, 163, 0.3)';
+  const brandPrimary = theme === 'light' ? '#C9A227' : '#22C55E';
+  const brandGlow = theme === 'light' ? 'rgba(201, 162, 39, 0.1)' : 'rgba(34, 197, 94, 0.15)';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -481,7 +503,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
                 <span className="text-[9px] font-black text-brand uppercase">+12 pts</span>
               </motion.div>
               <div className="mt-3">
-                <AnimatedProgressBar progress={((creditScore - 300) / 600) * 100} delay={0.8} height="h-1.5" />
+                <AnimatedProgressBar progress={((creditScore - 300) / 600) * 100} color="var(--color-success)" delay={0.8} height="h-1.5" />
               </div>
             </>
           )}
@@ -702,7 +724,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
         </div>
       </motion.div>
 
-      {/* ═══ Spending Flow Chart ═══════════════════════════════ */}
+      {/* ═══ Recent Performance Chart ═══════════════════════════════ */}
       <motion.section 
         variants={cardSlideUp} 
         className="glass rounded-[2.5rem] p-[var(--card-padding)] border theme-transition relative overflow-hidden group shadow-2xl" 
@@ -715,101 +737,112 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
              style={{ backgroundImage: 'radial-gradient(var(--brand-primary) 0.5px, transparent 0.5px)', backgroundSize: '16px 16px' }} />
 
-        <div className="flex items-center justify-between mb-8 relative z-10">
-          <div>
-            <h3 className="font-black text-xl tracking-tight" style={{ color: 'var(--text-color)' }}>Spending Flow</h3>
-            <div className="flex items-center gap-2 mt-1">
-               <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: brandPrimary }} />
-               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">Trend Intelligence</p>
+        <div className="flex flex-col mb-8 relative z-10">
+          <div className="flex items-start justify-between">
+            <h3 className="font-bold text-lg" style={{ color: 'var(--text-color)' }}>Recent performance</h3>
+            
+            {/* Controls */}
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:flex p-1 rounded-xl" style={{ backgroundColor: 'var(--card-subtle)' }}>
+                {['1D', '5D', '1M', '6M', '1Y'].map((t) => (
+                  <button key={t} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${t === '1M' ? 'text-brand shadow-sm' : 'text-gray-500'}`} style={t === '1M' ? { backgroundColor: 'var(--brand-glow)' } : {}}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+              <button className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ backgroundColor: 'var(--card-subtle)' }}>
+                <Download className="w-4 h-4 text-gray-500" />
+              </button>
             </div>
           </div>
-          
-          {/* Neumorphic / Glass Toggle */}
-          <div className="flex p-1.5 rounded-2xl gap-1 shadow-inner" style={{ backgroundColor: 'var(--card-subtle)' }}>
-            {(['daily', 'trend'] as const).map((view) => (
-              <motion.button
-                key={view}
-                onClick={() => setChartView(view)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all duration-300 ${chartView === view ? 'bg-brand text-black shadow-[0_4px_12px_var(--brand-glow)]' : 'text-gray-500'}`}
-              >
-                {view === 'daily' ? <BarChart2 className="w-3.5 h-3.5" /> : <Activity className="w-3.5 h-3.5" />}
-                {view.toUpperCase()}
-              </motion.button>
-            ))}
+
+          {/* Stats Row */}
+          <div className="flex items-center gap-8 mt-6">
+            <div className="flex flex-col">
+               <div className="flex items-center gap-2 mb-1">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#C9A227' }} />
+                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">USDC</span>
+               </div>
+               <div className="flex items-baseline">
+                  <span className="text-3xl font-black tracking-tight" style={{ color: 'var(--text-color)' }}>32.658</span>
+                  <span className="text-xl font-black text-gray-500">,45</span>
+               </div>
+            </div>
+            <div className="flex flex-col">
+               <div className="flex items-center gap-2 mb-1">
+                  <span className="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.4)]" style={{ backgroundColor: '#22C55E' }} />
+                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Token price</span>
+               </div>
+               <div className="flex items-baseline">
+                  <span className="text-3xl font-black tracking-tight" style={{ color: 'var(--text-color)' }}>1.028</span>
+               </div>
+            </div>
           </div>
         </div>
 
-        <AnimatePresence mode="wait">
-          <motion.div 
-            key={chartView}
-            initial={{ opacity: 0, scale: 0.98, filter: 'blur(10px)' }}
-            animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, scale: 1.02, filter: 'blur(10px)' }}
-            transition={{ duration: 0.5, ease: 'circOut' }}
-            className="h-60 w-full relative z-10"
-          >
-            <ResponsiveContainer width="100%" height="100%">
-              {chartView === 'daily' ? (
-                <BarChart data={dailyStats} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={brandPrimary} stopOpacity={1} />
-                      <stop offset="100%" stopColor={brandPrimary} stopOpacity={0.3} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#6B7280' }} dy={10} />
-                  <Tooltip cursor={{ fill: 'var(--card-subtle)', radius: 12 }} content={<CustomTooltip />} />
-                  <Bar dataKey="value" radius={[8, 8, 8, 8]} barSize={28}>
-                    {dailyStats.map((entry, index) => {
-                      const isMax = entry.value === Math.max(...dailyStats.map(d => d.value));
-                      return (
-                        <Cell 
-                          key={`c-${index}`} 
-                          fill="url(#barGradient)"
-                          style={{ filter: isMax ? `drop-shadow(0 0 12px ${brandGlow})` : 'none' }}
-                        />
-                      );
-                    })}
-                  </Bar>
-                </BarChart>
-              ) : (
-                <AreaChart data={TREND_STATS} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={brandPrimary} stopOpacity={0.4} />
-                      <stop offset="100%" stopColor={brandPrimary} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="6 6" stroke="var(--glass-border)" vertical={false} opacity={0.5} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#6B7280' }} dy={10} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Area 
-                    type="monotone" 
-                    dataKey="spent" 
-                    stroke={brandPrimary} 
-                    strokeWidth={4} 
-                    fillOpacity={1} 
-                    fill="url(#areaGradient)" 
-                    animationDuration={2000}
-                    dot={{ r: 4, fill: brandPrimary, strokeWidth: 2, stroke: '#fff' }}
-                    activeDot={{ r: 8, stroke: brandPrimary, strokeWidth: 4, fill: '#fff' }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="limit" 
-                    stroke="#EF4444" 
-                    strokeWidth={2} 
-                    strokeDasharray="8 8" 
-                    fill="transparent" 
-                    opacity={0.3}
-                  />
-                </AreaChart>
-              )}
-            </ResponsiveContainer>
-          </motion.div>
-        </AnimatePresence>
+        <div className="h-64 w-full relative z-10 -ml-4">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={PERFORMANCE_DATA} margin={{ top: 10, right: 15, left: 0, bottom: 0 }} style={{ outline: 'none' }}>
+              <defs>
+                <linearGradient id="fadeGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#C9A227" stopOpacity={0.8} />
+                  <stop offset="100%" stopColor="#C9A227" stopOpacity={0} />
+                </linearGradient>
+                <pattern id="verticalStripes" width="6" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(0)">
+                  <line x1="0" y1="0" x2="0" y2="20" stroke="#C9A227" strokeWidth="1" />
+                </pattern>
+                <mask id="stripeMask">
+                  <rect x="0" y="0" width="100%" height="100%" fill="url(#verticalStripes)" />
+                </mask>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="transparent" />
+              <YAxis 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fontSize: 10, fontWeight: 700, fill: '#6B7280' }} 
+                tickFormatter={(val) => val === 0 ? '0M' : `${val / 1000000}M`}
+                width={45}
+                domain={[0, 3000000]}
+                ticks={[0, 1000000, 1500000, 2000000, 2500000, 3000000]}
+              />
+              <XAxis 
+                dataKey="month" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fontSize: 10, fontWeight: 700, fill: '#6B7280' }} 
+                dy={10} 
+                interval={0}
+              />
+              <Tooltip 
+                cursor={{ stroke: '#C9A227', strokeWidth: 1, opacity: 0.5 }} 
+                content={<CustomTooltip />} 
+              />
+              {/* Secondary Series: Token Price */}
+              <Area 
+                type="monotone" 
+                dataKey="token" 
+                stroke="#22C55E" 
+                strokeWidth={2} 
+                strokeDasharray="4 4" 
+                fill="transparent" 
+                dot={false}
+                activeDot={false}
+              />
+              {/* Primary Series: USDC */}
+              <Area 
+                type="monotone" 
+                dataKey="usdc" 
+                stroke="#C9A227" 
+                strokeWidth={2.5} 
+                fillOpacity={1} 
+                fill="url(#fadeGradient)" 
+                mask="url(#stripeMask)"
+                dot={false}
+                activeDot={{ r: 5, stroke: '#C9A227', strokeWidth: 2, fill: '#fff' }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
 
         {/* Cash Flow Summary Summary */}
         <div className="pt-8 border-t space-y-6 relative z-10" style={{ borderColor: 'var(--glass-border)' }}>
@@ -978,11 +1011,11 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
 
            {/* Trust Marker 2 */}
            <div className="glass rounded-3xl p-5 border border-brand/5 flex flex-col items-center text-center gap-3 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-              <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-                 <Lock className="w-5 h-5 text-blue-400" />
+              <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center">
+                 <Lock className="w-5 h-5 text-brand" />
               </div>
               <div className="space-y-1">
-                 <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">PCI-DSS Ready</p>
+                 <p className="text-[10px] font-black text-brand uppercase tracking-widest">PCI-DSS Ready</p>
                  <p className="text-[8px] text-gray-500 font-bold uppercase">Encrypted Handshake</p>
               </div>
            </div>

@@ -4,79 +4,57 @@
    DARK THEME (Default)
    ═══════════════════════════════════════════ */
 :root {
-  --bg-color: #0a0a0a;
-  --text-color: #ffffff;
-  --glass-bg: rgba(255, 255, 255, 0.03);
-  --glass-border: rgba(255, 255, 255, 0.05);
-  --card-subtle: rgba(255, 255, 255, 0.05);
-  --nav-bg: rgba(10, 10, 10, 0.8);
+  --bg-color: #0B0F0C;
+  --text-color: #E5E7EB;
+  --text-secondary: #9CA3AF;
+  --text-muted: #6B7280;
+  --glass-bg: #111827;
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --card-subtle: #161B22;
+  --nav-bg: rgba(11, 15, 12, 0.8);
 
-  /* Brand Colors - Dark (Mint focused) */
-  --brand-primary: #00ffa3;
-  --brand-secondary: #00d1ff;
-  --brand-glow: rgba(0, 255, 163, 0.3);
-  --brand-on-primary: #000000;
+  /* Brand Colors - Dark */
+  --brand-primary: #22C55E;
+  --brand-secondary: #16A34A;
+  --brand-glow: rgba(34, 197, 94, 0.15);
+  --brand-on-primary: #FFFFFF;
 }
 
 /* ═══════════════════════════════════════════
-   LIGHT THEME — Premium Neumorphic
-   Final Palette:
-     Background:    #F6F7FB
-     Surface:       #FFFFFF
-     Soft Surface:  #EEF1F6
-     Primary:       #FFC107   Hover: #E6AC00
-     Secondary:     #3B82F6   (alt: #14B8A6)
-     Text Primary:  #1A1D1F
-     Text Secondary:#6B7280
-     Success:       #22C55E
-     Error:         #EF4444
-     Warning:       #F59E0B
-   Shadows:
-     Light:  #FFFFFF  (top-left highlight)
-     Dark:   #D1D9E6  (bottom-right)
+   LIGHT THEME — Clean & Minimal
    ═══════════════════════════════════════════ */
 .light {
-  --bg-color: #F6F7FB;
-  --text-color: #1A1D1F;
-  --glass-bg: #FFFFFF;
-  --glass-border: #EEF1F6;
-  --card-subtle: #EEF1F6;
-  --nav-bg: #F6F7FB;
+  --bg-color: #F8FAFC;
+  --text-color: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #94A3B8;
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  --glass-border: rgba(226, 232, 240, 0.8);
+  --card-subtle: rgba(255, 255, 255, 0.45);
+  --nav-bg: rgba(248, 250, 252, 0.9);
 
-  /* Brand Colors — Warm Golden Yellow */
-  --brand-primary: #FFC107;
-  --brand-secondary: #E6AC00;
-  --brand-glow: rgba(255, 193, 7, 0.22);
-  --brand-on-primary: #1A1D1F;
+  /* Brand Colors */
+  --brand-primary: #C9A227; /* Gold accent */
+  --brand-secondary: #A6831A;
+  --brand-glow: rgba(201, 162, 39, 0.1);
+  --brand-on-primary: #0F172A; /* Dark text/icons on gold */
 
   /* Accent & Semantic Colors */
-  --accent-blue: #3B82F6;
+  --accent-blue: #C9A227; /* Fallback accent replaced with gold */
   --accent-teal: #14B8A6;
-  --color-success: #22C55E;
+  --color-success: #22C55E; /* Green strictly for positive values */
   --color-error: #EF4444;
   --color-warning: #F59E0B;
-  --text-secondary: #6B7280;
 
-  /* Neumorphic Shadow System — Premium #D1D9E6 / #FFFFFF */
-  --neu-raised:
-    6px 6px 12px #D1D9E6,
-    -6px -6px 12px #FFFFFF;
-  --neu-raised-sm:
-    3px 3px 6px #D1D9E6,
-    -3px -3px 6px #FFFFFF;
-  --neu-inset:
-    inset 3px 3px 6px #D1D9E6,
-    inset -3px -3px 6px #FFFFFF;
-  --neu-inset-sm:
-    inset 2px 2px 4px #D1D9E6,
-    inset -2px -2px 4px #FFFFFF;
-  --neu-flat:
-    2px 2px 4px #D1D9E6,
-    -2px -2px 4px #FFFFFF;
+  /* Soft shadow for depth */
+  --neu-raised: 0 4px 12px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  --neu-raised-sm: 0 2px 6px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --neu-inset: inset 0 2px 4px rgba(0, 0, 0, 0.03);
+  --neu-inset-sm: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+  --neu-flat: 0 1px 2px rgba(0, 0, 0, 0.02);
 
-  /* Surface gradients */
-  --neu-convex: linear-gradient(145deg, #FFFFFF, #EEF1F6);
-  --neu-concave: linear-gradient(145deg, #E8EBF0, #FFFFFF);
+  --neu-convex: #FFFFFF;
+  --neu-concave: #F8FAFC;
 }
 
 /* ═══════════════════════════════════════════
@@ -164,16 +142,14 @@ body::before {
 .light .glass {
   background: var(--neu-convex);
   backdrop-filter: none;
-  border: none;
+  border: 1px solid var(--glass-border);
   border-radius: 24px;
   box-shadow: var(--neu-raised);
   transition: box-shadow 0.3s ease, transform 0.25s ease;
 }
 
 .light .glass:hover {
-  box-shadow:
-    8px 8px 16px #D1D9E6,
-    -8px -8px 16px #FFFFFF;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 /* ─── Neumorphic Inset (inputs, recessed areas) ─── */
@@ -181,7 +157,7 @@ body::before {
 .light textarea,
 .light select {
   background: var(--bg-color);
-  border: none;
+  border: 1px solid var(--glass-border);
   box-shadow: var(--neu-inset-sm);
   border-radius: 12px;
   color: var(--text-color);
@@ -190,9 +166,8 @@ body::before {
 .light input:focus,
 .light textarea:focus,
 .light select:focus {
-  box-shadow:
-    var(--neu-inset),
-    0 0 0 2px rgba(255, 193, 7, 0.35);
+  box-shadow: var(--neu-inset);
+  border-color: var(--brand-primary);
   outline: none;
 }
 
@@ -256,13 +231,9 @@ body::before {
 }
 
 .light .mint-gradient {
-  background: linear-gradient(135deg, #FFC107 0%, #FFD54F 40%, #E6AC00 100%);
+  background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
   border: none;
-  box-shadow:
-    3px 3px 6px #D1D9E6,
-    -3px -3px 6px #FFFFFF,
-    inset 0 2px 0 rgba(255,255,255,0.45),
-    inset 0 -2px 0 rgba(0,0,0,0.04);
+  box-shadow: var(--neu-raised-sm);
 }
 
 /* ═══════════════════════════════════════════
@@ -271,11 +242,11 @@ body::before {
 .text-brand { color: var(--brand-primary); }
 .bg-brand { background-color: var(--brand-primary); }
 
-/* Gold text: readable on #F6F7FB surface */
-.light .text-brand { color: #E6AC00; }
+/* Gold text removed, using consistent text brand color */
+.light .text-brand { color: var(--brand-primary); }
 
 .light .bg-brand {
-  background-color: #FFC107;
+  background-color: var(--brand-primary);
   border: none;
   box-shadow: var(--neu-raised-sm);
 }
@@ -285,32 +256,30 @@ body::before {
    ═══════════════════════════════════════════ */
 .light nav.glass {
   background: var(--neu-convex);
-  border: none;
+  border: 1px solid var(--glass-border);
+  border-bottom: none;
   border-radius: 24px 24px 0 0;
-  box-shadow:
-    0 -6px 12px #D1D9E6,
-    inset 0 1px 0 rgba(255,255,255,0.8);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
 }
 
 .light header.glass {
   background: var(--neu-convex);
-  border: none;
+  border: 1px solid var(--glass-border);
+  border-top: none;
   border-radius: 0 0 24px 24px;
-  box-shadow:
-    0 6px 12px #D1D9E6,
-    inset 0 -1px 0 rgba(255,255,255,0.8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
 /* ─── Progress bar tracks (recessed neumorphic channel) ─── */
 .light .rounded-full.overflow-hidden {
   box-shadow: var(--neu-inset-sm);
-  background-color: #EEF1F6 !important;
+  background-color: var(--glass-border) !important;
 }
 
 .light .bg-brand.h-full,
 .light .h-full.bg-brand,
 .light .bg-brand.rounded-full {
-  background-color: #FFC107 !important;
+  background-color: var(--brand-primary) !important;
   box-shadow: none;
   border: none;
 }
@@ -348,7 +317,7 @@ body::before {
 }
 
 .light .neu-dot.active {
-  background: linear-gradient(145deg, #FFC107, #E6AC00);
+  background: var(--brand-primary);
   box-shadow: var(--neu-raised-sm);
 }
 
@@ -383,8 +352,8 @@ body::before {
 }
 
 @keyframes neuPulse {
-  0%, 100% { box-shadow: 6px 6px 12px #D1D9E6, -6px -6px 12px #FFFFFF; }
-  50% { box-shadow: 3px 3px 6px #D1D9E6, -3px -3px 6px #FFFFFF; }
+  0%, 100% { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04); }
+  50% { box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02); }
 }
 
 /* ═══════════════════════════════════════════
@@ -424,9 +393,9 @@ body::before {
 
 /* Ripple glow — subtle radiance on important buttons */
 @keyframes rippleGlow {
-  0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4); }
-  70% { box-shadow: 0 0 0 12px rgba(255, 193, 7, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.3); }
+  70% { box-shadow: 0 0 0 12px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
 }
 
 /* Breathing card — subtle scale pulse for live elements */
@@ -501,9 +470,7 @@ body::before {
 }
 .light .hover-lift:hover {
   transform: translateY(-3px);
-  box-shadow:
-    8px 8px 16px #D1D9E6,
-    -8px -8px 16px #FFFFFF;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.03);
 }
 
 /* Tap feedback — press-in effect */
@@ -537,12 +504,12 @@ body::before {
 }
 
 .light .shimmer-bar::after {
-  background: linear-gradient(90deg, transparent 0%, rgba(255,193,7,0.12) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(34, 197, 94, 0.08) 50%, transparent 100%);
 }
 
-/* Gold shimmer text */
+/* Gold shimmer text removed - using normal shimmer or green shimmer */
 .light .gold-shimmer {
-  background: linear-gradient(90deg, #E6AC00 0%, #FFC107 40%, #FFD54F 60%, #E6AC00 100%);
+  background: linear-gradient(90deg, var(--brand-secondary) 0%, var(--brand-primary) 40%, var(--brand-secondary) 60%, var(--brand-primary) 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -561,4 +528,15 @@ body::before {
     color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
     border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Force removal of all focus borders/outlines on charts */
+.recharts-wrapper, 
+.recharts-surface,
+.recharts-responsive-container {
+  outline: none !important;
+}
+.recharts-wrapper *:focus,
+.recharts-surface:focus {
+  outline: none !important;
 }
