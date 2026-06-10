@@ -260,62 +260,165 @@ const App: FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full max-w-md mx-auto relative theme-transition flex flex-col bg-bg">
+    <div className="min-h-screen w-full relative theme-transition flex bg-bg overflow-x-hidden">
       <div className="noise-overlay" />
-      <header className="sticky top-0 z-50 px-[var(--card-padding)] py-4 glass flex items-center justify-between theme-transition" 
-              style={{ 
-                backgroundColor: 'var(--nav-bg)', 
-                borderColor: 'var(--glass-border)',
-                paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' 
-              }}>
-        <button onClick={() => handleNavigate('dashboard')} className="flex items-center gap-2 cursor-pointer">
-          <div className="w-8 h-8 bg-brand rounded-lg flex items-center justify-center">
-            <Zap className="w-5 h-5 text-black fill-black" />
-          </div>
-          <span className="font-extrabold text-xl tracking-tighter" style={{ color: 'var(--text-color)' }}>FlowMint</span>
-        </button>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-xl glass hover:bg-white/10 transition-colors"
-          >
-            {theme === 'dark' ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-brand" />}
-          </button>
-          <button className="relative p-2 rounded-full hover:bg-black/5">
-            <Bell className="w-5 h-5 text-gray-400" />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2" style={{ borderColor: 'var(--bg-color)' }}></span>
-          </button>
-          <button
-             onClick={() => setShowSettings(true)}
-             className="relative p-2 rounded-full hover:bg-black/5"
-          >
-            <Settings className="w-5 h-5 text-gray-400" />
-          </button>
-          <button
-            onClick={() => handleNavigate('profile')}
-            className="w-8 h-8 rounded-full overflow-hidden border-2 border-brand theme-transition cursor-pointer block"
-          >
-            <img src={userProfile?.avatar || "https://picsum.photos/seed/user1/100/100"} alt="Avatar" />
+
+      {/* Sidebar - Visible on Tablet/Desktop (md and up) */}
+      <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 border-r theme-transition z-50 shrink-0"
+             style={{ 
+               backgroundColor: 'var(--nav-bg)', 
+               borderColor: 'var(--glass-border)',
+               backdropFilter: 'blur(12px)'
+             }}>
+        {/* Sidebar Header / Logo */}
+        <div className="p-6 border-b" style={{ borderColor: 'var(--glass-border)' }}>
+          <button onClick={() => handleNavigate('dashboard')} className="flex items-center gap-2 cursor-pointer w-full text-left bg-transparent border-none p-0">
+            <div className="w-8 h-8 bg-brand rounded-lg flex items-center justify-center">
+              <Zap className="w-5 h-5 text-black fill-black" />
+            </div>
+            <span className="font-extrabold text-xl tracking-tighter" style={{ color: 'var(--text-color)' }}>FlowMint</span>
           </button>
         </div>
-      </header>
 
-      <main className="px-[var(--card-padding)] py-4 flex-grow overflow-x-hidden">
+        {/* Sidebar Navigation */}
+        <div className="flex-grow overflow-y-auto py-6 px-4 space-y-1 scrollbar-hide">
+          <SidebarNavButton active={activeTab === Tab.Dashboard} onClick={() => handleNavigate('dashboard')} icon={<LayoutDashboard className="w-4 h-4" />} label="Dashboard" />
+          <SidebarNavButton active={activeTab === Tab.Expenses} onClick={() => handleNavigate('expenses')} icon={<Receipt className="w-4 h-4" />} label="Expenses" />
+          <SidebarNavButton active={activeTab === Tab.Pay} onClick={() => handleNavigate('pay')} icon={<Wallet className="w-4 h-4" />} label="UPI Pay" />
+          <SidebarNavButton active={activeTab === Tab.CreditCore || activeTab === Tab.Credit || activeTab === Tab.CreditUpload} onClick={() => handleNavigate('credit_core')} icon={<ShieldCheck className="w-4 h-4" />} label="Credit Center" />
+          <SidebarNavButton active={activeTab === Tab.Goals} onClick={() => handleNavigate('goals')} icon={<Target className="w-4 h-4" />} label="Goals" />
+          <SidebarNavButton active={activeTab === Tab.Lend} onClick={() => handleNavigate('lend')} icon={<ShieldCheck className="w-4 h-4" />} label="P2P Market" />
+          <SidebarNavButton active={activeTab === Tab.Bills} onClick={() => handleNavigate('bills')} icon={<Bell className="w-4 h-4" />} label="Bill Reminders" />
+          <SidebarNavButton active={activeTab === Tab.Wishes} onClick={() => handleNavigate('wishes')} icon={<Heart className="w-4 h-4" />} label="Wish Tracker" />
+          <SidebarNavButton active={activeTab === Tab.Loans} onClick={() => handleNavigate('loans')} icon={<Calculator className="w-4 h-4" />} label="Loan Market" />
+          <SidebarNavButton active={activeTab === Tab.AI} onClick={() => handleNavigate('ai')} icon={<Sparkles className="w-4 h-4" />} label="AI Advisor" />
+          <SidebarNavButton active={activeTab === Tab.Rewards} onClick={() => handleNavigate('rewards')} icon={<Gift className="w-4 h-4" />} label="Rewards" />
+        </div>
 
-        <ErrorBoundary>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
+        {/* Sidebar Footer / User Profile & Settings */}
+        <div className="p-4 border-t space-y-3" style={{ borderColor: 'var(--glass-border)' }}>
+          <div className="flex items-center justify-between gap-2">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-xl glass hover:bg-white/10 transition-colors flex-grow flex justify-center cursor-pointer"
             >
-              {renderContent()}
-            </motion.div>
-          </AnimatePresence>
-        </ErrorBoundary>
-      </main>
+              {theme === 'dark' ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-brand" />}
+            </button>
+            <button
+               onClick={() => setShowSettings(true)}
+               className="p-2 rounded-xl glass hover:bg-white/10 transition-colors flex-grow flex justify-center cursor-pointer"
+            >
+              <Settings className="w-4 h-4 text-gray-400" />
+            </button>
+          </div>
+          <button
+            onClick={() => handleNavigate('profile')}
+            className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 w-full text-left transition-colors cursor-pointer border-none bg-transparent"
+          >
+            <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-brand shrink-0">
+              <img src={userProfile?.avatar || "https://picsum.photos/seed/user1/100/100"} alt="Avatar" className="w-full h-full object-cover" />
+            </div>
+            <div className="truncate">
+              <p className="font-bold text-xs truncate" style={{ color: 'var(--text-color)' }}>{userProfile?.name}</p>
+              <p className="text-[10px] text-gray-500 truncate">{userProfile?.email}</p>
+            </div>
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-grow min-h-screen flex flex-col md:max-w-none w-full max-w-md mx-auto relative">
+        {/* Mobile Header (md:hidden) */}
+        <header className="sticky top-0 z-50 px-[var(--card-padding)] py-4 glass flex md:hidden items-center justify-between theme-transition" 
+                style={{ 
+                  backgroundColor: 'var(--nav-bg)', 
+                  borderColor: 'var(--glass-border)',
+                  paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' 
+                }}>
+          <button onClick={() => handleNavigate('dashboard')} className="flex items-center gap-2 cursor-pointer bg-transparent border-none p-0">
+            <div className="w-8 h-8 bg-brand rounded-lg flex items-center justify-center">
+              <Zap className="w-5 h-5 text-black fill-black" />
+            </div>
+            <span className="font-extrabold text-xl tracking-tighter" style={{ color: 'var(--text-color)' }}>FlowMint</span>
+          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-xl glass hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              {theme === 'dark' ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-brand" />}
+            </button>
+            <button className="relative p-2 rounded-full hover:bg-black/5 cursor-pointer bg-transparent border-none">
+              <Bell className="w-5 h-5 text-gray-400" />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2" style={{ borderColor: 'var(--bg-color)' }}></span>
+            </button>
+            <button
+               onClick={() => setShowSettings(true)}
+               className="relative p-2 rounded-full hover:bg-black/5 cursor-pointer bg-transparent border-none"
+            >
+              <Settings className="w-5 h-5 text-gray-400" />
+            </button>
+            <button
+              onClick={() => handleNavigate('profile')}
+              className="w-8 h-8 rounded-full overflow-hidden border-2 border-brand theme-transition cursor-pointer block p-0"
+            >
+              <img src={userProfile?.avatar || "https://picsum.photos/seed/user1/100/100"} alt="Avatar" className="w-full h-full object-cover" />
+            </button>
+          </div>
+        </header>
+
+        {/* Desktop Header (hidden on mobile, visible on md+) */}
+        <header className="hidden md:flex sticky top-0 z-40 px-8 py-4 border-b items-center justify-between theme-transition"
+                style={{ 
+                  backgroundColor: 'var(--nav-bg)', 
+                  borderColor: 'var(--glass-border)',
+                  backdropFilter: 'blur(12px)'
+                }}>
+          <h2 className="text-2xl font-black tracking-tight uppercase" style={{ color: 'var(--text-color)' }}>
+            {activeTab === Tab.Dashboard && 'Dashboard'}
+            {activeTab === Tab.Expenses && 'Expense Tracker'}
+            {activeTab === Tab.Pay && 'UPI Payments'}
+            {activeTab === Tab.CreditCore && 'Credit Center'}
+            {activeTab === Tab.Credit && 'Credit Score'}
+            {activeTab === Tab.CreditUpload && 'Upload Statement'}
+            {activeTab === Tab.Goals && 'Savings Goals'}
+            {activeTab === Tab.Lend && 'Community Lend'}
+            {activeTab === Tab.Bills && 'Bill Reminders'}
+            {activeTab === Tab.Wishes && 'AI Wish Tracker'}
+            {activeTab === Tab.Loans && 'Loan Marketplace'}
+            {activeTab === Tab.AI && 'Flow AI Advisor'}
+            {activeTab === Tab.Rewards && 'Gamified Rewards'}
+            {activeTab === Tab.Profile && 'User Profile'}
+          </h2>
+          <div className="flex items-center gap-4">
+            <button className="relative p-2 rounded-full hover:bg-white/5 transition-colors cursor-pointer bg-transparent border-none">
+              <Bell className="w-5 h-5 text-gray-400" />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2" style={{ borderColor: 'var(--bg-color)' }}></span>
+            </button>
+            <div className="h-6 w-px" style={{ backgroundColor: 'var(--glass-border)' }}></div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold text-gray-400">Welcome, {userProfile?.name.split(' ')[0]}!</span>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="px-[var(--card-padding)] md:px-8 py-4 md:py-6 flex-grow overflow-x-hidden md:max-w-6xl md:w-full md:mx-auto">
+          <ErrorBoundary>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                {renderContent()}
+              </motion.div>
+            </AnimatePresence>
+          </ErrorBoundary>
+        </main>
+      </div>
 
       {/* Settings Overlay */}
       <AnimatePresence>
@@ -373,7 +476,7 @@ const App: FC = () => {
       </AnimatePresence>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto glass border-t px-6 py-3 z-50 rounded-t-[2.5rem] shadow-[0_-10px_30px_rgba(0,0,0,0.1)] theme-transition" 
+      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto glass border-t px-6 py-3 z-50 rounded-t-[2.5rem] shadow-[0_-10px_30px_rgba(0,0,0,0.1)] theme-transition md:hidden" 
            style={{ 
              backgroundColor: 'var(--nav-bg)', 
              borderColor: 'var(--glass-border)',
@@ -395,7 +498,7 @@ const App: FC = () => {
           <div className="relative -mt-12">
             <button
               onClick={() => setShowMore(!showMore)}
-              className="w-14 h-14 mint-gradient rounded-full flex items-center justify-center shadow-lg border-4 theme-transition"
+              className="w-14 h-14 mint-gradient rounded-full flex items-center justify-center shadow-lg border-4 theme-transition cursor-pointer"
               style={{ borderColor: 'var(--bg-color)', boxShadow: '0 10px 20px var(--brand-glow)' }}
             >
               {showMore ? <X className="w-7 h-7 text-black" /> : <Plus className="w-7 h-7 text-black" />}
@@ -416,9 +519,20 @@ const App: FC = () => {
         </div>
       </nav>
     </div>
-
   );
 };
+
+const SidebarNavButton: FC<{ active: boolean, onClick: () => void, icon: ReactNode, label: string }> = ({ active, onClick, icon, label }) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl font-bold text-sm tracking-tight transition-all text-left cursor-pointer border-none bg-transparent ${active ? 'bg-brand text-black shadow-md shadow-brand/10' : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'}`}
+  >
+    <div className={`transition-transform duration-300 ${active ? 'scale-110' : ''}`}>
+      {icon}
+    </div>
+    <span>{label}</span>
+  </button>
+);
 
 const NavButton: FC<{ active: boolean, onClick: () => void, icon: ReactNode, label: string }> = ({ active, onClick, icon, label }) => (
   <button
@@ -444,3 +558,4 @@ const MoreMenuItem: FC<{ icon: ReactNode, label: string, color: string, onTap: (
 );
 
 export default App;
+

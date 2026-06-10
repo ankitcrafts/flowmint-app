@@ -505,7 +505,7 @@ const AIWishTracker: React.FC = () => {
           )}
 
           {/* Wish Cards */}
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <AnimatePresence>
               {wishes.map((wish, index) => {
                 const progress = wish.price > 0 ? Math.round((wish.savedSoFar / wish.price) * 100) : 0;
@@ -812,67 +812,69 @@ const AIWishTracker: React.FC = () => {
             </motion.div>
           )}
 
-          <AnimatePresence>
-            {history.map((conv, i) => {
-              const ctx = conv.input_context as any;
-              const resp = conv.ai_response as any;
-              const date = new Date(conv.created_at);
-              const timeAgo = getTimeAgo(date);
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <AnimatePresence>
+              {history.map((conv, i) => {
+                const ctx = conv.input_context as any;
+                const resp = conv.ai_response as any;
+                const date = new Date(conv.created_at);
+                const timeAgo = getTimeAgo(date);
 
-              return (
-                <motion.div
-                  key={conv.id}
-                  custom={i}
-                  variants={cardVariants}
-                  initial="hidden"
-                  animate="visible"
-                  className="glass rounded-[2rem] p-5 border theme-transition hover:border-brand/30 transition-colors cursor-pointer"
-                  style={{ borderColor: 'var(--glass-border)' }}
-                  onClick={() => restoreFromHistory(conv)}
-                  whileHover={{ scale: 1.01, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <motion.div
-                        whileHover={{ rotate: 15 }}
-                        className="w-10 h-10 rounded-xl flex items-center justify-center"
-                        style={{ backgroundColor: 'var(--card-subtle)' }}
-                      >
-                        <Sparkles className="w-5 h-5 text-brand" />
-                      </motion.div>
-                      <div>
-                        <h4 className="text-sm font-black tracking-tight" style={{ color: 'var(--text-color)' }}>
-                          {conv.title || ctx?.wishName || 'Saving Plan'}
-                        </h4>
-                        <p className="text-[10px] text-gray-500 font-bold mt-0.5">
-                          ₹{(ctx?.price || 0).toLocaleString()} • {timeAgo}
-                        </p>
+                return (
+                  <motion.div
+                    key={conv.id}
+                    custom={i}
+                    variants={cardVariants}
+                    initial="hidden"
+                    animate="visible"
+                    className="glass rounded-[2rem] p-5 border theme-transition hover:border-brand/30 transition-colors cursor-pointer"
+                    style={{ borderColor: 'var(--glass-border)' }}
+                    onClick={() => restoreFromHistory(conv)}
+                    whileHover={{ scale: 1.01, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <motion.div
+                          whileHover={{ rotate: 15 }}
+                          className="w-10 h-10 rounded-xl flex items-center justify-center"
+                          style={{ backgroundColor: 'var(--card-subtle)' }}
+                        >
+                          <Sparkles className="w-5 h-5 text-brand" />
+                        </motion.div>
+                        <div>
+                          <h4 className="text-sm font-black tracking-tight" style={{ color: 'var(--text-color)' }}>
+                            {conv.title || ctx?.wishName || 'Saving Plan'}
+                          </h4>
+                          <p className="text-[10px] text-gray-500 font-bold mt-0.5">
+                            ₹{(ctx?.price || 0).toLocaleString()} • {timeAgo}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {conv.user_rating && (
+                          <div className="flex items-center gap-0.5">
+                            <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                            <span className="text-[10px] font-black text-yellow-400">{conv.user_rating}</span>
+                          </div>
+                        )}
+                        {conv.is_bookmarked && (
+                          <BookmarkCheck className="w-4 h-4 text-brand" />
+                        )}
+                        <ArrowRight className="w-4 h-4 text-gray-600" />
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {conv.user_rating && (
-                        <div className="flex items-center gap-0.5">
-                          <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                          <span className="text-[10px] font-black text-yellow-400">{conv.user_rating}</span>
-                        </div>
-                      )}
-                      {conv.is_bookmarked && (
-                        <BookmarkCheck className="w-4 h-4 text-brand" />
-                      )}
-                      <ArrowRight className="w-4 h-4 text-gray-600" />
-                    </div>
-                  </div>
 
-                  {resp?.aiTip && (
-                    <p className="text-[11px] text-gray-400 mt-3 line-clamp-2 leading-relaxed pl-[52px]">
-                      {resp.aiTip}
-                    </p>
-                  )}
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
+                    {resp?.aiTip && (
+                      <p className="text-[11px] text-gray-400 mt-3 line-clamp-2 leading-relaxed pl-[52px]">
+                        {resp.aiTip}
+                      </p>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
         </motion.div>
       )}
       </AnimatePresence>

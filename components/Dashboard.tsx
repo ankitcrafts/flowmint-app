@@ -313,7 +313,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="space-y-[var(--section-gap)] pb-4"
+      className="grid grid-cols-1 lg:grid-cols-3 gap-[var(--section-gap)] pb-24 md:pb-6"
     >
       {/* ═══ Verification Nudge ═══════════════════════════════ */}
       {!userProfile?.verified && (
@@ -321,7 +321,7 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
           variants={cardSlideUp}
           whileHover={{ scale: 1.02, y: -2 }}
           whileTap={{ scale: 0.98 }}
-          className="glass rounded-[2.2rem] p-[var(--card-padding)] border-2 border-brand/20 bg-brand/5 flex items-center justify-between group cursor-pointer hover:bg-brand/10 transition-all shadow-[0_10px_30px_rgba(0,255,163,0.1)]"
+          className="col-span-1 lg:col-span-3 glass rounded-[2.2rem] p-[var(--card-padding)] border-2 border-brand/20 bg-brand/5 flex items-center justify-between group cursor-pointer hover:bg-brand/10 transition-all shadow-[0_10px_30px_rgba(0,255,163,0.1)]"
           onClick={() => onNavigate?.('credit')}>
           <div className="flex items-center gap-4">
             <motion.div 
@@ -346,709 +346,714 @@ const Dashboard: FC<DashboardProps> = ({ theme = 'dark', userProfile, onNavigate
         </motion.div>
       )}
 
-      {/* ═══ Wealth Card ═══════════════════════════════════════ */}
-      <motion.section 
-        variants={cardSlideUp} 
-        whileHover={{ y: -3 }}
-        className="glass rounded-[2.5rem] border overflow-hidden theme-transition" 
-        style={{ borderColor: 'var(--glass-border)' }}
-      >
-        <div className="p-[var(--card-padding)] pb-2 flex items-center justify-between">
-          <motion.div 
-            className="flex items-center gap-3"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-             <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center p-1.5 shadow-lg"><Landmark className="text-white w-full h-full" /></div>
-             <div><h4 className="font-black text-sm uppercase tracking-tighter" style={{ color: 'var(--text-color)' }}>HDFC Bank</h4><p className="text-[10px] text-gray-500 font-bold">***3566</p></div>
-          </motion.div>
-          <motion.button 
-            whileHover={{ scale: 1.1, rotate: 5 }}
-            whileTap={{ scale: 0.9 }}
-            className="p-2 glass rounded-xl" 
-            style={{ backgroundColor: 'var(--card-subtle)' }}
-          >
-            <CreditCard className="w-4 h-4 text-brand" />
-          </motion.button>
-        </div>
-
-        <div className="px-[var(--card-padding)] pt-4">
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Current Balance</p>
-            <motion.button 
-              onClick={() => setShowBalance(!showBalance)} 
-              whileHover={{ scale: 1.2 }}
-              whileTap={{ scale: 0.8 }}
-              className="text-gray-500 hover:text-brand transition-colors"
+      {/* Left Column (2/3 width on Desktop) */}
+      <div className="col-span-1 lg:col-span-2 space-y-[var(--section-gap)]">
+        {/* ═══ Wealth Card ═══════════════════════════════════════ */}
+        <motion.section 
+          whileHover={{ y: -3 }}
+          className="glass rounded-[2.5rem] border overflow-hidden theme-transition" 
+          style={{ borderColor: 'var(--glass-border)' }}
+        >
+          <div className="p-[var(--card-padding)] pb-2 flex items-center justify-between">
+            <motion.div 
+              className="flex items-center gap-3"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
             >
-              {showBalance ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+               <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center p-1.5 shadow-lg"><Landmark className="text-white w-full h-full" /></div>
+               <div><h4 className="font-black text-sm uppercase tracking-tighter" style={{ color: 'var(--text-color)' }}>HDFC Bank</h4><p className="text-[10px] text-gray-500 font-bold">***3566</p></div>
+            </motion.div>
+            <motion.button 
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              whileTap={{ scale: 0.9 }}
+              className="p-2 glass rounded-xl" 
+              style={{ backgroundColor: 'var(--card-subtle)' }}
+            >
+              <CreditCard className="w-4 h-4 text-brand" />
             </motion.button>
           </div>
-          <AnimatePresence mode="wait">
-            <motion.h2 
-              key={showBalance ? 'visible' : 'hidden'}
-              initial={{ opacity: 0, y: 10, filter: 'blur(8px)' }}
-              animate={{ opacity: 1, y: 0, filter: showBalance ? 'blur(0px)' : 'blur(10px)' }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.4 }}
-              className="text-4xl font-black mt-2 tracking-tighter"
-              style={{ color: 'var(--text-color)' }}
-            >
-              ₹<AnimatedCounter value={currentBalance} /><span className="text-xl opacity-40">.00</span>
-            </motion.h2>
-          </AnimatePresence>
-        </div>
 
-        <motion.div 
-          className="h-28 w-full mt-4 -mb-1 opacity-80"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.8 }}
-          transition={{ delay: 0.8, duration: 1 }}
-        >
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={wealthHistory} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-              <defs><linearGradient id="wealthGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={brandPrimary} stopOpacity={0.3}/><stop offset="95%" stopColor={brandPrimary} stopOpacity={0}/></linearGradient></defs>
-              <Area type="monotone" dataKey="balance" stroke={brandPrimary} strokeWidth={3} fillOpacity={1} fill="url(#wealthGrad)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </motion.div>
-      </motion.section>
-
-      {/* ═══ Quick Actions ═════════════════════════════════════ */}
-      <motion.div variants={cardSlideUp} className="grid grid-cols-4 gap-[calc(var(--section-gap)*0.6)]">
-        {[
-          { icon: <Plus className="w-5 h-5" />, label: 'Add Expense', tab: 'expenses' },
-          { icon: <Target className="w-5 h-5" />, label: 'Goals', tab: 'wishes' },
-          { icon: <Bell className="w-5 h-5" />, label: 'Bills', tab: 'bills', badge: upcomingBills },
-          { icon: <Calculator className="w-5 h-5" />, label: 'Loans', tab: 'loans' },
-        ].map((action, i) => (
-          <motion.button
-            key={action.tab}
-            onClick={() => onNavigate?.(action.tab)}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 + i * 0.08, type: 'spring', stiffness: 200 }}
-            whileHover={{ scale: 1.05, y: -4 }}
-            whileTap={{ scale: 0.95 }}
-            className="group flex flex-col items-center justify-center p-2 min-h-[90px] w-full glass rounded-[1.2rem] border theme-transition hover:border-brand/40 hover:shadow-[0_4px_20px_var(--brand-glow)] transition-all relative z-10"
-            style={{ borderColor: 'var(--glass-border)' }}
-          >
-            {typeof action.badge === 'number' && action.badge > 0 && (
-              <motion.span 
-                initial={{ scale: 0, rotate: -45 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ delay: 0.8, type: 'spring', stiffness: 500, damping: 15 }}
-                className="absolute -top-1.5 -right-1.5 w-[22px] h-[22px] bg-red-500/90 backdrop-blur-md border border-white/20 rounded-full text-[9px] font-black text-white flex items-center justify-center shadow-lg shadow-red-500/40 z-20"
+          <div className="px-[var(--card-padding)] pt-4">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Current Balance</p>
+              <motion.button 
+                onClick={() => setShowBalance(!showBalance)} 
+                whileHover={{ scale: 1.2 }}
+                whileTap={{ scale: 0.8 }}
+                className="text-gray-500 hover:text-brand transition-colors"
               >
-                {action.badge}
-              </motion.span>
-            )}
-            <motion.div 
-               className="text-brand mb-1.5"
-               whileHover={{ rotate: [0, -15, 15, -10, 10, 0], scale: 1.15 }}
-               transition={{ duration: 0.5 }}
-            >
-              {action.icon}
-            </motion.div>
-            <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest text-center leading-[1.2] group-hover:text-gray-300 transition-colors">{action.label}</span>
-          </motion.button>
-        ))}
-      </motion.div>
+                {showBalance ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+              </motion.button>
+            </div>
+            <AnimatePresence mode="wait">
+              <motion.h2 
+                key={showBalance ? 'visible' : 'hidden'}
+                initial={{ opacity: 0, y: 10, filter: 'blur(8px)' }}
+                animate={{ opacity: 1, y: 0, filter: showBalance ? 'blur(0px)' : 'blur(10px)' }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.4 }}
+                className="text-4xl font-black mt-2 tracking-tighter"
+                style={{ color: 'var(--text-color)' }}
+              >
+                ₹<AnimatedCounter value={currentBalance} /><span className="text-xl opacity-40">.00</span>
+              </motion.h2>
+            </AnimatePresence>
+          </div>
 
-      {/* ═══ Credit + EMI Stress Row ═══════════════════════════ */}
-      <motion.div variants={cardSlideUp} className="grid grid-cols-2 gap-[var(--section-gap)]">
-        {/* Credit Health */}
-        <motion.div 
-          whileHover={{ scale: 1.03, y: -3 }}
-          whileTap={{ scale: 0.97 }}
-          className="glass rounded-[2rem] p-[var(--card-padding)] border theme-transition cursor-pointer transition-all"
-          style={{ borderColor: 'var(--glass-border)' }}
-          onClick={() => onNavigate?.('credit')}
-        >
           <motion.div 
-            className="flex items-center gap-2 mb-3"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5 }}
+            className="h-28 w-full mt-4 -mb-1 opacity-80"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.8 }}
+            transition={{ delay: 0.8, duration: 1 }}
           >
-            <motion.div animate={{ rotate: [0, 10, -10, 0] }} transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}>
-              <Shield className="w-4 h-4 text-brand" />
-            </motion.div>
-            <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Credit Health</span>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={wealthHistory} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                <defs><linearGradient id="wealthGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={brandPrimary} stopOpacity={0.3}/><stop offset="95%" stopColor={brandPrimary} stopOpacity={0}/></linearGradient></defs>
+                <Area type="monotone" dataKey="balance" stroke={brandPrimary} strokeWidth={3} fillOpacity={1} fill="url(#wealthGrad)" />
+              </AreaChart>
+            </ResponsiveContainer>
           </motion.div>
-          {creditScore === null ? (
-            <>
-              <h3 className="text-lg font-black tracking-tighter text-gray-500 mt-2 mb-2 leading-tight">
-                Unlock your<br/>CIBIL Score
-              </h3>
-              <div className="mt-4">
-                <AnimatedProgressBar progress={0} delay={0.8} height="h-1.5" />
+        </motion.section>
+
+        {/* ═══ Recent Performance Chart ═══════════════════════════════ */}
+        <motion.section 
+          variants={cardSlideUp} 
+          className="glass rounded-[2.5rem] p-[var(--card-padding)] border theme-transition relative overflow-hidden group shadow-2xl" 
+          style={{ 
+            borderColor: 'var(--glass-border)',
+            background: theme === 'light' ? 'var(--bg-color)' : 'rgba(255,255,255,0.02)'
+          }}
+        >
+          {/* Subtle Background Mesh */}
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
+               style={{ backgroundImage: 'radial-gradient(var(--brand-primary) 0.5px, transparent 0.5px)', backgroundSize: '16px 16px' }} />
+
+          <div className="flex flex-col mb-8 relative z-10">
+            <div className="flex items-start justify-between">
+              <h3 className="font-bold text-lg" style={{ color: 'var(--text-color)' }}>Recent performance</h3>
+              
+              {/* Controls */}
+              <div className="flex items-center gap-4">
+                <div className="hidden sm:flex p-1 rounded-xl" style={{ backgroundColor: 'var(--card-subtle)' }}>
+                  {['1D', '5D', '1M', '6M', '1Y'].map((t) => (
+                    <button key={t} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${t === '1M' ? 'text-brand shadow-sm' : 'text-gray-500'}`} style={t === '1M' ? { backgroundColor: 'var(--brand-glow)' } : {}}>
+                      {t}
+                    </button>
+                  ))}
+                </div>
+                <button className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ backgroundColor: 'var(--card-subtle)' }}>
+                  <Download className="w-4 h-4 text-gray-500" />
+                </button>
               </div>
-            </>
-          ) : (
-            <>
-              <h3 className="text-3xl font-black tracking-tighter text-brand">
-                <AnimatedCounter value={creditScore} duration={2} />
-              </h3>
+            </div>
+
+            {/* Stats Row */}
+            <div className="flex items-center gap-8 mt-6">
+              <div className="flex flex-col">
+                 <div className="flex items-center gap-2 mb-1">
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#C9A227' }} />
+                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">USDC</span>
+                 </div>
+                 <div className="flex items-baseline">
+                    <span className="text-3xl font-black tracking-tight" style={{ color: 'var(--text-color)' }}>32.658</span>
+                    <span className="text-xl font-black text-gray-500">,45</span>
+                 </div>
+              </div>
+              <div className="flex flex-col">
+                 <div className="flex items-center gap-2 mb-1">
+                    <span className="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.4)]" style={{ backgroundColor: '#22C55E' }} />
+                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Token price</span>
+                 </div>
+                 <div className="flex items-baseline">
+                    <span className="text-3xl font-black tracking-tight" style={{ color: 'var(--text-color)' }}>1.028</span>
+                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="h-64 w-full relative z-10 -ml-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={PERFORMANCE_DATA} margin={{ top: 10, right: 15, left: 0, bottom: 0 }} style={{ outline: 'none' }}>
+                <defs>
+                  <linearGradient id="fadeGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#C9A227" stopOpacity={0.8} />
+                    <stop offset="100%" stopColor="#C9A227" stopOpacity={0} />
+                  </linearGradient>
+                  <pattern id="verticalStripes" width="6" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(0)">
+                    <line x1="0" y1="0" x2="0" y2="20" stroke="#C9A227" strokeWidth="1" />
+                  </pattern>
+                  <mask id="stripeMask">
+                    <rect x="0" y="0" width="100%" height="100%" fill="url(#verticalStripes)" />
+                  </mask>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="transparent" />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fontWeight: 700, fill: '#6B7280' }} 
+                  tickFormatter={(val) => val === 0 ? '0M' : `${val / 1000000}M`}
+                  width={45}
+                  domain={[0, 3000000]}
+                  ticks={[0, 1000000, 1500000, 2000000, 2500000, 3000000]}
+                />
+                <XAxis 
+                  dataKey="month" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fontWeight: 700, fill: '#6B7280' }} 
+                  dy={10} 
+                  interval={0}
+                />
+                <Tooltip 
+                  cursor={{ stroke: '#C9A227', strokeWidth: 1, opacity: 0.5 }} 
+                  content={<CustomTooltip />} 
+                />
+                {/* Secondary Series: Token Price */}
+                <Area 
+                  type="monotone" 
+                  dataKey="token" 
+                  stroke="#22C55E" 
+                  strokeWidth={2} 
+                  strokeDasharray="4 4" 
+                  fill="transparent" 
+                  dot={false}
+                  activeDot={false}
+                />
+                {/* Primary Series: USDC */}
+                <Area 
+                  type="monotone" 
+                  dataKey="usdc" 
+                  stroke="#C9A227" 
+                  strokeWidth={2.5} 
+                  fillOpacity={1} 
+                  fill="url(#fadeGradient)" 
+                  mask="url(#stripeMask)"
+                  dot={false}
+                  activeDot={{ r: 5, stroke: '#C9A227', strokeWidth: 2, fill: '#fff' }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Cash Flow Summary Summary */}
+          <div className="pt-8 border-t space-y-6 relative z-10" style={{ borderColor: 'var(--glass-border)' }}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                 <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--card-subtle)' }}>
+                   <TrendingDown className="w-5 h-5 text-brand" />
+                 </div>
+                 <div>
+                    <h3 className="font-black text-lg tracking-tight" style={{ color: 'var(--text-color)' }}>Cash Flow</h3>
+                    <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Balanced Status</p>
+                 </div>
+              </div>
+              {/* Lively Status Badge */}
               <motion.div 
-                className="flex items-center gap-1 mt-1"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1.5 }}
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ repeat: Infinity, duration: 2.5 }}
+                className="bg-emerald-500/10 text-emerald-500 text-[10px] font-black px-4 py-1.5 rounded-full border border-emerald-500/20"
               >
-                <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>
-                  <TrendingUp className="w-3 h-3 text-brand" />
-                </motion.div>
-                <span className="text-[9px] font-black text-brand uppercase">+12 pts</span>
+                STABLE
               </motion.div>
-              <div className="mt-3">
-                <AnimatedProgressBar progress={((creditScore - 300) / 600) * 100} color="var(--color-success)" delay={0.8} height="h-1.5" />
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex justify-between items-end">
+                <div>
+                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Spent</p>
+                  <p className="text-2xl font-black mt-1" style={{ color: 'var(--text-color)' }}>
+                    <span className="text-sm opacity-40 mr-1">₹</span>
+                    <AnimatedCounter value={24500} duration={1.8} />
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Budget Left</p>
+                  <p className="text-2xl font-black mt-1 text-brand">
+                    <span className="text-sm opacity-40 mr-1">₹</span>
+                    <AnimatedCounter value={15500} duration={2} />
+                  </p>
+                </div>
               </div>
-            </>
-          )}
+
+              <div className="relative pt-2">
+                 <AnimatedProgressBar progress={62} color={brandPrimary} delay={1.2} />
+                 <motion.div 
+                   initial={{ width: 0 }}
+                   animate={{ width: '62%' }}
+                   transition={{ duration: 1.5, delay: 1.2 }}
+                   className="absolute top-2 right-0 flex justify-end"
+                 >
+                   <div className="w-1 h-3 bg-brand/30 blur-[2px] rounded-full" />
+                 </motion.div>
+              </div>
+              
+              <div className="flex justify-between items-center px-1">
+                 <p className="text-[9px] font-black text-gray-500 uppercase tracking-tighter">Budget Control: <span className="text-brand">62%</span></p>
+                 <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map(i => (
+                      <div key={i} className={`w-1 h-1 rounded-full ${i <= 3 ? 'bg-brand' : 'bg-gray-700'}`} />
+                    ))}
+                 </div>
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ═══ Recent Activity ═══════════════════════════════════ */}
+        <motion.section variants={cardSlideUp} className="space-y-[calc(var(--section-gap)*0.75)] pb-10">
+          <div className="flex items-center justify-between px-2">
+            <div className="flex items-center gap-2">
+              <motion.div
+                animate={{ rotate: [0, -10, 10, 0] }}
+                transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
+              >
+                <Activity className="w-5 h-5 text-brand" />
+              </motion.div>
+              <h3 className="font-black text-lg" style={{ color: 'var(--text-color)' }}>Recent Swipes</h3>
+            </div>
+            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{transactions.length} transactions</span>
+          </div>
+          <div className="space-y-3">
+            {transactions.map((tx, i) => {
+              const catConfig = getCategoryConfig(tx.category, tx.type);
+              return (
+                <motion.div
+                  key={tx.id}
+                  initial={{ opacity: 0, x: -40, scale: 0.95 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  transition={{ delay: 0.08 * i, type: 'spring', stiffness: 180, damping: 18 }}
+                  whileHover={{ scale: 1.03, x: 10 }}
+                  whileTap={{ scale: 0.96 }}
+                  className="flex items-center justify-between p-[var(--card-padding)] glass rounded-[1.8rem] border theme-transition cursor-pointer"
+                  style={{ borderColor: 'var(--glass-border)' }}
+                >
+                  <div className="flex items-center gap-4">
+                    <motion.div 
+                      whileHover={{ rotate: [0, -15, 15, 0], scale: 1.15 }}
+                      transition={{ duration: 0.5 }}
+                      className="w-12 h-12 rounded-[1.2rem] flex items-center justify-center relative overflow-hidden"
+                      style={{ backgroundColor: catConfig.bg }}
+                    >
+                      {/* Subtle shimmer on icon container */}
+                      <motion.div
+                        className="absolute inset-0"
+                        animate={{ opacity: [0, 0.3, 0] }}
+                        transition={{ repeat: Infinity, duration: 2, delay: i * 0.2 }}
+                        style={{ background: `linear-gradient(135deg, transparent 40%, ${catConfig.color}30 50%, transparent 60%)` }}
+                      />
+                      {catConfig.icon}
+                    </motion.div>
+                    <div>
+                      <p className="font-bold text-sm" style={{ color: 'var(--text-color)' }}>{tx.title}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] text-gray-500 font-bold uppercase">{tx.date}</span>
+                        <span className="w-1 h-1 rounded-full bg-gray-400" />
+                        <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: catConfig.color }}>{tx.category}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.3 + 0.08 * i, type: 'spring', stiffness: 300 }}
+                    className="text-right"
+                  >
+                    <p className="font-black text-sm" style={{ color: tx.type === 'income' ? '#10B981' : 'var(--text-color)' }}>
+                      {tx.type === 'expense' ? '-' : '+'}<span className="text-[10px]">₹</span>{tx.amount.toLocaleString()}
+                    </p>
+                    {tx.type === 'income' && (
+                      <motion.span 
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.6 + 0.08 * i }}
+                        className="text-[8px] font-black text-emerald-500 uppercase tracking-widest"
+                      >
+                        credited
+                      </motion.span>
+                    )}
+                  </motion.div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </motion.section>
+      </div>
+
+      {/* Right Column (1/3 width on Desktop) */}
+      <div className="col-span-1 space-y-[var(--section-gap)]">
+        {/* ═══ Quick Actions ═════════════════════════════════════ */}
+        <motion.div variants={cardSlideUp} className="grid grid-cols-4 gap-[calc(var(--section-gap)*0.6)]">
+          {[
+            { icon: <Plus className="w-5 h-5" />, label: 'Add Expense', tab: 'expenses' },
+            { icon: <Target className="w-5 h-5" />, label: 'Goals', tab: 'wishes' },
+            { icon: <Bell className="w-5 h-5" />, label: 'Bills', tab: 'bills', badge: upcomingBills },
+            { icon: <Calculator className="w-5 h-5" />, label: 'Loans', tab: 'loans' },
+          ].map((action, i) => (
+            <motion.button
+              key={action.tab}
+              onClick={() => onNavigate?.(action.tab)}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 + i * 0.08, type: 'spring', stiffness: 200 }}
+              whileHover={{ scale: 1.05, y: -4 }}
+              whileTap={{ scale: 0.95 }}
+              className="group flex flex-col items-center justify-center p-2 min-h-[90px] w-full glass rounded-[1.2rem] border theme-transition hover:border-brand/40 hover:shadow-[0_4px_20px_var(--brand-glow)] transition-all relative z-10 cursor-pointer"
+              style={{ borderColor: 'var(--glass-border)' }}
+            >
+              {typeof action.badge === 'number' && action.badge > 0 && (
+                <motion.span 
+                  initial={{ scale: 0, rotate: -45 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ delay: 0.8, type: 'spring', stiffness: 500, damping: 15 }}
+                  className="absolute -top-1.5 -right-1.5 w-[22px] h-[22px] bg-red-500/90 backdrop-blur-md border border-white/20 rounded-full text-[9px] font-black text-white flex items-center justify-center shadow-lg shadow-red-500/40 z-20"
+                >
+                  {action.badge}
+                </motion.span>
+              )}
+              <motion.div 
+                 className="text-brand mb-1.5"
+                 whileHover={{ rotate: [0, -15, 15, -10, 10, 0], scale: 1.15 }}
+                 transition={{ duration: 0.5 }}
+              >
+                {action.icon}
+              </motion.div>
+              <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest text-center leading-[1.2] group-hover:text-gray-300 transition-colors">{action.label}</span>
+            </motion.button>
+          ))}
         </motion.div>
 
-        {/* EMI Stress */}
+        {/* ═══ Credit + EMI Stress Row ═══════════════════════════ */}
+        <motion.div variants={cardSlideUp} className="grid grid-cols-2 gap-[var(--section-gap)]">
+          {/* Credit Health */}
+          <motion.div 
+            whileHover={{ scale: 1.03, y: -3 }}
+            whileTap={{ scale: 0.97 }}
+            className="glass rounded-[2rem] p-[var(--card-padding)] border theme-transition cursor-pointer transition-all"
+            style={{ borderColor: 'var(--glass-border)' }}
+            onClick={() => onNavigate?.('credit')}
+          >
+            <motion.div 
+              className="flex items-center gap-2 mb-3"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <motion.div animate={{ rotate: [0, 10, -10, 0] }} transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}>
+                <Shield className="w-4 h-4 text-brand" />
+              </motion.div>
+              <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Credit Health</span>
+            </motion.div>
+            {creditScore === null ? (
+              <>
+                <h3 className="text-lg font-black tracking-tighter text-gray-500 mt-2 mb-2 leading-tight">
+                  Unlock your<br/>CIBIL Score
+                </h3>
+                <div className="mt-4">
+                  <AnimatedProgressBar progress={0} delay={0.8} height="h-1.5" />
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="text-3xl font-black tracking-tighter text-brand">
+                  <AnimatedCounter value={creditScore} duration={2} />
+                </h3>
+                <motion.div 
+                  className="flex items-center gap-1 mt-1"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1.5 }}
+                >
+                  <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>
+                    <TrendingUp className="w-3 h-3 text-brand" />
+                  </motion.div>
+                  <span className="text-[9px] font-black text-brand uppercase">+12 pts</span>
+                </motion.div>
+                <div className="mt-3">
+                  <AnimatedProgressBar progress={((creditScore - 300) / 600) * 100} color="var(--color-success)" delay={0.8} height="h-1.5" />
+                </div>
+              </>
+            )}
+          </motion.div>
+
+          {/* EMI Stress */}
+          <motion.div 
+            whileHover={{ scale: 1.03, y: -3 }}
+            whileTap={{ scale: 0.97 }}
+            className="glass rounded-[2rem] p-[var(--card-padding)] border theme-transition cursor-pointer transition-all"
+            style={{ borderColor: 'var(--glass-border)' }}
+            onClick={() => onNavigate?.('bills')}
+          >
+            <motion.div 
+              className="flex items-center gap-2 mb-3"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.55 }}
+            >
+              <Percent className="w-4 h-4" style={{ color: emiToIncome > 40 ? '#F59E0B' : 'var(--brand-primary)' }} />
+              <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">EMI Stress</span>
+            </motion.div>
+            <h3 className="text-3xl font-black tracking-tighter" style={{ color: emiToIncome > 40 ? '#F59E0B' : 'var(--brand-primary)' }}>
+              <AnimatedCounter value={emiToIncome} duration={1.8} suffix="%" />
+            </h3>
+            <span className="text-[9px] font-black text-gray-500 uppercase">of income</span>
+            <div className="mt-3">
+              <AnimatedProgressBar 
+                progress={emiToIncome} 
+                color={emiToIncome > 50 ? '#EF4444' : emiToIncome > 35 ? '#F59E0B' : 'var(--brand-primary)'} 
+                delay={0.9}
+                height="h-1.5"
+              />
+            </div>
+          </motion.div>
+        </motion.div>
+
+        {/* ═══ Loan Readiness — Enhanced ═════════════════════════ */}
+        {(() => {
+          const statusConfig = loanReadiness >= 80 
+            ? { label: 'HIGH', color: '#10B981', bg: 'rgba(16,185,129,0.15)', glow: 'rgba(16,185,129,0.4)', gradient: 'linear-gradient(135deg, #10B981, #059669)', desc: 'Excellent! You qualify for top-tier rates.' }
+            : loanReadiness >= 50
+              ? { label: 'MODERATE', color: '#F59E0B', bg: 'rgba(245,158,11,0.15)', glow: 'rgba(245,158,11,0.4)', gradient: 'linear-gradient(135deg, #F59E0B, #D97706)', desc: 'Good standing. Improve to unlock better rates.' }
+              : { label: 'BASIC', color: '#EF4444', bg: 'rgba(239,68,68,0.15)', glow: 'rgba(239,68,68,0.4)', gradient: 'linear-gradient(135deg, #EF4444, #DC2626)', desc: 'Needs work. Build credit to improve eligibility.' };
+
+          return (
+            <motion.div 
+              variants={cardSlideUp}
+              whileHover={{ scale: 1.02, y: -3 }}
+              whileTap={{ scale: 0.97 }}
+              className="glass rounded-[2.2rem] p-[var(--card-padding)] border-2 theme-transition cursor-pointer transition-all relative overflow-hidden"
+              style={{ borderColor: statusConfig.color + '30' }}
+              onClick={() => onNavigate?.('loans')}
+            >
+              {/* Background status glow */}
+              <motion.div 
+                className="absolute top-0 right-0 w-40 h-40 rounded-full blur-3xl pointer-events-none"
+                animate={{ opacity: [0.08, 0.15, 0.08], scale: [1, 1.1, 1] }}
+                transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
+                style={{ backgroundColor: statusConfig.color }}
+              />
+
+              <div className="flex items-center justify-between relative z-10">
+                <div className="flex-1">
+                  {/* Header */}
+                  <motion.div 
+                    className="flex items-center gap-2 mb-3"
+                    initial={{ opacity: 0, x: -15 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.6 }}
+                  >
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: statusConfig.bg }}>
+                      <Calculator className="w-4 h-4" style={{ color: statusConfig.color }} />
+                    </div>
+                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Loan Readiness</span>
+                  </motion.div>
+
+                  {/* Score + Badge Row */}
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="text-3xl font-black tracking-tighter" style={{ color: statusConfig.color }}>
+                      <AnimatedCounter value={loanReadiness} duration={2} suffix="%" />
+                    </h3>
+                    {/* ── Vivid Status Badge ── */}
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0, rotate: -10 }}
+                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                      transition={{ delay: 1.2, type: 'spring' as const, stiffness: 400, damping: 15 }}
+                    >
+                      <motion.span 
+                        className="relative inline-flex items-center gap-1 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-wider text-white shadow-lg"
+                        style={{ background: statusConfig.gradient, boxShadow: `0 4px 15px ${statusConfig.glow}` }}
+                        animate={{ boxShadow: [`0 4px 15px ${statusConfig.glow}`, `0 4px 25px ${statusConfig.glow}`, `0 4px 15px ${statusConfig.glow}`] }}
+                        transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-white/60 animate-pulse" />
+                        {statusConfig.label}
+                      </motion.span>
+                    </motion.div>
+                  </div>
+
+                  {/* Description */}
+                  <motion.p 
+                    className="text-[10px] text-gray-400 font-medium leading-tight"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1.8 }}
+                  >
+                    {statusConfig.desc}
+                  </motion.p>
+                </div>
+
+                {/* Circular progress */}
+                <AnimatedCircularProgress 
+                  progress={loanReadiness} 
+                  delay={0.8} 
+                  size={80} 
+                  strokeWidth={6}
+                  color={statusConfig.color}
+                  glowColor={statusConfig.glow}
+                />
+              </div>
+
+              {/* Bottom progress bar */}
+              <div className="mt-4">
+                <AnimatedProgressBar progress={loanReadiness} color={statusConfig.color} delay={1.0} height="h-1.5" />
+              </div>
+            </motion.div>
+          );
+        })()}
+
+        {/* ═══ Upcoming Bills ════════════════════════════════════ */}
         <motion.div 
-          whileHover={{ scale: 1.03, y: -3 }}
-          whileTap={{ scale: 0.97 }}
-          className="glass rounded-[2rem] p-[var(--card-padding)] border theme-transition cursor-pointer transition-all"
+          variants={cardSlideRight}
+          whileHover={{ scale: 1.02, x: 5 }}
+          whileTap={{ scale: 0.98 }}
+          className="glass rounded-[2.2rem] p-[var(--card-padding)] border theme-transition cursor-pointer transition-all"
           style={{ borderColor: 'var(--glass-border)' }}
           onClick={() => onNavigate?.('bills')}
         >
-          <motion.div 
-            className="flex items-center gap-2 mb-3"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.55 }}
-          >
-            <Percent className="w-4 h-4" style={{ color: emiToIncome > 40 ? '#F59E0B' : 'var(--brand-primary)' }} />
-            <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">EMI Stress</span>
-          </motion.div>
-          <h3 className="text-3xl font-black tracking-tighter" style={{ color: emiToIncome > 40 ? '#F59E0B' : 'var(--brand-primary)' }}>
-            <AnimatedCounter value={emiToIncome} duration={1.8} suffix="%" />
-          </h3>
-          <span className="text-[9px] font-black text-gray-500 uppercase">of income</span>
-          <div className="mt-3">
-            <AnimatedProgressBar 
-              progress={emiToIncome} 
-              color={emiToIncome > 50 ? '#EF4444' : emiToIncome > 35 ? '#F59E0B' : 'var(--brand-primary)'} 
-              delay={0.9}
-              height="h-1.5"
-            />
-          </div>
-        </motion.div>
-      </motion.div>
-
-      {/* ═══ Loan Readiness — Enhanced ═════════════════════════ */}
-      {(() => {
-        const statusConfig = loanReadiness >= 80 
-          ? { label: 'HIGH', color: '#10B981', bg: 'rgba(16,185,129,0.15)', glow: 'rgba(16,185,129,0.4)', gradient: 'linear-gradient(135deg, #10B981, #059669)', desc: 'Excellent! You qualify for top-tier rates.' }
-          : loanReadiness >= 50
-            ? { label: 'MODERATE', color: '#F59E0B', bg: 'rgba(245,158,11,0.15)', glow: 'rgba(245,158,11,0.4)', gradient: 'linear-gradient(135deg, #F59E0B, #D97706)', desc: 'Good standing. Improve to unlock better rates.' }
-            : { label: 'BASIC', color: '#EF4444', bg: 'rgba(239,68,68,0.15)', glow: 'rgba(239,68,68,0.4)', gradient: 'linear-gradient(135deg, #EF4444, #DC2626)', desc: 'Needs work. Build credit to improve eligibility.' };
-
-        return (
-          <motion.div 
-            variants={cardSlideUp}
-            whileHover={{ scale: 1.02, y: -3 }}
-            whileTap={{ scale: 0.97 }}
-            className="glass rounded-[2.2rem] p-[var(--card-padding)] border-2 theme-transition cursor-pointer transition-all relative overflow-hidden"
-            style={{ borderColor: statusConfig.color + '30' }}
-            onClick={() => onNavigate?.('loans')}
-          >
-            {/* Background status glow */}
-            <motion.div 
-              className="absolute top-0 right-0 w-40 h-40 rounded-full blur-3xl pointer-events-none"
-              animate={{ opacity: [0.08, 0.15, 0.08], scale: [1, 1.1, 1] }}
-              transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-              style={{ backgroundColor: statusConfig.color }}
-            />
-
-            <div className="flex items-center justify-between relative z-10">
-              <div className="flex-1">
-                {/* Header */}
-                <motion.div 
-                  className="flex items-center gap-2 mb-3"
-                  initial={{ opacity: 0, x: -15 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 }}
-                >
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: statusConfig.bg }}>
-                    <Calculator className="w-4 h-4" style={{ color: statusConfig.color }} />
-                  </div>
-                  <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Loan Readiness</span>
-                </motion.div>
-
-                {/* Score + Badge Row */}
-                <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-3xl font-black tracking-tighter" style={{ color: statusConfig.color }}>
-                    <AnimatedCounter value={loanReadiness} duration={2} suffix="%" />
-                  </h3>
-                  {/* ── Vivid Status Badge ── */}
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0, rotate: -10 }}
-                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                    transition={{ delay: 1.2, type: 'spring' as const, stiffness: 400, damping: 15 }}
-                  >
-                    <motion.span 
-                      className="relative inline-flex items-center gap-1 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-wider text-white shadow-lg"
-                      style={{ background: statusConfig.gradient, boxShadow: `0 4px 15px ${statusConfig.glow}` }}
-                      animate={{ boxShadow: [`0 4px 15px ${statusConfig.glow}`, `0 4px 25px ${statusConfig.glow}`, `0 4px 15px ${statusConfig.glow}`] }}
-                      transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-white/60 animate-pulse" />
-                      {statusConfig.label}
-                    </motion.span>
-                  </motion.div>
-                </div>
-
-                {/* Description */}
-                <motion.p 
-                  className="text-[10px] text-gray-400 font-medium leading-tight"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1.8 }}
-                >
-                  {statusConfig.desc}
-                </motion.p>
-              </div>
-
-              {/* Circular progress */}
-              <AnimatedCircularProgress 
-                progress={loanReadiness} 
-                delay={0.8} 
-                size={80} 
-                strokeWidth={6}
-                color={statusConfig.color}
-                glowColor={statusConfig.glow}
-              />
-            </div>
-
-            {/* Bottom progress bar */}
-            <div className="mt-4">
-              <AnimatedProgressBar progress={loanReadiness} color={statusConfig.color} delay={1.0} height="h-1.5" />
-            </div>
-          </motion.div>
-        );
-      })()}
-
-      {/* ═══ Upcoming Bills ════════════════════════════════════ */}
-      <motion.div 
-        variants={cardSlideRight}
-        whileHover={{ scale: 1.02, x: 5 }}
-        whileTap={{ scale: 0.98 }}
-        className="glass rounded-[2.2rem] p-[var(--card-padding)] border theme-transition cursor-pointer transition-all"
-        style={{ borderColor: 'var(--glass-border)' }}
-        onClick={() => onNavigate?.('bills')}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <motion.div 
-              className="w-12 h-12 rounded-2xl flex items-center justify-center bg-orange-500/10"
-              animate={{ rotate: [0, -5, 5, 0] }}
-              transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut', delay: 1 }}
-            >
-              <Bell className="w-6 h-6 text-orange-400" />
-            </motion.div>
-            <div>
-              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Upcoming Bills</p>
-              <p className="text-lg font-black mt-0.5" style={{ color: 'var(--text-color)' }}>
-                <AnimatedCounter value={upcomingBills} duration={0.8} /> bills totaling <span className="text-orange-400">₹<AnimatedCounter value={totalDue} duration={1.5} /></span>
-              </p>
-            </div>
-          </div>
-          <motion.div animate={{ x: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
-            <ChevronRight className="w-5 h-5 text-gray-500" />
-          </motion.div>
-        </div>
-      </motion.div>
-
-      {/* ═══ AI Wish Tracker ═══════════════════════════════════ */}
-      <motion.div 
-        variants={cardSlideRight}
-        whileHover={{ scale: 1.02, x: 5 }}
-        whileTap={{ scale: 0.98 }}
-        className="glass rounded-[2.2rem] p-[var(--card-padding)] border bg-gradient-to-r from-brand/5 to-amber-500/5 theme-transition cursor-pointer transition-all"
-        style={{ borderColor: 'var(--glass-border)' }}
-        onClick={() => onNavigate?.('wishes')}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <motion.div 
-              className="w-12 h-12 rounded-2xl flex items-center justify-center" 
-              style={{ backgroundColor: 'var(--brand-glow)' }}
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
-            >
-              <Heart className="w-6 h-6 text-brand" />
-            </motion.div>
-            <div>
-              <p className="text-[10px] font-black text-brand uppercase tracking-widest">AI Wish Tracker</p>
-              <p className="text-xs text-gray-400 mt-0.5 font-bold">iPhone 16 Pro in <span className="text-brand font-black">5 months</span> at current rate</p>
-            </div>
-          </div>
-          <motion.div animate={{ x: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
-            <ChevronRight className="w-5 h-5 text-brand" />
-          </motion.div>
-        </div>
-      </motion.div>
-
-      {/* ═══ AI Insight ════════════════════════════════════════ */}
-      <motion.div 
-        variants={cardSlideUp} 
-        whileHover={{ scale: 1.01 }}
-        className="glass rounded-[2.2rem] p-[var(--card-padding)] border flex gap-4 items-start theme-transition" 
-        style={{ borderColor: 'var(--glass-border)' }}
-      >
-        <motion.div 
-          className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" 
-          style={{ backgroundColor: 'var(--brand-glow)' }}
-          animate={{ rotate: [0, 360] }}
-          transition={{ repeat: Infinity, duration: 8, ease: 'linear' }}
-        >
-          <Sparkles className="w-6 h-6 text-brand" />
-        </motion.div>
-        <div className="space-y-1">
-          <p className="text-[10px] font-black text-brand uppercase tracking-widest">Flow AI Personality</p>
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1 }}
-            className="text-sm leading-relaxed font-medium italic" 
-            style={{ color: 'var(--text-color)' }}
-          >
-            "{insight}"
-          </motion.p>
-        </div>
-      </motion.div>
-
-      {/* ═══ Recent Performance Chart ═══════════════════════════════ */}
-      <motion.section 
-        variants={cardSlideUp} 
-        className="glass rounded-[2.5rem] p-[var(--card-padding)] border theme-transition relative overflow-hidden group shadow-2xl" 
-        style={{ 
-          borderColor: 'var(--glass-border)',
-          background: theme === 'light' ? 'var(--bg-color)' : 'rgba(255,255,255,0.02)'
-        }}
-      >
-        {/* Subtle Background Mesh */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
-             style={{ backgroundImage: 'radial-gradient(var(--brand-primary) 0.5px, transparent 0.5px)', backgroundSize: '16px 16px' }} />
-
-        <div className="flex flex-col mb-8 relative z-10">
-          <div className="flex items-start justify-between">
-            <h3 className="font-bold text-lg" style={{ color: 'var(--text-color)' }}>Recent performance</h3>
-            
-            {/* Controls */}
-            <div className="flex items-center gap-4">
-              <div className="hidden sm:flex p-1 rounded-xl" style={{ backgroundColor: 'var(--card-subtle)' }}>
-                {['1D', '5D', '1M', '6M', '1Y'].map((t) => (
-                  <button key={t} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${t === '1M' ? 'text-brand shadow-sm' : 'text-gray-500'}`} style={t === '1M' ? { backgroundColor: 'var(--brand-glow)' } : {}}>
-                    {t}
-                  </button>
-                ))}
-              </div>
-              <button className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ backgroundColor: 'var(--card-subtle)' }}>
-                <Download className="w-4 h-4 text-gray-500" />
-              </button>
-            </div>
-          </div>
-
-          {/* Stats Row */}
-          <div className="flex items-center gap-8 mt-6">
-            <div className="flex flex-col">
-               <div className="flex items-center gap-2 mb-1">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#C9A227' }} />
-                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">USDC</span>
-               </div>
-               <div className="flex items-baseline">
-                  <span className="text-3xl font-black tracking-tight" style={{ color: 'var(--text-color)' }}>32.658</span>
-                  <span className="text-xl font-black text-gray-500">,45</span>
-               </div>
-            </div>
-            <div className="flex flex-col">
-               <div className="flex items-center gap-2 mb-1">
-                  <span className="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.4)]" style={{ backgroundColor: '#22C55E' }} />
-                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Token price</span>
-               </div>
-               <div className="flex items-baseline">
-                  <span className="text-3xl font-black tracking-tight" style={{ color: 'var(--text-color)' }}>1.028</span>
-               </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="h-64 w-full relative z-10 -ml-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={PERFORMANCE_DATA} margin={{ top: 10, right: 15, left: 0, bottom: 0 }} style={{ outline: 'none' }}>
-              <defs>
-                <linearGradient id="fadeGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#C9A227" stopOpacity={0.8} />
-                  <stop offset="100%" stopColor="#C9A227" stopOpacity={0} />
-                </linearGradient>
-                <pattern id="verticalStripes" width="6" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(0)">
-                  <line x1="0" y1="0" x2="0" y2="20" stroke="#C9A227" strokeWidth="1" />
-                </pattern>
-                <mask id="stripeMask">
-                  <rect x="0" y="0" width="100%" height="100%" fill="url(#verticalStripes)" />
-                </mask>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="transparent" />
-              <YAxis 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fontSize: 10, fontWeight: 700, fill: '#6B7280' }} 
-                tickFormatter={(val) => val === 0 ? '0M' : `${val / 1000000}M`}
-                width={45}
-                domain={[0, 3000000]}
-                ticks={[0, 1000000, 1500000, 2000000, 2500000, 3000000]}
-              />
-              <XAxis 
-                dataKey="month" 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fontSize: 10, fontWeight: 700, fill: '#6B7280' }} 
-                dy={10} 
-                interval={0}
-              />
-              <Tooltip 
-                cursor={{ stroke: '#C9A227', strokeWidth: 1, opacity: 0.5 }} 
-                content={<CustomTooltip />} 
-              />
-              {/* Secondary Series: Token Price */}
-              <Area 
-                type="monotone" 
-                dataKey="token" 
-                stroke="#22C55E" 
-                strokeWidth={2} 
-                strokeDasharray="4 4" 
-                fill="transparent" 
-                dot={false}
-                activeDot={false}
-              />
-              {/* Primary Series: USDC */}
-              <Area 
-                type="monotone" 
-                dataKey="usdc" 
-                stroke="#C9A227" 
-                strokeWidth={2.5} 
-                fillOpacity={1} 
-                fill="url(#fadeGradient)" 
-                mask="url(#stripeMask)"
-                dot={false}
-                activeDot={{ r: 5, stroke: '#C9A227', strokeWidth: 2, fill: '#fff' }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Cash Flow Summary Summary */}
-        <div className="pt-8 border-t space-y-6 relative z-10" style={{ borderColor: 'var(--glass-border)' }}>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-               <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--card-subtle)' }}>
-                 <TrendingDown className="w-5 h-5 text-brand" />
-               </div>
-               <div>
-                  <h3 className="font-black text-lg tracking-tight" style={{ color: 'var(--text-color)' }}>Cash Flow</h3>
-                  <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Balanced Status</p>
-               </div>
-            </div>
-            {/* Lively Status Badge */}
-            <motion.div 
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ repeat: Infinity, duration: 2.5 }}
-              className="bg-emerald-500/10 text-emerald-500 text-[10px] font-black px-4 py-1.5 rounded-full border border-emerald-500/20"
-            >
-              STABLE
-            </motion.div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex justify-between items-end">
-              <div>
-                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Spent</p>
-                <p className="text-2xl font-black mt-1" style={{ color: 'var(--text-color)' }}>
-                  <span className="text-sm opacity-40 mr-1">₹</span>
-                  <AnimatedCounter value={24500} duration={1.8} />
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Budget Left</p>
-                <p className="text-2xl font-black mt-1 text-brand">
-                  <span className="text-sm opacity-40 mr-1">₹</span>
-                  <AnimatedCounter value={15500} duration={2} />
-                </p>
-              </div>
-            </div>
-
-            <div className="relative pt-2">
-               <AnimatedProgressBar progress={62} color={brandPrimary} delay={1.2} />
-               <motion.div 
-                 initial={{ width: 0 }}
-                 animate={{ width: '62%' }}
-                 transition={{ duration: 1.5, delay: 1.2 }}
-                 className="absolute top-2 right-0 flex justify-end"
-               >
-                 <div className="w-1 h-3 bg-brand/30 blur-[2px] rounded-full" />
-               </motion.div>
-            </div>
-            
-            <div className="flex justify-between items-center px-1">
-               <p className="text-[9px] font-black text-gray-500 uppercase tracking-tighter">Budget Control: <span className="text-brand">62%</span></p>
-               <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map(i => (
-                    <div key={i} className={`w-1 h-1 rounded-full ${i <= 3 ? 'bg-brand' : 'bg-gray-700'}`} />
-                  ))}
-               </div>
-            </div>
-          </div>
-        </div>
-      </motion.section>
-
-      {/* ═══ Recent Activity ═══════════════════════════════════ */}
-      <motion.section variants={cardSlideUp} className="space-y-[calc(var(--section-gap)*0.75)] pb-10">
-        <div className="flex items-center justify-between px-2">
-          <div className="flex items-center gap-2">
-            <motion.div
-              animate={{ rotate: [0, -10, 10, 0] }}
-              transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-            >
-              <Activity className="w-5 h-5 text-brand" />
-            </motion.div>
-            <h3 className="font-black text-lg" style={{ color: 'var(--text-color)' }}>Recent Swipes</h3>
-          </div>
-          <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{transactions.length} transactions</span>
-        </div>
-        <div className="space-y-3">
-          {transactions.map((tx, i) => {
-            const catConfig = getCategoryConfig(tx.category, tx.type);
-            return (
-              <motion.div
-                key={tx.id}
-                initial={{ opacity: 0, x: -40, scale: 0.95 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                transition={{ delay: 0.08 * i, type: 'spring', stiffness: 180, damping: 18 }}
-                whileHover={{ scale: 1.03, x: 10 }}
-                whileTap={{ scale: 0.96 }}
-                className="flex items-center justify-between p-[var(--card-padding)] glass rounded-[1.8rem] border theme-transition cursor-pointer"
-                style={{ borderColor: 'var(--glass-border)' }}
+            <div className="flex items-center gap-4">
+              <motion.div 
+                className="w-12 h-12 rounded-2xl flex items-center justify-center bg-orange-500/10"
+                animate={{ rotate: [0, -5, 5, 0] }}
+                transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut', delay: 1 }}
               >
-                <div className="flex items-center gap-4">
-                  <motion.div 
-                    whileHover={{ rotate: [0, -15, 15, 0], scale: 1.15 }}
-                    transition={{ duration: 0.5 }}
-                    className="w-12 h-12 rounded-[1.2rem] flex items-center justify-center relative overflow-hidden"
-                    style={{ backgroundColor: catConfig.bg }}
-                  >
-                    {/* Subtle shimmer on icon container */}
-                    <motion.div
-                      className="absolute inset-0"
-                      animate={{ opacity: [0, 0.3, 0] }}
-                      transition={{ repeat: Infinity, duration: 2, delay: i * 0.2 }}
-                      style={{ background: `linear-gradient(135deg, transparent 40%, ${catConfig.color}30 50%, transparent 60%)` }}
-                    />
-                    {catConfig.icon}
-                  </motion.div>
-                  <div>
-                    <p className="font-bold text-sm" style={{ color: 'var(--text-color)' }}>{tx.title}</p>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-[10px] text-gray-500 font-bold uppercase">{tx.date}</span>
-                      <span className="w-1 h-1 rounded-full bg-gray-400" />
-                      <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: catConfig.color }}>{tx.category}</span>
-                    </div>
-                  </div>
-                </div>
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.3 + 0.08 * i, type: 'spring', stiffness: 300 }}
-                  className="text-right"
-                >
-                  <p className="font-black text-sm" style={{ color: tx.type === 'income' ? '#10B981' : 'var(--text-color)' }}>
-                    {tx.type === 'expense' ? '-' : '+'}<span className="text-[10px]">₹</span>{tx.amount.toLocaleString()}
-                  </p>
-                  {tx.type === 'income' && (
-                    <motion.span 
-                      initial={{ opacity: 0, y: 5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.6 + 0.08 * i }}
-                      className="text-[8px] font-black text-emerald-500 uppercase tracking-widest"
-                    >
-                      credited
-                    </motion.span>
-                  )}
-                </motion.div>
+                <Bell className="w-6 h-6 text-orange-400" />
               </motion.div>
-            );
-          })}
-        </div>
-      </motion.section>
+              <div>
+                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Upcoming Bills</p>
+                <p className="text-lg font-black mt-0.5" style={{ color: 'var(--text-color)' }}>
+                  <AnimatedCounter value={upcomingBills} duration={0.8} /> bills totaling <span className="text-orange-400">₹<AnimatedCounter value={totalDue} duration={1.5} /></span>
+                </p>
+              </div>
+            </div>
+            <motion.div animate={{ x: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
+              <ChevronRight className="w-5 h-5 text-gray-500" />
+            </motion.div>
+          </div>
+        </motion.div>
 
-      {/* ─── Security & Reliability Oversight ─── */}
-      <motion.section 
-        variants={cardSlideUp}
-        className="mt-12 mb-20 space-y-6"
-      >
-        <div className="flex flex-col items-center text-center gap-2">
-           <div className="w-10 h-px bg-brand/20" />
-           <p className="text-[9px] font-black text-gray-500 uppercase tracking-[0.3em]">Institutional Grade Security</p>
-        </div>
+        {/* ═══ AI Wish Tracker ═══════════════════════════════════ */}
+        <motion.div 
+          variants={cardSlideRight}
+          whileHover={{ scale: 1.02, x: 5 }}
+          whileTap={{ scale: 0.98 }}
+          className="glass rounded-[2.2rem] p-[var(--card-padding)] border bg-gradient-to-r from-brand/5 to-amber-500/5 theme-transition cursor-pointer transition-all"
+          style={{ borderColor: 'var(--glass-border)' }}
+          onClick={() => onNavigate?.('wishes')}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <motion.div 
+                className="w-12 h-12 rounded-2xl flex items-center justify-center" 
+                style={{ backgroundColor: 'var(--brand-glow)' }}
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
+              >
+                <Heart className="w-6 h-6 text-brand" />
+              </motion.div>
+              <div>
+                <p className="text-[10px] font-black text-brand uppercase tracking-widest">AI Wish Tracker</p>
+                <p className="text-xs text-gray-400 mt-0.5 font-bold">iPhone 16 Pro in <span className="text-brand font-black">5 months</span> at current rate</p>
+              </div>
+            </div>
+            <motion.div animate={{ x: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
+              <ChevronRight className="w-5 h-5 text-brand" />
+            </motion.div>
+          </div>
+        </motion.div>
 
-        <div className="grid grid-cols-2 gap-4">
-           {/* Trust Marker 1 */}
-           <div className="glass rounded-3xl p-5 border border-brand/5 flex flex-col items-center text-center gap-3 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-              <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center">
-                 <ShieldCheck className="w-5 h-5 text-brand" />
-              </div>
-              <div className="space-y-1">
-                 <p className="text-[10px] font-black text-brand uppercase tracking-widest">RBI Regulated</p>
-                 <p className="text-[8px] text-gray-500 font-bold uppercase">Compliance Node v2.1</p>
-              </div>
-           </div>
+        {/* ═══ AI Insight ════════════════════════════════════════ */}
+        <motion.div 
+          variants={cardSlideUp} 
+          whileHover={{ scale: 1.01 }}
+          className="glass rounded-[2.2rem] p-[var(--card-padding)] border flex gap-4 items-start theme-transition" 
+          style={{ borderColor: 'var(--glass-border)' }}
+        >
+          <motion.div 
+            className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" 
+            style={{ backgroundColor: 'var(--brand-glow)' }}
+            animate={{ rotate: [0, 360] }}
+            transition={{ repeat: Infinity, duration: 8, ease: 'linear' }}
+          >
+            <Sparkles className="w-6 h-6 text-brand" />
+          </motion.div>
+          <div className="space-y-1">
+            <p className="text-[10px] font-black text-brand uppercase tracking-widest">Flow AI Personality</p>
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1 }}
+              className="text-sm leading-relaxed font-medium italic" 
+              style={{ color: 'var(--text-color)' }}
+            >
+              "{insight}"
+            </motion.p>
+          </div>
+        </motion.div>
 
-           {/* Trust Marker 2 */}
-           <div className="glass rounded-3xl p-5 border border-brand/5 flex flex-col items-center text-center gap-3 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-              <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center">
-                 <Lock className="w-5 h-5 text-brand" />
-              </div>
-              <div className="space-y-1">
-                 <p className="text-[10px] font-black text-brand uppercase tracking-widest">PCI-DSS Ready</p>
-                 <p className="text-[8px] text-gray-500 font-bold uppercase">Encrypted Handshake</p>
-              </div>
-           </div>
-        </div>
+        {/* ─── Security & Reliability Oversight ─── */}
+        <motion.section 
+          variants={cardSlideUp}
+          className="space-y-6"
+        >
+          <div className="flex flex-col items-center text-center gap-2">
+             <div className="w-10 h-px bg-brand/20" />
+             <p className="text-[9px] font-black text-gray-500 uppercase tracking-[0.3em]">Institutional Grade Security</p>
+          </div>
 
-        {/* ─── Vivid Simulated Mode Footer ─── */}
-        <div className="relative group mx-2">
-           <div className="absolute inset-0 bg-brand/5 blur-xl rounded-[2rem] group-hover:bg-brand/10 transition-all duration-500" />
-           <div className="relative glass rounded-[2rem] p-5 border-2 border-brand/10 flex items-center justify-between theme-transition">
-              <div className="flex items-center gap-4">
-                 <motion.div 
-                   animate={{ scale: [1, 1.1, 1] }}
-                   transition={{ repeat: Infinity, duration: 3 }}
-                   className="w-10 h-10 rounded-xl bg-brand/20 flex items-center justify-center text-brand"
-                 >
-                    <Zap className="w-5 h-5" />
-                 </motion.div>
-                 <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-brand">Vivid Simulation Active</p>
-                    <p className="text-[8px] text-gray-500 font-bold uppercase mt-0.5">Sandbox Environment • No Real Money</p>
-                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                 <span className="text-[9px] font-black text-emerald-500 uppercase tracking-tighter">Live Monitor</span>
-              </div>
-           </div>
-        </div>
+          <div className="grid grid-cols-2 gap-4">
+             {/* Trust Marker 1 */}
+             <div className="glass rounded-3xl p-5 border border-brand/5 flex flex-col items-center text-center gap-3 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+                <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center">
+                   <ShieldCheck className="w-5 h-5 text-brand" />
+                </div>
+                <div className="space-y-1">
+                   <p className="text-[10px] font-black text-brand uppercase tracking-widest">RBI Regulated</p>
+                   <p className="text-[8px] text-gray-500 font-bold uppercase">Compliance Node v2.1</p>
+                </div>
+             </div>
 
-        <p className="text-[8px] text-gray-600 font-bold uppercase tracking-[0.2em] text-center opacity-50">
-           © 2026 FlowMint Technologies • All Rights Reserved
-        </p>
-      </motion.section>
+             {/* Trust Marker 2 */}
+             <div className="glass rounded-3xl p-5 border border-brand/5 flex flex-col items-center text-center gap-3 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+                <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center">
+                   <Lock className="w-5 h-5 text-brand" />
+                </div>
+                <div className="space-y-1">
+                   <p className="text-[10px] font-black text-brand uppercase tracking-widest">PCI-DSS Ready</p>
+                   <p className="text-[8px] text-gray-500 font-bold uppercase">Encrypted Handshake</p>
+                </div>
+             </div>
+          </div>
+
+          {/* ─── Vivid Simulated Mode Footer ─── */}
+          <div className="relative group mx-2">
+             <div className="absolute inset-0 bg-brand/5 blur-xl rounded-[2rem] group-hover:bg-brand/10 transition-all duration-500" />
+             <div className="relative glass rounded-[2rem] p-5 border-2 border-brand/10 flex items-center justify-between theme-transition">
+                <div className="flex items-center gap-4">
+                   <motion.div 
+                     animate={{ scale: [1, 1.1, 1] }}
+                     transition={{ repeat: Infinity, duration: 3 }}
+                     className="w-10 h-10 rounded-xl bg-brand/20 flex items-center justify-center text-brand"
+                   >
+                      <Zap className="w-5 h-5" />
+                   </motion.div>
+                   <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-brand">Vivid Simulation Active</p>
+                      <p className="text-[8px] text-gray-500 font-bold uppercase mt-0.5">Sandbox Environment • No Real Money</p>
+                   </div>
+                </div>
+                <div className="flex items-center gap-2">
+                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                   <span className="text-[9px] font-black text-emerald-500 uppercase tracking-tighter">Live Monitor</span>
+                </div>
+             </div>
+          </div>
+
+          <p className="text-[8px] text-gray-600 font-bold uppercase tracking-[0.2em] text-center opacity-50">
+             © 2026 FlowMint Technologies • All Rights Reserved
+          </p>
+        </motion.section>
+      </div>
     </motion.div>
   );
 };

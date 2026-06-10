@@ -449,182 +449,186 @@ const Rewards: FC = () => {
           className="space-y-5"
         >
           {activeTab === 'overview' && (
-            <>
-              {/* Daily Challenges */}
-              <motion.section variants={cardSlideUp} className="glass rounded-[2rem] p-5 border" style={{ borderColor: 'var(--glass-border)' }}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <motion.div
-                      animate={{ rotate: [0, 10, -10, 0] }}
-                      transition={{ repeat: Infinity, duration: 3 }}
-                    >
-                      <Target className="w-5 h-5 text-brand" />
-                    </motion.div>
-                    <h3 className="font-black text-sm tracking-tight" style={{ color: 'var(--text-color)' }}>Daily Challenges</h3>
-                  </div>
-                  <span className="text-[10px] font-black px-3 py-1 rounded-full" style={{ backgroundColor: 'var(--brand-glow)', color: 'var(--brand-primary)' }}>
-                    {completedChallenges}/{challenges.length}
-                  </span>
-                </div>
-
-                <div className="space-y-2.5">
-                  {challenges.map((challenge) => {
-                    const meta = CHALLENGE_META[challenge.challenge_type] || CHALLENGE_META.daily_login;
-                    return (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+              <div className="lg:col-span-2">
+                {/* Daily Challenges */}
+                <motion.section variants={cardSlideUp} className="glass rounded-[2rem] p-5 border" style={{ borderColor: 'var(--glass-border)' }}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
                       <motion.div
-                        key={challenge.id}
-                        className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${
-                          challenge.is_completed ? 'opacity-60' : ''
-                        }`}
-                        style={{ borderColor: 'var(--glass-border)', backgroundColor: 'var(--card-subtle)' }}
-                        whileHover={!challenge.is_completed ? { scale: 1.01, x: 3 } : {}}
+                        animate={{ rotate: [0, 10, -10, 0] }}
+                        transition={{ repeat: Infinity, duration: 3 }}
                       >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-9 h-9 rounded-xl flex items-center justify-center"
-                            style={{ backgroundColor: `${meta.color}15` }}
-                          >
-                            <div style={{ color: meta.color }}>{meta.icon}</div>
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold" style={{ color: 'var(--text-color)' }}>{meta.label}</p>
-                            <p className="text-[9px] font-bold text-gray-500">+{challenge.coins_reward} coins</p>
-                          </div>
-                        </div>
-                        {challenge.is_completed ? (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center"
-                          >
-                            <Check className="w-4 h-4 text-emerald-400" />
-                          </motion.div>
-                        ) : (
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--glass-border)' }}>
-                            <ChevronRight className="w-4 h-4 text-gray-500" />
-                          </div>
-                        )}
+                        <Target className="w-5 h-5 text-brand" />
                       </motion.div>
-                    );
-                  })}
-                </div>
-              </motion.section>
-
-              {/* Referral Card */}
-              <motion.section
-                variants={cardSlideUp}
-                className="glass rounded-[2rem] p-5 border relative overflow-hidden"
-                style={{ borderColor: 'var(--glass-border)' }}
-              >
-                <motion.div
-                  className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-3xl pointer-events-none"
-                  animate={{ opacity: [0.1, 0.2, 0.1] }}
-                  transition={{ repeat: Infinity, duration: 3 }}
-                  style={{ backgroundColor: '#8B5CF6' }}
-                />
-                <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Users className="w-5 h-5 text-purple-400" />
-                    <h3 className="font-black text-sm tracking-tight" style={{ color: 'var(--text-color)' }}>Invite & Earn Together</h3>
-                  </div>
-                  <p className="text-xs text-gray-400 mb-4 leading-relaxed">
-                    Invite friends to FlowMint! Both of you earn <span className="text-brand font-black">{COIN_REWARDS.referral_bonus} coins</span>.
-                    Friends can donate cash to help you reach ₹1,000 faster!
-                  </p>
-
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="flex-1 flex items-center gap-2 px-4 py-3 rounded-2xl border font-mono text-sm font-bold tracking-wider"
-                      style={{ borderColor: 'var(--glass-border)', backgroundColor: 'var(--card-subtle)', color: 'var(--text-color)' }}
-                    >
-                      <Gift className="w-4 h-4 text-brand shrink-0" />
-                      {referralCode}
+                      <h3 className="font-black text-sm tracking-tight" style={{ color: 'var(--text-color)' }}>Daily Challenges</h3>
                     </div>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={handleCopyCode}
-                      className="p-3 rounded-2xl bg-brand text-black font-black"
-                      style={{ boxShadow: '0 4px 12px var(--brand-glow)' }}
-                    >
-                      {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="p-3 rounded-2xl border"
-                      style={{ borderColor: 'var(--glass-border)', backgroundColor: 'var(--card-subtle)' }}
-                    >
-                      <Share2 className="w-5 h-5 text-purple-400" />
-                    </motion.button>
+                    <span className="text-[10px] font-black px-3 py-1 rounded-full" style={{ backgroundColor: 'var(--brand-glow)', color: 'var(--brand-primary)' }}>
+                      {completedChallenges}/{challenges.length}
+                    </span>
                   </div>
-                </div>
-              </motion.section>
 
-              {/* Tier Progress */}
-              <motion.section
-                variants={cardSlideUp}
-                className="glass rounded-[2rem] p-5 border"
-                style={{ borderColor: 'var(--glass-border)' }}
-              >
-                <div className="flex items-center gap-2 mb-4">
-                  <Crown className="w-5 h-5" style={{ color: tierConfig.text }} />
-                  <h3 className="font-black text-sm tracking-tight" style={{ color: 'var(--text-color)' }}>Tier Progress</h3>
-                </div>
+                  <div className="space-y-2.5">
+                    {challenges.map((challenge) => {
+                      const meta = CHALLENGE_META[challenge.challenge_type] || CHALLENGE_META.daily_login;
+                      return (
+                        <motion.div
+                          key={challenge.id}
+                          className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${
+                            challenge.is_completed ? 'opacity-60' : ''
+                          }`}
+                          style={{ borderColor: 'var(--glass-border)', backgroundColor: 'var(--card-subtle)' }}
+                          whileHover={!challenge.is_completed ? { scale: 1.01, x: 3 } : {}}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-9 h-9 rounded-xl flex items-center justify-center"
+                              style={{ backgroundColor: `${meta.color}15` }}
+                            >
+                              <div style={{ color: meta.color }}>{meta.icon}</div>
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold" style={{ color: 'var(--text-color)' }}>{meta.label}</p>
+                              <p className="text-[9px] font-bold text-gray-500">+{challenge.coins_reward} coins</p>
+                            </div>
+                          </div>
+                          {challenge.is_completed ? (
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center"
+                            >
+                              <Check className="w-4 h-4 text-emerald-400" />
+                            </motion.div>
+                          ) : (
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--glass-border)' }}>
+                              <ChevronRight className="w-4 h-4 text-gray-500" />
+                            </div>
+                          )}
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </motion.section>
+              </div>
 
-                <div className="flex items-center gap-4 mb-4">
+              <div className="lg:col-span-1 space-y-6">
+                {/* Referral Card */}
+                <motion.section
+                  variants={cardSlideUp}
+                  className="glass rounded-[2rem] p-5 border relative overflow-hidden"
+                  style={{ borderColor: 'var(--glass-border)' }}
+                >
                   <motion.div
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
-                    style={{ background: tierConfig.gradient, boxShadow: `0 6px 20px ${tierConfig.glow}` }}
-                    animate={{ scale: [1, 1.05, 1] }}
-                    transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-                  >
-                    {tierConfig.icon}
-                  </motion.div>
-                  <div className="flex-1">
-                    <h4 className="font-black text-lg" style={{ color: tierConfig.text }}>{tierInfo.name}</h4>
-                    {tierInfo.nextTier && (
-                      <>
-                        <p className="text-[10px] font-bold text-gray-500">
-                          {tierInfo.coinsToNext - (wallet.lifetime_coins_earned % tierInfo.coinsToNext)} coins to {tierInfo.nextTier}
-                        </p>
-                        <div className="h-1.5 rounded-full mt-2 overflow-hidden" style={{ backgroundColor: 'var(--glass-border)' }}>
-                          <motion.div
-                            className="h-full rounded-full"
-                            initial={{ width: 0 }}
-                            animate={{ width: `${Math.min(100, (wallet.lifetime_coins_earned % tierInfo.coinsToNext / tierInfo.coinsToNext) * 100)}%` }}
-                            transition={{ duration: 1.2, delay: 0.8 }}
-                            style={{ background: tierConfig.gradient }}
-                          />
-                        </div>
-                      </>
-                    )}
-                    {!tierInfo.nextTier && (
-                      <p className="text-[10px] font-bold text-brand">Maximum tier reached! 🎉</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Lifetime Stats */}
-                <div className="grid grid-cols-3 gap-2 mt-3">
-                  {[
-                    { label: 'Earned', value: wallet.lifetime_coins_earned.toLocaleString(), icon: <Coins className="w-3 h-3 text-brand" />, color: 'text-brand' },
-                    { label: 'Longest Streak', value: `${wallet.longest_streak}d`, icon: <Flame className="w-3 h-3 text-orange-400" />, color: 'text-orange-400' },
-                    { label: 'Cash Earned', value: `₹${Number(wallet.lifetime_cash_earned).toLocaleString()}`, icon: <Wallet className="w-3 h-3 text-emerald-400" />, color: 'text-emerald-400' },
-                  ].map((stat, i) => (
-                    <div key={i} className="text-center p-2.5 rounded-xl" style={{ backgroundColor: 'var(--card-subtle)' }}>
-                      <div className="flex items-center justify-center gap-1 mb-1">{stat.icon}</div>
-                      <p className={`text-sm font-black ${stat.color}`}>{stat.value}</p>
-                      <p className="text-[7px] font-black uppercase tracking-widest text-gray-500">{stat.label}</p>
+                    className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-3xl pointer-events-none"
+                    animate={{ opacity: [0.1, 0.2, 0.1] }}
+                    transition={{ repeat: Infinity, duration: 3 }}
+                    style={{ backgroundColor: '#8B5CF6' }}
+                  />
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Users className="w-5 h-5 text-purple-400" />
+                      <h3 className="font-black text-sm tracking-tight" style={{ color: 'var(--text-color)' }}>Invite & Earn Together</h3>
                     </div>
-                  ))}
-                </div>
-              </motion.section>
-            </>
+                    <p className="text-xs text-gray-400 mb-4 leading-relaxed">
+                      Invite friends to FlowMint! Both of you earn <span className="text-brand font-black">{COIN_REWARDS.referral_bonus} coins</span>.
+                      Friends can donate cash to help you reach ₹1,000 faster!
+                    </p>
+
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="flex-1 flex items-center gap-2 px-4 py-3 rounded-2xl border font-mono text-sm font-bold tracking-wider"
+                        style={{ borderColor: 'var(--glass-border)', backgroundColor: 'var(--card-subtle)', color: 'var(--text-color)' }}
+                      >
+                        <Gift className="w-4 h-4 text-brand shrink-0" />
+                        {referralCode}
+                      </div>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={handleCopyCode}
+                        className="p-3 rounded-2xl bg-brand text-black font-black"
+                        style={{ boxShadow: '0 4px 12px var(--brand-glow)' }}
+                      >
+                        {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="p-3 rounded-2xl border"
+                        style={{ borderColor: 'var(--glass-border)', backgroundColor: 'var(--card-subtle)' }}
+                      >
+                        <Share2 className="w-5 h-5 text-purple-400" />
+                      </motion.button>
+                    </div>
+                  </div>
+                </motion.section>
+
+                {/* Tier Progress */}
+                <motion.section
+                  variants={cardSlideUp}
+                  className="glass rounded-[2rem] p-5 border"
+                  style={{ borderColor: 'var(--glass-border)' }}
+                >
+                  <div className="flex items-center gap-2 mb-4">
+                    <Crown className="w-5 h-5" style={{ color: tierConfig.text }} />
+                    <h3 className="font-black text-sm tracking-tight" style={{ color: 'var(--text-color)' }}>Tier Progress</h3>
+                  </div>
+
+                  <div className="flex items-center gap-4 mb-4">
+                    <motion.div
+                      className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
+                      style={{ background: tierConfig.gradient, boxShadow: `0 6px 20px ${tierConfig.glow}` }}
+                      animate={{ scale: [1, 1.05, 1] }}
+                      transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
+                    >
+                      {tierConfig.icon}
+                    </motion.div>
+                    <div className="flex-1">
+                      <h4 className="font-black text-lg" style={{ color: tierConfig.text }}>{tierInfo.name}</h4>
+                      {tierInfo.nextTier && (
+                        <>
+                          <p className="text-[10px] font-bold text-gray-500">
+                            {tierInfo.coinsToNext - (wallet.lifetime_coins_earned % tierInfo.coinsToNext)} coins to {tierInfo.nextTier}
+                          </p>
+                          <div className="h-1.5 rounded-full mt-2 overflow-hidden" style={{ backgroundColor: 'var(--glass-border)' }}>
+                            <motion.div
+                              className="h-full rounded-full"
+                              initial={{ width: 0 }}
+                              animate={{ width: `${Math.min(100, (wallet.lifetime_coins_earned % tierInfo.coinsToNext / tierInfo.coinsToNext) * 100)}%` }}
+                              transition={{ duration: 1.2, delay: 0.8 }}
+                              style={{ background: tierConfig.gradient }}
+                            />
+                          </div>
+                        </>
+                      )}
+                      {!tierInfo.nextTier && (
+                        <p className="text-[10px] font-bold text-brand">Maximum tier reached! 🎉</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Lifetime Stats */}
+                  <div className="grid grid-cols-3 gap-2 mt-3">
+                    {[
+                      { label: 'Earned', value: wallet.lifetime_coins_earned.toLocaleString(), icon: <Coins className="w-3 h-3 text-brand" />, color: 'text-brand' },
+                      { label: 'Longest Streak', value: `${wallet.longest_streak}d`, icon: <Flame className="w-3 h-3 text-orange-400" />, color: 'text-orange-400' },
+                      { label: 'Cash Earned', value: `₹${Number(wallet.lifetime_cash_earned).toLocaleString()}`, icon: <Wallet className="w-3 h-3 text-emerald-400" />, color: 'text-emerald-400' },
+                    ].map((stat, i) => (
+                      <div key={i} className="text-center p-2.5 rounded-xl" style={{ backgroundColor: 'var(--card-subtle)' }}>
+                        <div className="flex items-center justify-center gap-1 mb-1">{stat.icon}</div>
+                        <p className={`text-sm font-black ${stat.color}`}>{stat.value}</p>
+                        <p className="text-[7px] font-black uppercase tracking-widest text-gray-500">{stat.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </motion.section>
+              </div>
+            </div>
           )}
 
           {activeTab === 'earn' && (
-            <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
               {/* How to Earn Coins */}
               <motion.section variants={cardSlideUp} className="glass rounded-[2rem] p-5 border" style={{ borderColor: 'var(--glass-border)' }}>
                 <div className="flex items-center gap-2 mb-4">
@@ -714,11 +718,11 @@ const Rewards: FC = () => {
                   </div>
                 </div>
               </motion.section>
-            </>
+            </div>
           )}
 
           {activeTab === 'transfer' && (
-            <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
               {/* Transfer Section */}
               <motion.section variants={cardSlideUp} className="glass rounded-[2rem] p-5 border" style={{ borderColor: 'var(--glass-border)' }}>
                 <div className="flex items-center gap-2 mb-4">
@@ -834,7 +838,7 @@ const Rewards: FC = () => {
                   ))}
                 </div>
               </motion.section>
-            </>
+            </div>
           )}
 
           {activeTab === 'history' && (
