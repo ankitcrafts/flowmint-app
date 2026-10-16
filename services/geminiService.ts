@@ -1,11 +1,28 @@
+import { llmService } from './llmService';
+
+export const getSpendingInsights = async (
+  transactions: Array<{ title: string; amount: number; category: string; type: string }>
+) => {
+  const response = await llmService.getSpendingInsight({ transactions });
+  return `${response.personality}: ${response.tip}`;
+};
+
+export const getWishTrackerPlan = async (goal: string, amount: number, currentSavings: number) => {
+  const plan = await llmService.getWishPlan({
+    wishName: goal,
+    price: amount,
+    currentSavings,
+  });
+  return [plan.aiTip, plan.speedUpTip, ...plan.savingSteps].join('\n');
+};
+
+/*
+Legacy direct Gemini implementation retained for reference only. Do not reactivate:
+it exposed a VITE_ API key in the frontend and returned fabricated advice on errors.
 
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Always use the API key directly from process.env.API_KEY as per guidelines
-// Creating a new instance right before each call as per updated guidelines
-
 export const getSpendingInsights = async (transactions: any[]) => {
-  // Create a new GoogleGenAI instance right before making an API call to ensure it always uses the most up-to-date API key
   const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
   try {
     const response = await ai.models.generateContent({
@@ -15,7 +32,6 @@ export const getSpendingInsights = async (transactions: any[]) => {
         systemInstruction: "You are FlowMint AI, a witty financial genius for Indian Millennials. You use Gen-Z lingo (no cap, bet, flex) but provide serious financial wisdom. Be brief. Maximum 2 sentences.",
       },
     });
-    // Access response.text property directly as per guidelines
     return response.text || "Your spending is mid. Let's aim for 'Elite' status next month.";
   } catch (error) {
     console.error("Gemini Error:", error);
@@ -24,7 +40,6 @@ export const getSpendingInsights = async (transactions: any[]) => {
 };
 
 export const getWishTrackerPlan = async (goal: string, amount: number, currentSavings: number) => {
-  // Create a new GoogleGenAI instance right before making an API call
   const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
   try {
     const response = await ai.models.generateContent({
@@ -35,10 +50,10 @@ export const getWishTrackerPlan = async (goal: string, amount: number, currentSa
         thinkingConfig: { thinkingBudget: 2000 }
       },
     });
-    // Access response.text property directly as per guidelines
     return response.text || "Step 1: Save 5k/month in a liquid fund. Step 2: Cut Zomato. Step 3: Win.";
   } catch (error) {
     console.error("Gemini Error:", error);
     return "Start by automating ₹2,000 every week into your goal pot.";
   }
 };
+*/

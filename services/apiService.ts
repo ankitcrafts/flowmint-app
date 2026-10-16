@@ -27,6 +27,18 @@ export class FlowMintError extends Error {
 function handleSupabaseError(error: any, context: string): never {
   console.error(`[FlowMint:${context}]`, error);
 
+  if (error?.code === '42703' || error?.code === 'PGRST204') {
+    throw new FlowMintError(
+      'SCHEMA_MISMATCH',
+      'Your Supabase database is missing financial profile fields. Apply supabase/migrations/005_v1_financial_profile.sql in the Supabase SQL Editor, then refresh.'
+    );
+  }
+  if (error?.code === '42P01') {
+    throw new FlowMintError(
+      'SCHEMA_MISMATCH',
+      'Your Supabase database is missing the financial profile table. Apply the project migrations in order, then refresh.'
+    );
+  }
   if (error?.code === 'PGRST301' || error?.message?.includes('JWT')) {
     throw new FlowMintError('AUTH_EXPIRED', 'Your session has expired. Please sign in again.');
   }
@@ -101,7 +113,34 @@ export const transactionService = {
     return data || [];
   },
 
-  async create(tx: Omit<Transaction, 'id'>): Promise<Transaction> {
+  async getExpensesSince(since: string): Promise<Transaction[]> {
+    const userId = await getUserId();
+    const pageSize = 1000;
+    const expenses: Transaction[] = [];
+    let offset = 0;
+
+    while (true) {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('type', 'expense')
+        .gte('date', since)
+        .order('date', { ascending: false })
+        .order('id', { ascending: true })
+        .range(offset, offset + pageSize - 1);
+
+      if (error) handleSupabaseError(error, 'fetching expense history');
+      const page = data || [];
+      expenses.push(...page);
+      if (page.length < pageSize) break;
+      offset += page.length;
+    }
+
+    return expenses;
+  },
+
+  async create(tx: Omit<Transaction, 'id' | 'type'> & { type: 'income' | 'expense' }): Promise<Transaction> {
     const userId = await getUserId();
 
     const { data, error } = await supabase
@@ -452,6 +491,8 @@ export interface Payment {
 
 export const paymentService = {
   async getAll(limit = 20): Promise<Payment[]> {
+    throw new FlowMintError('FEATURE_DISABLED', 'Payment history is disabled in FlowMint V1.');
+    /*
     const userId = await getUserId();
 
     const { data, error } = await supabase
@@ -463,9 +504,12 @@ export const paymentService = {
 
     if (error) handleSupabaseError(error, 'fetching payments');
     return data || [];
+    */
   },
 
   async create(payment: Omit<Payment, 'id' | 'created_at'>): Promise<Payment> {
+    throw new FlowMintError('FEATURE_DISABLED', 'Payments are disabled in FlowMint V1. No money is moved.');
+    /*
     const userId = await getUserId();
 
     const { data, error } = await supabase
@@ -476,6 +520,7 @@ export const paymentService = {
 
     if (error) handleSupabaseError(error, 'recording payment');
     return data!;
+    */
   },
 };
 
@@ -495,6 +540,47 @@ export interface DashboardData {
   goalsCount: number;
   creditScore?: number | null;
 }
+
+export interface FinancialProfile {
+  user_id: string;
+  monthly_income: number | null;
+  monthly_expenses: number | null;
+  current_savings: number | null;
+  monthly_rent_emi: number | null;
+}
+
+export interface FinancialProfileInput {
+  monthly_income: number;
+  monthly_expenses: number;
+  current_savings: number;
+  monthly_rent_emi: number;
+}
+
+export const financialProfileService = {
+  async get(): Promise<FinancialProfile | null> {
+    const userId = await getUserId();
+    const { data, error } = await supabase
+      .from('user_financial_profiles')
+      .select('user_id, monthly_income, monthly_expenses, current_savings, monthly_rent_emi')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) handleSupabaseError(error, 'fetching your financial profile');
+    return data;
+  },
+
+  async save(profile: FinancialProfileInput): Promise<FinancialProfile> {
+    const userId = await getUserId();
+    const { data, error } = await supabase
+      .from('user_financial_profiles')
+      .upsert({ ...profile, user_id: userId }, { onConflict: 'user_id' })
+      .select('user_id, monthly_income, monthly_expenses, current_savings, monthly_rent_emi')
+      .single();
+
+    if (error) handleSupabaseError(error, 'saving your financial profile');
+    return data;
+  },
+};
 
 import { getApiBase } from '../utils/platform';
 
@@ -557,48 +643,18 @@ export const dashboardService = {
 
 export const apiService = {
   async getTransactions() {
-    try {
-      return await transactionService.getRecent(5);
-    } catch {
-      // Fallback to mock data if DB tables don't have data yet
-      return [
-        { id: '1', title: 'Zomato', amount: 450, category: 'Food', date: '10:30 AM', type: 'expense' as const },
-        { id: '2', title: 'Uber', amount: 120, category: 'Travel', date: '9:15 AM', type: 'expense' as const },
-        { id: '3', title: 'Salary', amount: 85000, category: 'Income', date: 'Yesterday', type: 'income' as const },
-        { id: '4', title: 'Netflix', amount: 499, category: 'Subscription', date: '2 days ago', type: 'expense' as const },
-        { id: '5', title: 'Amazon', amount: 2400, category: 'Shopping', date: '3 days ago', type: 'expense' as const },
-      ];
-    }
+    return transactionService.getRecent(5);
   },
 
   async getBills() {
-    try {
-      return await billService.getAll();
-    } catch {
-      return [
-        { id: '1', title: 'iPhone 15 EMI', amount: 5499, due_date: 'In 2 days', type: 'EMI', is_paid: false },
-        { id: '2', title: 'Electricity Bill', amount: 2100, due_date: 'In 5 days', type: 'Utility', is_paid: false },
-        { id: '3', title: 'Car Loan', amount: 12500, due_date: 'Paid', type: 'EMI', is_paid: true },
-      ];
-    }
+    return billService.getAll();
   },
 
   async getGoals() {
-    try {
-      return await goalService.getAll();
-    } catch {
-      return [
-        { id: '1', name: 'Tokyo Trip 2025', target_amount: 250000, current_amount: 125000, deadline: 'Dec 2025', category: 'Travel', status: 'active' as const },
-        { id: '2', name: 'MacBook Pro M4', target_amount: 180000, current_amount: 45000, deadline: 'Sep 2025', category: 'Gadget', status: 'active' as const },
-      ];
-    }
+    return goalService.getAll();
   },
 
   async getLoanOffers() {
-    return [
-      { id: '1', partner: 'HDFC Bank', amount: 1500000, interestRate: 9.25, tenure: 60, type: 'Personal' },
-      { id: '2', partner: 'Muthoot Finance', amount: 5000000, interestRate: 8.0, tenure: 24, type: 'Gold' },
-      { id: '3', partner: 'ICICI Bank', amount: 4000000, interestRate: 10.5, tenure: 84, type: 'Education' },
-    ];
+    throw new FlowMintError('FEATURE_DISABLED', 'Loan offers are not available in this version.');
   },
 };
