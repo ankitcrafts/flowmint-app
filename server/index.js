@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
+import { createEmailOtpRouter } from './emailOtp.js';
 
 import { fileURLToPath } from 'url';
 
@@ -91,8 +92,6 @@ app.use(helmet({
       connectSrc: [
         "'self'", 
         "https://qefuzyxzgcrnpllkrznd.supabase.co", 
-        "https://api.groq.com", 
-        "https://generativelanguage.googleapis.com",
         "https://api.apify.com"
       ],
       frameSrc: ["'self'", "https://accounts.google.com"],
@@ -135,25 +134,13 @@ if (!supabaseUrl || !supabaseServiceKey) {
 }
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
+app.use('/auth/email-otp', createEmailOtpRouter(supabase));
 
 // Google Client
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// ─── JWT Configuration (Production-Grade) ────────────────────
-// CRITICAL: No fallback — server MUST crash if secret is missing
+// Legacy JWT handlers are disabled; Supabase Auth is the sole identity provider.
 const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  console.error('\n🚨 FATAL: JWT_SECRET environment variable is not set!');
-  console.error('   Generate one with: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"');
-  console.error('   Then add it to .env.local (dev) or your hosting dashboard (production).\n');
-  process.exit(1);
-}
-if (JWT_SECRET.length < 64) {
-  console.error('\n🚨 FATAL: JWT_SECRET is too short (minimum 64 characters for 256-bit security).');
-  console.error(`   Current length: ${JWT_SECRET.length} characters.`);
-  console.error('   Generate a proper secret: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"\n');
-  process.exit(1);
-}
 
 // Optional: Previous secret for zero-downtime key rotation
 // Set JWT_SECRET_PREVIOUS to the old key when rotating, remove it after all old tokens expire
@@ -264,7 +251,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Auth Middleware — supports JWT cookie + Supabase Bearer token
-const authenticateToken = async (req, res, next) => {
+const legacyAuthenticateToken = async (req, res, next) => {
   // Strategy 1: Express JWT from cookie (web, after /auth/google or /auth/mobile)
   const cookieToken = req.cookies.access_token;
   if (cookieToken) {
@@ -335,7 +322,32 @@ const authenticateToken = async (req, res, next) => {
   return res.status(401).json({ error: 'Please sign in to use FlowMint AI' });
 };
 
+const authenticateToken = async (req, res, next) => {
+  const authorization = req.headers.authorization;
+  if (!authorization?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Please sign in to use FlowMint AI' });
+  }
+
+  try {
+    const { data, error } = await supabase.auth.getUser(authorization.slice(7));
+    if (error || !data.user) {
+      return res.status(401).json({ error: 'Invalid or expired session' });
+    }
+    req.user = {
+      id: data.user.id,
+      email: data.user.email || '',
+      name: data.user.user_metadata?.full_name || data.user.email || '',
+    };
+    return next();
+  } catch (error) {
+    console.error('Supabase session verification failed:', error);
+    return res.status(401).json({ error: 'Unable to verify session' });
+  }
+};
+
 /* --- Routes --- */
+
+app.use('/auth', (_req, res) => res.status(410).json({ error: 'Use Supabase Auth for sign-in.' }));
 
 // Google Auth Callback
 app.post('/auth/google', async (req, res) => {
@@ -788,13 +800,6 @@ async function saveConversation(userId, { type, title, inputContext, aiResponse,
     // Common: table doesn't exist yet, RLS policy blocked, etc.
   }
 
-  // 2. Update the user's financial profile (build it over time) — also non-blocking
-  if (type === 'wish_plan' && inputContext) {
-    updateFinancialProfile(userId, inputContext).catch(err => 
-      console.warn('FlowMint: ⚠️ Profile update failed (non-fatal):', err.message)
-    );
-  }
-
   return conversation;
 }
 
@@ -884,6 +889,35 @@ async function queueForTraining(conversationId, instruction, response, rating, t
 
 // ─── API Routes ───────────────────────────────────────────
 
+async function getAuthenticatedFinancialData(userId) {
+  const [profileResult, transactionsResult] = await Promise.all([
+    supabase
+      .from('user_financial_profiles')
+      .select('monthly_income, monthly_expenses, current_savings, monthly_rent_emi')
+      .eq('user_id', userId)
+      .maybeSingle(),
+    supabase
+      .from('transactions')
+      .select('title, amount, category, type, date')
+      .eq('user_id', userId)
+      .eq('type', 'expense')
+      .order('date', { ascending: false })
+      .limit(20),
+  ]);
+
+  if (profileResult.error) throw profileResult.error;
+  if (transactionsResult.error) throw transactionsResult.error;
+  return { profile: profileResult.data, transactions: transactionsResult.data || [] };
+}
+
+function hasCompleteFinancialProfile(profile) {
+  return !!profile &&
+    profile.monthly_income !== null &&
+    profile.monthly_expenses !== null &&
+    profile.current_savings !== null &&
+    profile.monthly_rent_emi !== null;
+}
+
 /**
  * GET /api/ai/usage
  * Returns unlimited status since AI is free for all users.
@@ -922,21 +956,32 @@ app.post('/api/ai/wish-plan', authenticateToken, async (req, res) => {
   //   });
   // }
 
-  const {
-    wishName,
-    price,
-    currentSavings,
-    monthlyIncome = 50000,
-    monthlyExpenses = 30000,
-    existingEMIs = 0,
-    topSpendingCategories = [],
-  } = req.body;
-
-  if (!wishName || !price) {
-    return res.status(400).json({ error: 'Missing wishName or price' });
+  const { wishName, price } = req.body;
+  if (typeof wishName !== 'string' || !wishName.trim() ||
+      !Number.isFinite(Number(price)) || Number(price) <= 0) {
+    return res.status(400).json({ error: 'Enter a goal name and a positive target amount.' });
   }
 
-  const inputContext = { wishName, price, currentSavings, monthlyIncome, monthlyExpenses, existingEMIs, topSpendingCategories };
+  let financialData;
+  try {
+    financialData = await getAuthenticatedFinancialData(userId);
+  } catch (error) {
+    console.error('Unable to load authenticated financial data for wish plan:', error);
+    return res.status(503).json({ error: 'Your financial profile is temporarily unavailable.' });
+  }
+  if (!hasCompleteFinancialProfile(financialData.profile)) {
+    return res.status(409).json({ error: 'Complete your financial profile before requesting a personalized plan.' });
+  }
+
+  const profile = financialData.profile;
+  const targetAmount = Number(price);
+  const currentSavings = Number(profile.current_savings);
+  const monthlyIncome = Number(profile.monthly_income);
+  const monthlyExpenses = Number(profile.monthly_expenses);
+  const monthlyRentEmi = Number(profile.monthly_rent_emi);
+  const monthlySurplus = monthlyIncome - monthlyExpenses - monthlyRentEmi;
+  const topSpendingCategories = [...new Set(financialData.transactions.map((transaction) => transaction.category).filter(Boolean))].slice(0, 5);
+  const inputContext = { wishName: wishName.trim(), price: targetAmount, currentSavings, monthlyIncome, monthlyExpenses, monthlyRentEmi, monthlySurplus, topSpendingCategories };
 
   const systemPrompt = `You are FlowMint AI, a witty and sharp financial advisor for Indian Gen-Z and Millennials.
 
@@ -957,31 +1002,31 @@ RESPOND ONLY with valid JSON in this exact schema:
   "savingSteps": ["Step 1 with specific ₹ amounts", "Step 2", "Step 3"]
 }`;
 
-  const userPrompt = `I want to buy "${wishName}" costing ₹${price.toLocaleString('en-IN')}.
-I have ₹${currentSavings.toLocaleString('en-IN')} saved so far (${Math.round((currentSavings / price) * 100)}% progress).
+  const userPrompt = `The user wants to save for "${wishName.trim()}" costing ₹${targetAmount.toLocaleString('en-IN')}.
+Their current savings are ₹${currentSavings.toLocaleString('en-IN')}.
 
-My financial profile:
+Authenticated financial profile:
 - Monthly income: ₹${monthlyIncome.toLocaleString('en-IN')}
 - Monthly expenses: ₹${monthlyExpenses.toLocaleString('en-IN')}
-- Existing EMIs: ₹${existingEMIs.toLocaleString('en-IN')}
-- Monthly surplus: ₹${(monthlyIncome - monthlyExpenses - existingEMIs).toLocaleString('en-IN')}
-${topSpendingCategories.length > 0 ? `- Top spending categories: ${topSpendingCategories.join(', ')}` : ''}
+- Monthly rent/EMI: ₹${monthlyRentEmi.toLocaleString('en-IN')}
+- Estimated monthly surplus: ₹${monthlySurplus.toLocaleString('en-IN')}
+${topSpendingCategories.length > 0 ? `- Recent expense categories: ${topSpendingCategories.join(', ')}` : '- No recent expense records are available.'}
 
-Create a realistic, actionable saving plan.`;
+Create a realistic, advisory-only saving plan. Do not claim to move or invest money.`;
 
   try {
     const { content: rawResponse, tokens, responseTimeMs, provider, model } = await callAI(systemPrompt, userPrompt);
     const plan = safeParseJSON(rawResponse);
 
+    if (typeof plan.aiTip !== 'string' || typeof plan.speedUpTip !== 'string' ||
+        !Number.isFinite(Number(plan.monthsToAfford)) || !Array.isArray(plan.savingSteps)) {
+      throw new Error('AI provider returned an invalid savings plan.');
+    }
     const result = {
-      aiTip: plan.aiTip || `You can afford "${wishName}" in approximately ${Math.ceil((price - currentSavings) / ((monthlyIncome - monthlyExpenses - existingEMIs) * 0.7))} months.`,
-      speedUpTip: plan.speedUpTip || 'Cut discretionary spending by 15% to speed up your goal.',
-      monthsToAfford: plan.monthsToAfford || Math.ceil((price - currentSavings) / ((monthlyIncome - monthlyExpenses - existingEMIs) * 0.7)),
-      savingSteps: Array.isArray(plan.savingSteps) ? plan.savingSteps.slice(0, 5) : [
-        'Set up auto-transfer on salary day',
-        'Reduce food delivery orders',
-        'Audit and cancel unused subscriptions',
-      ],
+      aiTip: plan.aiTip,
+      speedUpTip: plan.speedUpTip,
+      monthsToAfford: Math.max(0, Math.ceil(Number(plan.monthsToAfford))),
+      savingSteps: plan.savingSteps.filter((step) => typeof step === 'string').slice(0, 5),
     };
 
     // Save conversation to Supabase
@@ -1005,46 +1050,8 @@ Create a realistic, actionable saving plan.`;
       responseTimeMs,
     });
   } catch (error) {
-    console.error('FlowMint AI — Wish Plan Error:', error.message);
-
-    // Fallback: math-based plan (still save as conversation)
-    const surplus = monthlyIncome - monthlyExpenses - existingEMIs;
-    const saveable = Math.round(surplus * 0.7);
-    const remaining = price - currentSavings;
-    const months = Math.max(1, Math.ceil(remaining / saveable));
-
-    const fallbackResult = {
-      aiTip: `At ₹${saveable.toLocaleString('en-IN')}/month savings, you can afford "${wishName}" in ~${months} months.`,
-      speedUpTip: 'Cut food delivery and subscriptions by 20% to reach your goal faster.',
-      monthsToAfford: months,
-      savingSteps: [
-        `Auto-save ₹${saveable.toLocaleString('en-IN')}/month into a liquid fund`,
-        'Reduce Swiggy/Zomato orders by 2-3 per week',
-        'Switch annual plans for Netflix, Spotify, YouTube Premium',
-      ],
-    };
-
-    // Save fallback conversation too (useful for tracking failure rates)
-    const conversation = await saveConversation(userId, {
-      type: 'wish_plan',
-      title: `${wishName} — Saving Plan`,
-      inputContext,
-      aiResponse: fallbackResult,
-      modelUsed: 'fallback-math',
-      provider: 'local',
-      responseTimeMs: 0,
-      tokensUsed: 0,
-    });
-
-    // await incrementUsage(userId, 'wish_plans', 0);
-
-    res.json({
-      ...fallbackResult,
-      conversationId: conversation?.id,
-      provider: 'local',
-      model: 'fallback-math',
-      fallback: true,
-    });
+    console.error('FlowMint AI — Wish Plan Error:', error);
+    return res.status(503).json({ error: 'FlowMint could not generate a plan right now. Please try again later.' });
   }
 });
 
@@ -1065,7 +1072,23 @@ app.post('/api/ai/spending-insight', authenticateToken, async (req, res) => {
   //   });
   // }
 
-  const { transactions = [], creditScore, monthlyIncome, totalBalance, activeEMIs } = req.body;
+  let financialData;
+  try {
+    financialData = await getAuthenticatedFinancialData(userId);
+  } catch (error) {
+    console.error('Unable to load authenticated financial data for insight:', error);
+    return res.status(503).json({ error: 'Your financial information is temporarily unavailable.' });
+  }
+  if (!hasCompleteFinancialProfile(financialData.profile)) {
+    return res.status(409).json({ error: 'Complete your financial profile before requesting an insight.' });
+  }
+
+  const profile = financialData.profile;
+  const monthlyIncome = Number(profile.monthly_income);
+  const monthlyExpenses = Number(profile.monthly_expenses);
+  const currentSavings = Number(profile.current_savings);
+  const monthlyRentEmi = Number(profile.monthly_rent_emi);
+  const transactions = financialData.transactions;
 
   const systemPrompt = `You are FlowMint AI, a witty financial advisor for Indian millennials.
 
@@ -1078,29 +1101,30 @@ Analyze the user's spending data and return a JSON response with:
 RESPOND ONLY with valid JSON.`;
 
   const txSummary = transactions.length > 0
-    ? `Recent transactions:\n${transactions.slice(0, 15).map(t => `- ${t.title}: ₹${t.amount} (${t.category}, ${t.type})`).join('\n')}`
-    : 'No transaction data available.';
+    ? `Recent user-entered expenses:\n${transactions.map(t => `- ${t.title}: ₹${Number(t.amount).toLocaleString('en-IN')} (${t.category})`).join('\n')}`
+    : 'The user has not recorded any recent individual expenses. Do not infer spending patterns.';
 
   const userPrompt = `${txSummary}
 
 Financial snapshot:
-- Total balance: ₹${(totalBalance || 0).toLocaleString('en-IN')}
-- Credit score: ${creditScore || 'Unknown'}
-- Monthly income: ₹${(monthlyIncome || 0).toLocaleString('en-IN')}
-- Active EMIs: ${activeEMIs || 0}
+- Monthly income: ₹${monthlyIncome.toLocaleString('en-IN')}
+- Monthly expenses (excluding rent/EMI): ₹${monthlyExpenses.toLocaleString('en-IN')}
+- Current savings: ₹${currentSavings.toLocaleString('en-IN')}
+- Monthly rent/EMI: ₹${monthlyRentEmi.toLocaleString('en-IN')}
+- Estimated monthly surplus: ₹${(monthlyIncome - monthlyExpenses - monthlyRentEmi).toLocaleString('en-IN')}
 
-What's my spending personality and one tip to improve?`;
+Give one useful, evidence-based financial insight. Explicitly say when there is not enough transaction history to identify a spending pattern.`;
 
-  const inputContext = { transactions: transactions.slice(0, 15), creditScore, monthlyIncome, totalBalance, activeEMIs };
+  const inputContext = { transactions, monthlyIncome, monthlyExpenses, currentSavings, monthlyRentEmi };
 
   try {
     const { content: rawResponse, tokens, responseTimeMs, provider, model } = await callAI(systemPrompt, userPrompt, 256);
     const insight = safeParseJSON(rawResponse);
 
-    const result = {
-      personality: insight.personality || 'The Balanced One',
-      tip: insight.tip || 'Keep tracking — awareness is the first step to wealth!',
-    };
+    if (typeof insight.personality !== 'string' || typeof insight.tip !== 'string') {
+      throw new Error('AI provider returned an invalid financial insight.');
+    }
+    const result = { personality: insight.personality, tip: insight.tip };
 
     // Save conversation
     const conversation = await saveConversation(userId, {
@@ -1112,27 +1136,12 @@ What's my spending personality and one tip to improve?`;
       tokensUsed: tokens,
     });
 
-    // Update financial profile with personality
-    if (result.personality) {
-      await supabase
-        .from('user_financial_profiles')
-        .upsert({
-          user_id: userId,
-          spending_personality: result.personality,
-          credit_score: creditScore || undefined,
-          last_ai_interaction: new Date().toISOString(),
-        }, { onConflict: 'user_id' });
-    }
-
     // await incrementUsage(userId, 'spending_insights', tokens);
 
     res.json({ ...result, conversationId: conversation?.id, provider, model });
   } catch (error) {
-    console.error('FlowMint AI — Insight Error:', error.message);
-    res.json({
-      personality: 'The Balanced One',
-      tip: 'Your spending is on track. Keep building that emergency fund — aim for 6 months of expenses!',
-    });
+    console.error('FlowMint AI — Insight Error:', error);
+    return res.status(503).json({ error: 'FlowMint could not generate an insight right now. Please try again later.' });
   }
 });
 
@@ -1144,11 +1153,33 @@ What's my spending personality and one tip to improve?`;
  */
 app.post('/api/ai/chat', authenticateToken, async (req, res) => {
   const userId = req.user.id;
-  const { message } = req.body;
+  const message = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
 
-  if (!message || !message.trim()) {
+  if (!message) {
     return res.status(400).json({ error: 'Message is required' });
   }
+  if (message.length > 2000) {
+    return res.status(413).json({ error: 'Messages must be 2,000 characters or fewer.' });
+  }
+
+  let financialData;
+  try {
+    financialData = await getAuthenticatedFinancialData(userId);
+  } catch (error) {
+    console.error('Unable to load authenticated financial data for chat:', error);
+    return res.status(503).json({ error: 'Your financial information is temporarily unavailable.' });
+  }
+  if (!hasCompleteFinancialProfile(financialData.profile)) {
+    return res.status(409).json({ error: 'Complete your financial profile before using personalized AI.' });
+  }
+  const profile = financialData.profile;
+  const monthlyIncome = Number(profile.monthly_income);
+  const monthlyExpenses = Number(profile.monthly_expenses);
+  const currentSavings = Number(profile.current_savings);
+  const monthlyRentEmi = Number(profile.monthly_rent_emi);
+  const expenseSummary = financialData.transactions.length
+    ? financialData.transactions.map((transaction) => `${transaction.category}: ₹${Number(transaction.amount).toLocaleString('en-IN')}`).join(', ')
+    : 'No recent individual expense records';
 
   const systemPrompt = `You are FlowMint AI, a witty, knowledgeable, and sharp financial advisor for Indian Gen-Z and Millennials.
 
@@ -1161,14 +1192,10 @@ PERSONALITY:
 - All amounts in ₹ (Indian Rupees)
 
 CAPABILITIES:
-- Personal finance advice (budgeting, saving, investing, debt management)
-- Spending optimization and expense tracking guidance
-- Credit score improvement strategies
-- Loan eligibility and EMI calculations
-- Tax-saving tips (Section 80C, 80D, HRA, etc.)
-- Investment options comparison (SIP, FD, PPF, mutual funds, stocks)
-- Goal-based financial planning
-- Insurance guidance (term, health)
+- Budgeting, expense tracking, savings plans, goals, and purchase affordability
+- Basic savings, emergency-fund, and EMI calculations
+- Make clear that advice is educational and does not move money or constitute professional advice
+- Never claim access to bank accounts, loans, or credit scores
 
 RESPOND ONLY with valid JSON in this exact schema:
 {
@@ -1178,24 +1205,35 @@ RESPOND ONLY with valid JSON in this exact schema:
   "followUp": "Optional follow-up question to engage the user"
 }`;
 
-  const userPrompt = message.trim();
+  const userPrompt = `Authenticated financial profile (source of truth):
+- Monthly income: ₹${monthlyIncome.toLocaleString('en-IN')}
+- Monthly expenses, excluding rent/EMI: ₹${monthlyExpenses.toLocaleString('en-IN')}
+- Current savings: ₹${currentSavings.toLocaleString('en-IN')}
+- Monthly rent/EMI: ₹${monthlyRentEmi.toLocaleString('en-IN')}
+- Estimated monthly surplus: ₹${(monthlyIncome - monthlyExpenses - monthlyRentEmi).toLocaleString('en-IN')}
+- Recent expense records: ${expenseSummary}
+
+User question: ${message}`;
 
   try {
     const { content: rawResponse, tokens, responseTimeMs, provider, model } = await callAI(systemPrompt, userPrompt, 512);
     const parsed = safeParseJSON(rawResponse);
 
+    if (typeof parsed.reply !== 'string' || !parsed.reply.trim()) {
+      throw new Error('AI provider returned an invalid chat response.');
+    }
     const result = {
-      reply: parsed.reply || "I'm here to help with your finances! Could you tell me more about what you need advice on?",
-      category: parsed.category || 'general',
-      actionable: parsed.actionable || false,
-      followUp: parsed.followUp || null,
+      reply: parsed.reply,
+      category: typeof parsed.category === 'string' ? parsed.category : 'general',
+      actionable: parsed.actionable === true,
+      followUp: typeof parsed.followUp === 'string' ? parsed.followUp : null,
     };
 
     // Save conversation to Supabase
     const conversation = await saveConversation(userId, {
       type: 'chat',
-      title: message.trim().slice(0, 80),
-      inputContext: { message: userPrompt },
+      title: message.slice(0, 80),
+      inputContext: { message, monthlyIncome, monthlyExpenses, currentSavings, monthlyRentEmi },
       aiResponse: result,
       modelUsed: model,
       provider,
@@ -1211,18 +1249,8 @@ RESPOND ONLY with valid JSON in this exact schema:
       responseTimeMs,
     });
   } catch (error) {
-    console.error('FlowMint AI — Chat Error:', error.message);
-
-    // Static fallback — still useful
-    res.json({
-      reply: "That's a great question! I'm having a brief moment, but here's a universal money tip: automate your savings by setting up a ₹5,000 auto-transfer on salary day into a liquid fund. Small consistent actions build serious wealth over time. Try asking me again in a moment! 💪",
-      category: 'general',
-      actionable: true,
-      followUp: 'Want me to help you set up a savings plan or analyze your spending?',
-      provider: 'fallback',
-      model: 'static',
-      fallback: true,
-    });
+    console.error('FlowMint AI — Chat Error:', error);
+    return res.status(503).json({ error: 'FlowMint AI is unavailable right now. Please try again later.' });
   }
 });
 
@@ -1423,8 +1451,8 @@ app.post('/api/transactions', authenticateToken, async (req, res) => {
   const amountError = validatePositiveNumber(amount, 'Amount');
   if (amountError) return res.status(400).json({ error: amountError });
 
-  if (!['income', 'expense', 'transfer'].includes(type)) {
-    return res.status(400).json({ error: 'Type must be one of: income, expense, transfer' });
+  if (!['income', 'expense'].includes(type)) {
+    return res.status(400).json({ error: 'Type must be either income or expense' });
   }
 
   try {
@@ -1657,7 +1685,8 @@ app.patch('/api/bills/:id/pay', authenticateToken, async (req, res) => {
     if (error) throw error;
     if (!data) return res.status(404).json({ error: 'Bill not found' });
 
-    // Record as a payment + transaction
+    /*
+    // Legacy simulated payment recording retained for reference, intentionally disabled in V1.
     await Promise.allSettled([
       supabase.from('payments').insert([{
         user_id: userId, recipient: data.title, amount: data.amount,
@@ -1668,8 +1697,9 @@ app.patch('/api/bills/:id/pay', authenticateToken, async (req, res) => {
         category: data.type || 'Bills', type: 'expense',
       }]),
     ]);
+    */
 
-    res.json({ bill: data, message: `${data.title} marked as paid` });
+    res.json({ bill: data, message: `${data.title} recorded as paid outside FlowMint` });
   } catch (err) {
     console.error('Bills PATCH error:', err.message);
     res.status(500).json({ error: 'Failed to update bill', detail: err.message });
@@ -1917,7 +1947,12 @@ app.get('/api/credit-score', authenticateToken, async (req, res) => {
   }
 });
 
-// GET /api/payments
+// Legacy simulated payment handlers are retained below but disabled for V1.
+app.use('/api/payments', (_req, res) => res.status(410).json({
+  error: 'Payments are disabled. FlowMint V1 tracks expenses and does not move money.',
+}));
+
+// GET /api/payments (disabled by the middleware above)
 app.get('/api/payments', authenticateToken, async (req, res) => {
   const userId = getAuthUserId(req);
   const { limit = 20 } = req.query;

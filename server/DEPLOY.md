@@ -1,4 +1,4 @@
-# ══════════════════════════════════════════════════════════════
+cbt-agentic-clinical-intelligence-assistant-backend# ══════════════════════════════════════════════════════════════
 
 # FlowMint Backend — Deployment Guide
 
@@ -52,19 +52,25 @@
 
 #
 
-# SUPABASE_URL = https://qefuzyxzgcrnpllkrznd.supabase.co
+# SUPABASE_URL = https://your-project.supabase.co
 
 # SUPABASE_SERVICE_ROLE_KEY = (your service role key)
+#
+# SMTP_HOST = (your SMTP host, e.g. smtp.gmail.com)
+# SMTP_PORT = (465 for SSL or 587 for STARTTLS)
+# SMTP_SECURE = (true for port 465, otherwise false)
+# SMTP_USER = (SMTP account username)
+# SMTP_PASSWORD = (SMTP provider password or app password)
+# SMTP_FROM = (verified sender, e.g. FlowMint <you@example.com>)
+# OTP_HASH_SECRET = (optional random server-only secret; defaults to service role key)
 
-# GOOGLE_CLIENT_ID = 67326297377-our22c4hei4djsjv0v4piilbpe53a3e0.apps.googleusercontent.com
+# Legacy Google sign-in is not used by the active V1 app.
 
-# JWT_SECRET = (Your Supabase JWT Secret — MUST match dashboard)
-
-# Found in: Project Settings → API → JWT Settings → JWT Secret
+# Supabase Auth verifies the Supabase access token; a legacy JWT_SECRET is not required.
 
 # GROQ_API_KEY = (your Groq API key)
 
-# GEMINI_API_KEY = (your Gemini key, or leave empty)
+# GEMINI_API_KEY = (optional server-only Gemini key)
 
 # NODE_ENV = production
 
@@ -73,10 +79,12 @@
 #
 
 # 6. Click "Create Web Service" — Render will deploy automatically
+#
+# 7. Apply supabase/migrations/006_email_login_otp.sql in the Supabase SQL Editor.
 
 #
 
-# 7. Your server URL will be: https://flowmint-server.onrender.com
+# 8. Your server URL will be: https://flowmint-server.onrender.com
 
 # (This is already configured in utils/platform.ts)
 
@@ -111,10 +119,12 @@
 #
 
 # 5. Add the same environment variables as above
+#
+# 6. Apply supabase/migrations/006_email_login_otp.sql in the Supabase SQL Editor
 
 #
 
-# 6. Railway will auto-assign a URL like:
+# 7. Railway will auto-assign a URL like:
 
 # https://flowmint-server-production.up.railway.app
 
