@@ -1,4 +1,6 @@
 
+// Legacy savings-blueprint demo retained for reference; V1 routes to FinancialGoals.tsx,
+// which uses saved user-entered figures and reports backend AI errors without fabricated plans.
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {

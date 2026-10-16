@@ -39,18 +39,24 @@ const SettingsPanel: FC<SettingsPanelProps> = ({ onClose, onLogout, userProfile,
         <div className="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-hide">
           {/* Profile Section */}
           <div className="flex items-center gap-4">
-            <img src={userProfile?.avatar || "https://picsum.photos/seed/user1/100/100"} alt="Avatar" className="w-16 h-16 rounded-full border-2 border-brand shadow-lg" />
+            {userProfile?.avatar ? (
+              <img src={userProfile.avatar} alt="Profile" className="w-16 h-16 rounded-full border-2 border-brand shadow-lg" />
+            ) : (
+              <div className="w-16 h-16 rounded-full border-2 border-brand shadow-lg flex items-center justify-center">
+                <User className="h-7 w-7 text-brand" />
+              </div>
+            )}
             <div>
               <h3 className="text-lg font-bold" style={{ color: 'var(--text-color)' }}>{userProfile?.name || 'FlowMint User'}</h3>
-              <p className="text-sm text-gray-500">{userProfile?.email || 'user@flowmint.com'}</p>
+              <p className="text-sm text-gray-500">{userProfile?.email || ''}</p>
             </div>
           </div>
 
           {/* Settings Options */}
           <div className="space-y-3">
-            <SettingsOption icon={<User className="text-brand" />} title="Personal Information" subtitle="Update your profile details" />
-            <SettingsOption icon={<Bell className="text-brand" />} title="Notifications" subtitle="Push, email & SMS settings" />
-            <SettingsOption icon={<Shield className="text-emerald-400" />} title="Security" subtitle="PIN, Biometrics & Limits" />
+            <SettingsOption icon={<User className="text-brand" />} title="Personal Information" subtitle="Not available in V1" />
+            <SettingsOption icon={<Bell className="text-brand" />} title="Notifications" subtitle="Not available in V1" />
+            <SettingsOption icon={<Shield className="text-emerald-400" />} title="Security" subtitle="Not available in V1" />
           </div>
 
           {/* Preferences & Support */}
@@ -101,7 +107,7 @@ const SettingsPanel: FC<SettingsPanelProps> = ({ onClose, onLogout, userProfile,
 };
 
 const SettingsOption: FC<{ icon: React.ReactNode, title: string, subtitle: string }> = ({ icon, title, subtitle }) => (
-  <button className="w-full flex items-center justify-between p-4 rounded-2xl border transition-all hover:border-brand/30"
+  <button disabled aria-disabled="true" title={`${title} is not available in V1`} className="w-full flex items-center justify-between p-4 rounded-2xl border opacity-60 cursor-not-allowed"
           style={{ backgroundColor: 'var(--card-subtle)', borderColor: 'var(--glass-border)' }}>
     <div className="flex items-center gap-4">
       <div className="p-2 rounded-full glass relative overflow-hidden group">

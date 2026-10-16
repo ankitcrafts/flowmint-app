@@ -71,7 +71,7 @@ interface UserProfile {
 }
 
 interface InitialSetupProps {
-  onComplete: (profile?: UserProfile) => void;
+  onComplete: (profile?: UserProfile) => void | Promise<void>;
   theme: 'light' | 'dark';
   initialStep?: SetupStep;
 }
@@ -133,12 +133,9 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme, initialS
   const [idNumber, setIdNumber] = useState('');
   const [idError, setIdError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
+  const [checkedIdType, setCheckedIdType] = useState<'aadhaar' | 'pan' | null>(null);
+  const [completionError, setCompletionError] = useState('');
   const [isEkycComplete, setIsEkycComplete] = useState(false);
-  const [fetchedDetails, setFetchedDetails] = useState({
-    dob: '12th Aug 1998',
-    address: 'Indiranagar, Bengaluru, KA',
-    fullAddress: 'No. 42, 10th Main Road, Stage 2, Indiranagar, Bengaluru - 560038'
-  });
 
   // Local Biometric Crypto Vault State
   const [hasExistingBiometric, setHasExistingBiometric] = useState(false);
@@ -168,8 +165,8 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme, initialS
       case 'field': text = `Which industry are you focused on?`; break;
       case 'income': text = vibe === 'Student' ? "How much pocket money do you get every month?" : "How much do you bring in every month (after tax)?"; break;
       case 'savings': text = `Based on your ₹${monthlyIncome.toLocaleString()} ${vibe === 'Student' ? 'budget' : 'income'}, how much do you plan to save?`; break;
-      case 'identity-choice': text = "Let's verify your identity to unlock higher limits."; break;
-      case 'details-review': text = "Details fetched! Everything looking sharp?"; break;
+      case 'identity-choice': text = "You can check an ID number's format. This does not verify your identity."; break;
+      case 'details-review': text = "Format check complete. This is not identity verification."; break;
       case 'ekyc': text = "Lock your identity securely on-device with FlowMint Local Biometrics."; break;
       case 'card-details': text = `Link a card to unlock full dashboard insights.`; break;
       case 'celebration': text = "You're all set, Alpha. Ready to enter the flow?"; break;
@@ -398,11 +395,9 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme, initialS
       }
     }
 
-    setIsVerifying(true);
-    setTimeout(() => {
-      setIsVerifying(false);
-      setStep('details-review');
-    }, 1500);
+    setCheckedIdType(idType);
+    setIdNumber('');
+    setStep('details-review');
   };
 
   const startEkyc = async () => {
@@ -498,20 +493,24 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme, initialS
   };
 
   const handleCompleteSetup = async () => {
+    setCompletionError('');
+    const { data: { session } } = await supabase.auth.getSession();
     const profileData = {
       name: name || 'User',
       avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name || 'default'}`,
-      verified: isEkycComplete,
-      email: 'user@flowmint.com',
+      verified: false,
+      email: session?.user.email || '',
       dob,
       isMinor,
       guardianId
     };
 
-    // TODO: Save profile to backend when user session is available
-    // For now, just proceed with local profile data
-
-    onComplete(profileData);
+    try {
+      await onComplete(profileData);
+    } catch (error) {
+      console.error('Unable to complete personal onboarding:', error);
+      setCompletionError(error instanceof Error ? error.message : 'We could not save your profile. Please try again.');
+    }
   };
 
   const handleIncomeChange = (val: string) => {
@@ -825,9 +824,12 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme, initialS
                 <PremiumButton 
                   disabled={isVerifying || !idNumber} 
                   onClick={handleIdSubmit} 
-                  label={isVerifying ? "FETCHING..." : "FETCH DETAILS"} 
+                  label="CHECK FORMAT"
                 />
-                <button onClick={() => setStep('ekyc')} className="w-full text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] py-2">Skip for now</button>
+                <p className="px-2 text-xs leading-relaxed text-gray-500">
+                  This checks only the number's format/checksum on this device. It does not contact UIDAI or verify identity. The number is cleared after the check and is not saved.
+                </p>
+                <button onClick={() => { setIdNumber(''); setCheckedIdType(null); setStep('celebration'); }} className="w-full text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] py-2">Skip for now</button>
               </div>
             </div>
           )}
@@ -839,21 +841,19 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme, initialS
                     <div className="w-12 h-12 bg-brand/20 rounded-xl flex items-center justify-center text-brand">
                       <FileCheck className="w-6 h-6" />
                     </div>
-                    <span className="text-[8px] bg-brand text-black px-3 py-1 rounded-full font-black uppercase tracking-widest">Verified Data</span>
+                    <span className="text-[8px] bg-brand text-black px-3 py-1 rounded-full font-black uppercase tracking-widest">Format Checked</span>
                   </div>
-                  <div className="space-y-4 pt-2">
-                    <div>
-                      <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Birthday</p>
-                      <p className="text-xl font-black" style={{ color: 'var(--text-color)' }}>{fetchedDetails.dob}</p>
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Registered Address</p>
-                      <p className="text-sm font-bold text-gray-300 leading-tight">{fetchedDetails.fullAddress}</p>
-                    </div>
+                  <div className="space-y-2 pt-2">
+                    <p className="text-sm font-bold" style={{ color: 'var(--text-color)' }}>
+                      {checkedIdType === 'aadhaar' ? 'Aadhaar checksum passed.' : 'PAN format passed.'}
+                    </p>
+                    <p className="text-xs leading-relaxed text-gray-500">
+                      This local format check does not confirm that the ID exists or belongs to you. FlowMint has not verified your identity with UIDAI or a PAN service.
+                    </p>
                   </div>
                   <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 blur-3xl pointer-events-none rounded-full"></div>
                </div>
-               <PremiumButton onClick={() => setStep('ekyc')} label="CONFIRM DETAILS" />
+               <PremiumButton onClick={() => setStep('celebration')} label="CONTINUE" />
             </div>
           )}
 
@@ -1125,10 +1125,11 @@ const InitialSetup: React.FC<InitialSetupProps> = ({ onComplete, theme, initialS
                  <PartyPopper className="w-10 h-10 text-black" />
               </div>
               <div className="space-y-2">
-                <h4 className="text-lg font-black uppercase tracking-tight" style={{ color: 'var(--text-color)' }}>PROFILE READY</h4>
+                <h4 className="text-lg font-black uppercase tracking-tight" style={{ color: 'var(--text-color)' }}>PERSONAL SETUP COMPLETE</h4>
                 <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Goal Set: ₹{savingsGoal.toLocaleString()}</p>
               </div>
-              <PremiumButton onClick={handleCompleteSetup} label="ENTER DASHBOARD" showSparkles />
+              {completionError && <p role="alert" className="text-sm text-red-400">{completionError}</p>}
+              <PremiumButton onClick={handleCompleteSetup} label="CONTINUE TO FINANCIAL SETUP" showSparkles />
             </div>
           )}
         </div>

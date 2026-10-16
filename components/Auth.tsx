@@ -1,4 +1,6 @@
 
+// Legacy phone OTP, Google OAuth, and fallback auth UI retained for reference only.
+// The V1 app imports EmailOtpAuth.tsx; legacy /auth server endpoints are disabled.
 import React, { useState, useEffect } from 'react';
 import { 
   Zap, 
@@ -263,7 +265,8 @@ const Auth: React.FC<AuthProps> = ({ onLoginSuccess, theme }) => {
     }
   };
 
-  // OTP submission — works both in browser (via server) and Capacitor (client-side fallback)
+  /*
+  // Legacy OTP submission and client-side profile fallback retained for reference only.
   const handleOtpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (otp === '021303') {
@@ -362,6 +365,12 @@ const Auth: React.FC<AuthProps> = ({ onLoginSuccess, theme }) => {
     } else {
       setError('ENTER 021303 TO VERIFY');
     }
+  };
+  */
+
+  const handleOtpSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('This legacy phone verification flow is disabled. Use email OTP sign-in.');
   };
 
   const handleResend = async () => {
@@ -609,4 +618,15 @@ const SocialButton = ({ icon, label, onClick }: { icon: React.ReactNode, label: 
   </button>
 );
 
-export default Auth;
+// The original interactive auth implementation remains above for reference, but the module
+// exports only a safe disabled screen so it cannot restore the hardcoded OTP or fallback login.
+const DisabledLegacyAuth: React.FC<AuthProps> = () => (
+  <main className="min-h-screen flex items-center justify-center p-8 text-center" style={{ backgroundColor: 'var(--bg-color)' }}>
+    <div>
+      <h1 className="text-2xl font-black" style={{ color: 'var(--text-color)' }}>This sign-in method is disabled</h1>
+      <p className="mt-3 text-sm text-gray-500">Use FlowMint’s email verification screen to sign in.</p>
+    </div>
+  </main>
+);
+
+export default DisabledLegacyAuth;
