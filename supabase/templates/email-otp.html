@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <meta name="supported-color-schemes" content="light dark">
+    <title>Your FlowMint sign-in code</title>
+  </head>
+  <body style="margin:0;padding:0;background-color:#08110c;font-family:Arial,Helvetica,sans-serif;color:#f4f7f4;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">
+      Your one-time FlowMint sign-in code is {{ .Token }}.
+    </div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#08110c;">
+      <tr>
+        <td align="center" style="padding:40px 16px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:520px;">
+            <tr>
+              <td align="center" style="padding:0 0 24px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <td align="center" valign="middle" width="44" height="44" style="width:44px;height:44px;border-radius:14px;background-color:#b9f36a;color:#08110c;font-size:24px;font-weight:900;">F</td>
+                    <td style="padding-left:12px;color:#f4f7f4;font-size:19px;font-weight:800;letter-spacing:1px;">FLOWMINT</td>
+                  </tr>
+                </table>
+                <p style="margin:12px 0 0;color:#b9f36a;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Your AI Financial Copilot</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:36px 32px;border:1px solid #25352b;border-radius:24px;background-color:#101b14;">
+                <p style="margin:0 0 10px;color:#b9f36a;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">Secure sign-in</p>
+                <h1 style="margin:0;color:#f4f7f4;font-size:28px;line-height:1.25;font-weight:800;">Your FlowMint code is ready</h1>
+                <p style="margin:16px 0 0;color:#b7c2ba;font-size:15px;line-height:1.6;">
+                  Enter this one-time code in FlowMint to verify your email address and continue.
+                </p>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:28px 0;">
+                  <tr>
+                    <td align="center" style="padding:20px 12px;border:1px solid #34483a;border-radius:16px;background-color:#0a130d;">
+                      <span style="color:#b9f36a;font-size:36px;font-weight:800;letter-spacing:10px;">{{ .Token }}</span>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:0;color:#b7c2ba;font-size:13px;line-height:1.6;">
+                  This code expires according to the security settings for your FlowMint account. If you didn’t request it, you can safely ignore this email.
+                </p>
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:28px 0 0;">
+                  <tr>
+                    <td align="center" style="border-radius:12px;background-color:#b9f36a;">
+                      <a href="{{ .SiteURL }}" style="display:inline-block;padding:14px 22px;color:#08110c;font-size:14px;font-weight:800;text-decoration:none;">Open FlowMint</a>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:28px 0 0;padding-top:20px;border-top:1px solid #25352b;color:#829087;font-size:12px;line-height:1.6;">
+                  For your security, never share this code with anyone. FlowMint will never ask you to send it to us.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:22px 12px;color:#829087;font-size:11px;line-height:1.6;">
+                Sent to {{ .Email }}<br>
+                FlowMint · Understand. Plan. Save. Decide.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
