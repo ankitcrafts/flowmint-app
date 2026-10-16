@@ -1,10 +1,9 @@
 import path from 'path';
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, '.', '');
+export default defineConfig(() => {
     return {
       server: {
         port: 5173,
@@ -30,7 +29,7 @@ export default defineConfig(({ mode }) => {
           manifest: {
             name: 'FlowMint',
             short_name: 'FlowMint',
-            description: 'Financial Super App for Gen-Z',
+            description: 'Your AI Financial Copilot for expense tracking and financial planning.',
             theme_color: '#0A0A0A',
             background_color: '#0A0A0A',
             display: 'standalone',
@@ -56,10 +55,6 @@ export default defineConfig(({ mode }) => {
           }
         })
       ],
-      define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
-      },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),

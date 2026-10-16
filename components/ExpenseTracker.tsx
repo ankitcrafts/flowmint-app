@@ -1,21 +1,13 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   Plus, Coffee, ShoppingBag, Car, Smartphone, Zap, Home, Utensils,
-  TrendingUp, TrendingDown, AlertTriangle, RefreshCw, ChevronRight,
-  Calendar, Filter, Search, X, Sparkles, ArrowUpRight, BarChart2
+  AlertTriangle, RefreshCw, X, Sparkles, BarChart2
 } from 'lucide-react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, Cell, PieChart, Pie } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, Cell } from 'recharts';
+import { transactionService, type Transaction } from '../services/apiService';
 
-interface Expense {
-  id: string;
-  title: string;
-  amount: number;
-  category: string;
-  date: string;
-  isRecurring: boolean;
-  recurringTag?: string;
-}
+type Expense = Transaction;
 
 const CATEGORIES = [
   { name: 'Food', icon: Coffee, color: '#F97316' },
@@ -28,6 +20,7 @@ const CATEGORIES = [
   { name: 'Other', icon: BarChart2, color: '#6B7280' },
 ];
 
+/* Legacy demo fixtures retained for reference; V1 loads only the signed-in user's records.
 const MOCK_EXPENSES: Expense[] = [
   { id: '1', title: 'Swiggy Order', amount: 456, category: 'Food', date: 'Today', isRecurring: false },
   { id: '2', title: 'Amazon Prime', amount: 1499, category: 'Shopping', date: 'Today', isRecurring: true, recurringTag: 'Monthly' },
@@ -45,9 +38,14 @@ const MONTHLY_DATA = [
   { month: 'Sep', amount: 32000 }, { month: 'Oct', amount: 28000 },
   { month: 'Nov', amount: 35000 }, { month: 'Dec', amount: 31000 },
 ];
+*/
 
 const ExpenseTracker: React.FC = () => {
-  const [expenses, setExpenses] = useState<Expense[]>(MOCK_EXPENSES);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [summaryExpenses, setSummaryExpenses] = useState<Expense[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [view, setView] = useState<'list' | 'summary'>('list');
@@ -57,12 +55,56 @@ const ExpenseTracker: React.FC = () => {
   const [newAmount, setNewAmount] = useState('');
   const [newCategory, setNewCategory] = useState('Food');
 
-  const totalSpent = useMemo(() => expenses.reduce((sum, e) => sum + e.amount, 0), [expenses]);
-  const recurringTotal = useMemo(() => expenses.filter(e => e.isRecurring).reduce((sum, e) => sum + e.amount, 0), [expenses]);
+  useEffect(() => {
+    let active = true;
+    const now = new Date();
+    const since = new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString();
+    Promise.all([
+      transactionService.getAll(200),
+      transactionService.getExpensesSince(since),
+    ])
+      .then(([recent, history]) => {
+        if (active) {
+          setExpenses(recent.data.filter((transaction) => transaction.type === 'expense'));
+          setSummaryExpenses(history);
+        }
+      })
+      .catch((loadError) => {
+        console.error('Unable to load expense records:', loadError);
+        if (active) setError('Your expense records could not be loaded. Please try again.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
+
+  const currentMonthExpenses = useMemo(() => {
+    const now = new Date();
+    return summaryExpenses.filter((expense) => {
+      const date = new Date(expense.date);
+      return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+    });
+  }, [summaryExpenses]);
+  const totalSpent = useMemo(() => currentMonthExpenses.reduce((sum, e) => sum + Number(e.amount), 0), [currentMonthExpenses]);
+  const recurringTotal = useMemo(() => currentMonthExpenses.filter(e => e.is_recurring).reduce((sum, e) => sum + Number(e.amount), 0), [currentMonthExpenses]);
+  const monthlyData = useMemo(() => {
+    const now = new Date();
+    return Array.from({ length: 4 }, (_, index) => {
+      const month = new Date(now.getFullYear(), now.getMonth() - (3 - index), 1);
+      const amount = summaryExpenses.reduce((sum, expense) => {
+        const date = new Date(expense.date);
+        return date.getFullYear() === month.getFullYear() && date.getMonth() === month.getMonth()
+          ? sum + Number(expense.amount)
+          : sum;
+      }, 0);
+      return { month: month.toLocaleString('en-US', { month: 'short' }), amount };
+    });
+  }, [summaryExpenses]);
 
   const categoryBreakdown = useMemo(() => {
     const map: Record<string, number> = {};
-    expenses.forEach(e => { map[e.category] = (map[e.category] || 0) + e.amount; });
+    currentMonthExpenses.forEach(e => { map[e.category] = (map[e.category] || 0) + Number(e.amount); });
     return Object.entries(map)
       .map(([name, value]) => ({
         name,
@@ -70,17 +112,30 @@ const ExpenseTracker: React.FC = () => {
         color: CATEGORIES.find(c => c.name === name)?.color || '#6B7280',
       }))
       .sort((a, b) => b.value - a.value);
-  }, [expenses]);
+  }, [currentMonthExpenses]);
 
-  // Spending anomaly detection
   const anomalyAlert = useMemo(() => {
-    const avgDaily = 31500 / 30; // ~1050 avg
-    const todaySpend = expenses.filter(e => e.date === 'Today').reduce((s, e) => s + e.amount, 0);
-    if (todaySpend > avgDaily * 1.8) {
-      return `Today's spending (₹${todaySpend.toLocaleString()}) is ${Math.round((todaySpend / avgDaily - 1) * 100)}% above your daily average.`;
+    const now = new Date();
+    const todayKey = now.toLocaleDateString();
+    const priorDayTotals = new Map<string, number>();
+    let todaySpend = 0;
+    currentMonthExpenses.forEach((expense) => {
+      const date = new Date(expense.date);
+      if (date.toLocaleDateString() === todayKey) {
+        todaySpend += Number(expense.amount);
+      } else {
+        const dayKey = date.toLocaleDateString();
+        priorDayTotals.set(dayKey, (priorDayTotals.get(dayKey) || 0) + Number(expense.amount));
+      }
+    });
+    const averageRecordedDay = priorDayTotals.size
+      ? Array.from(priorDayTotals.values()).reduce((sum, amount) => sum + amount, 0) / priorDayTotals.size
+      : 0;
+    if (averageRecordedDay > 0 && todaySpend > averageRecordedDay * 1.8) {
+      return `Today's recorded spending (₹${todaySpend.toLocaleString()}) is ${Math.round((todaySpend / averageRecordedDay - 1) * 100)}% above your average recorded day this month.`;
     }
     return null;
-  }, [expenses]);
+  }, [currentMonthExpenses]);
 
   // Smart category suggestion
   const suggestCategory = (title: string): string => {
@@ -95,21 +150,32 @@ const ExpenseTracker: React.FC = () => {
     return 'Other';
   };
 
-  const handleAddExpense = () => {
-    if (!newTitle || !newAmount) return;
-    const expense: Expense = {
-      id: Date.now().toString(),
-      title: newTitle,
-      amount: parseInt(newAmount),
-      category: newCategory,
-      date: 'Today',
-      isRecurring: false,
-    };
-    setExpenses([expense, ...expenses]);
-    setNewTitle('');
-    setNewAmount('');
-    setNewCategory('Food');
-    setShowAddModal(false);
+  const handleAddExpense = async () => {
+    const amount = Number(newAmount);
+    if (!newTitle.trim() || !Number.isFinite(amount) || amount <= 0 || saving) return;
+    setSaving(true);
+    setError('');
+    try {
+      const expense = await transactionService.create({
+        title: newTitle.trim(),
+        amount,
+        category: newCategory,
+        type: 'expense',
+        date: new Date().toISOString(),
+        is_recurring: false,
+      });
+      setExpenses((current) => [expense, ...current].slice(0, 200));
+      setSummaryExpenses((current) => [expense, ...current]);
+      setNewTitle('');
+      setNewAmount('');
+      setNewCategory('Food');
+      setShowAddModal(false);
+    } catch (saveError) {
+      console.error('Unable to save expense record:', saveError);
+      setError('Your expense could not be saved. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const filteredExpenses = filterCategory
@@ -123,7 +189,7 @@ const ExpenseTracker: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-black tracking-tighter" style={{ color: 'var(--text-color)' }}>Expenses</h2>
-            <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mt-1">Track every rupee</p>
+            <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mt-1">Track expenses you enter</p>
           </div>
           <button
             onClick={() => setShowAddModal(true)}
@@ -133,6 +199,9 @@ const ExpenseTracker: React.FC = () => {
             <Plus className="w-6 h-6" />
           </button>
         </div>
+
+        {error && <p role="alert" className="rounded-xl border border-red-500/30 p-3 text-sm text-red-400">{error}</p>}
+        {loading && <p className="text-sm text-gray-500">Loading your expense records…</p>}
 
         {/* Anomaly Alert */}
         {anomalyAlert && (
@@ -156,8 +225,7 @@ const ExpenseTracker: React.FC = () => {
                 ₹{totalSpent.toLocaleString()}
               </h3>
               <div className="flex items-center gap-2 mt-2">
-                <TrendingDown className="w-3 h-3 text-brand" />
-                <span className="text-[10px] font-black text-brand uppercase">8% less than Nov</span>
+                <span className="text-[10px] font-black text-gray-500 uppercase">Based on records you entered</span>
               </div>
             </div>
             <div className="text-right">
@@ -194,7 +262,7 @@ const ExpenseTracker: React.FC = () => {
               <h4 className="font-black text-sm mb-6 uppercase tracking-widest text-gray-500">Monthly Trend</h4>
               <div className="h-40 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={MONTHLY_DATA}>
+                  <BarChart data={monthlyData}>
                     <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#6B7280' }} />
                     <Tooltip content={({ active, payload }: any) =>
                       active && payload?.length ? (
@@ -204,8 +272,8 @@ const ExpenseTracker: React.FC = () => {
                       ) : null
                     } />
                     <Bar dataKey="amount" radius={[8, 8, 8, 8]} barSize={32}>
-                      {MONTHLY_DATA.map((_, i) => (
-                        <Cell key={i} fill={i === MONTHLY_DATA.length - 1 ? 'var(--brand-primary)' : 'var(--glass-border)'} />
+                      {monthlyData.map((_, i) => (
+                        <Cell key={i} fill={i === monthlyData.length - 1 ? 'var(--brand-primary)' : 'var(--glass-border)'} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -273,6 +341,11 @@ const ExpenseTracker: React.FC = () => {
 
             {/* Transaction List */}
             <div className="space-y-3">
+              {!loading && filteredExpenses.length === 0 && (
+                <div className="rounded-2xl border p-6 text-center text-sm text-gray-500" style={{ borderColor: 'var(--glass-border)' }}>
+                  {expenses.length === 0 ? 'No expense records yet. Add an expense you want to track.' : 'No records match this category.'}
+                </div>
+              )}
               {filteredExpenses.map((expense) => {
                 const catInfo = CATEGORIES.find(c => c.name === expense.category);
                 const Icon = catInfo?.icon || BarChart2;
@@ -286,13 +359,13 @@ const ExpenseTracker: React.FC = () => {
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="font-bold text-sm" style={{ color: 'var(--text-color)' }}>{expense.title}</p>
-                          {expense.isRecurring && (
+                          {expense.is_recurring && (
                             <span className="text-[8px] font-black px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 uppercase">
-                              {expense.recurringTag}
+                              Recurring
                             </span>
                           )}
                         </div>
-                        <p className="text-[10px] text-gray-500 font-bold uppercase">{expense.date} • {expense.category}</p>
+                        <p className="text-[10px] text-gray-500 font-bold uppercase">{new Date(expense.date).toLocaleDateString()} • {expense.category}</p>
                       </div>
                     </div>
                     <p className="font-black text-sm" style={{ color: 'var(--text-color)' }}>-₹{expense.amount.toLocaleString()}</p>
@@ -370,15 +443,15 @@ const ExpenseTracker: React.FC = () => {
 
           <button
             onClick={handleAddExpense}
-            disabled={!newTitle || !newAmount}
-            className={`w-full h-14 rounded-2xl font-black uppercase tracking-widest text-xs transition-all ${!newTitle || !newAmount ? 'opacity-30' : ''}`}
+            disabled={!newTitle.trim() || !newAmount || saving}
+            className={`w-full h-14 rounded-2xl font-black uppercase tracking-widest text-xs transition-all ${!newTitle.trim() || !newAmount || saving ? 'opacity-30' : ''}`}
             style={{
               backgroundColor: 'var(--brand-primary)',
               color: '#000',
               boxShadow: '0 10px 30px var(--brand-glow)',
             }}
           >
-            Add Expense
+            {saving ? 'Saving…' : 'Add Expense'}
           </button>
         </div>
       </div>
@@ -453,7 +526,7 @@ const ExpenseTracker: React.FC = () => {
 
             <button
               onClick={handleAddExpense}
-              disabled={!newTitle || !newAmount}
+              disabled={!newTitle.trim() || !newAmount || saving}
               className={`w-full h-16 rounded-2xl font-black uppercase tracking-widest text-sm transition-all ${!newTitle || !newAmount ? 'opacity-30' : ''}`}
               style={{
                 backgroundColor: 'var(--brand-primary)',
@@ -461,7 +534,7 @@ const ExpenseTracker: React.FC = () => {
                 boxShadow: '0 10px 30px var(--brand-glow)',
               }}
             >
-              Add Expense
+              {saving ? 'Saving…' : 'Add Expense'}
             </button>
           </div>
         </div>

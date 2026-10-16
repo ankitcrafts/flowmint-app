@@ -1,3 +1,5 @@
+// Legacy rewards, fake score, payment-method, and biometric profile UI retained for reference.
+// V1 routes to FinancialProfileView.tsx instead.
 import { FC, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Edit3, Shield, Star, Award, ChevronRight, CheckCircle2, TrendingUp, CreditCard, Activity } from 'lucide-react';

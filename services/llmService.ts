@@ -118,28 +118,19 @@ export interface ChatResponse {
 // ─── Configuration ────────────────────────────────────────
 
 import { getApiBase } from '../utils/platform';
+import { supabase } from './supabase';
 
 const API_BASE = `${getApiBase()}/api/ai`;
 
 // ─── Helper ───────────────────────────────────────────────
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
-  const headers: Record<string, string> = {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) throw new Error('Please sign in to use FlowMint AI.');
+  return {
     'Content-Type': 'application/json',
+    Authorization: `Bearer ${session.access_token}`,
   };
-
-  try {
-    // Import supabase dynamically to avoid circular deps
-    const { supabase } = await import('./supabase');
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.access_token) {
-      headers['Authorization'] = `Bearer ${session.access_token}`;
-    }
-  } catch {
-    // No supabase session available — will rely on cookie auth
-  }
-
-  return headers;
 }
 
 async function apiCall<T>(url: string, options?: RequestInit): Promise<T> {
@@ -152,7 +143,6 @@ async function apiCall<T>(url: string, options?: RequestInit): Promise<T> {
   try {
     const response = await fetch(url, {
       ...options,
-      credentials: 'include', // Also send cookies for JWT auth
       signal: controller.signal,
       headers: {
         ...authHeaders,
@@ -204,66 +194,31 @@ export const llmService = {
    * Automatically saved to conversation history on the backend.
    */
   async getWishPlan(request: WishPlanRequest): Promise<WishPlanResponse> {
-    try {
-      return await apiCall<WishPlanResponse>(`${API_BASE}/wish-plan`, {
-        method: 'POST',
-        body: JSON.stringify(request),
-      });
-    } catch (error) {
-      console.error('FlowMint AI — Wish Plan Error:', error);
-      return this._fallbackWishPlan(request);
-    }
+    return apiCall<WishPlanResponse>(`${API_BASE}/wish-plan`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
   },
 
   /**
    * Generate AI spending insights from transaction data.
    */
   async getSpendingInsight(request: SpendingInsightRequest): Promise<SpendingInsightResponse> {
-    try {
-      return await apiCall<SpendingInsightResponse>(`${API_BASE}/spending-insight`, {
-        method: 'POST',
-        body: JSON.stringify(request),
-      });
-    } catch (error) {
-      console.error('FlowMint AI — Insight Error:', error);
-      return {
-        personality: 'The Balanced One',
-        tip: 'Keep tracking your spending — your financial awareness is already a superpower!',
-      };
-    }
+    return apiCall<SpendingInsightResponse>(`${API_BASE}/spending-insight`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
   },
 
   /**
    * General-purpose financial chat — ask anything.
-   * Uses the real AI backend (Groq/Gemini) first.
-   * If the backend is unreachable (Render sleeping), falls back to direct Gemini API call.
+   * Uses the authenticated AI backend; provider failures are returned to the caller.
    */
   async chatWithAI(message: string): Promise<ChatResponse> {
-    // 1. Try backend API first (Groq → Gemini on server)
-    try {
-      return await apiCall<ChatResponse>(`${API_BASE}/chat`, {
-        method: 'POST',
-        body: JSON.stringify({ message }),
-      });
-    } catch (backendError) {
-      console.warn('FlowMint AI — Backend unreachable, trying direct Gemini:', backendError);
-    }
-
-    // 2. Fallback: Call Gemini directly from the frontend
-    try {
-      return await this._directGeminiChat(message);
-    } catch (geminiError) {
-      console.error('FlowMint AI — Direct Gemini also failed:', geminiError);
-    }
-
-    // 3. Final fallback: static response
-    return {
-      reply: "I'm having a brief moment — but here's a universal tip: automate ₹5,000/month into a liquid fund on salary day. Small steps build serious wealth! Try again in a moment 💪",
-      category: 'general',
-      actionable: true,
-      followUp: 'Want me to help analyze your spending or plan savings?',
-      fallback: true,
-    };
+    return apiCall<ChatResponse>(`${API_BASE}/chat`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    });
   },
 
   // ── Usage & Limits (DISABLED — free for all users) ────
@@ -300,28 +255,19 @@ export const llmService = {
     offset: number = 0,
     bookmarked: boolean = false,
   ): Promise<ConversationHistory> {
-    try {
-      const params = new URLSearchParams();
-      if (type) params.set('type', type);
-      params.set('limit', String(limit));
-      params.set('offset', String(offset));
-      if (bookmarked) params.set('bookmarked', 'true');
-
-      return await apiCall<ConversationHistory>(`${API_BASE}/history?${params}`);
-    } catch {
-      return { conversations: [], total: 0, hasMore: false };
-    }
+    const params = new URLSearchParams();
+    if (type) params.set('type', type);
+    params.set('limit', String(limit));
+    params.set('offset', String(offset));
+    if (bookmarked) params.set('bookmarked', 'true');
+    return apiCall<ConversationHistory>(`${API_BASE}/history?${params}`);
   },
 
   /**
    * Get a single conversation with full details.
    */
   async getConversation(id: string): Promise<ConversationSummary | null> {
-    try {
-      return await apiCall<ConversationSummary>(`${API_BASE}/conversations/${id}`);
-    } catch {
-      return null;
-    }
+    return apiCall<ConversationSummary>(`${API_BASE}/conversations/${id}`);
   },
 
   // ── Ratings & Bookmarks ────────────────────────────────
@@ -364,90 +310,6 @@ export const llmService = {
    * This profile is progressively built from AI interactions.
    */
   async getFinancialProfile(): Promise<FinancialProfile> {
-    try {
-      return await apiCall<FinancialProfile>(`${API_BASE}/profile`);
-    } catch {
-      return { exists: false, profile_completeness: 0 };
-    }
-  },
-
-  // ── Direct Gemini Fallback (when backend is unreachable) ─
-
-  /**
-   * Call Gemini directly from the frontend when the backend server is down.
-   * This ensures the AI chat always works, even when Render is sleeping.
-   */
-  async _directGeminiChat(message: string): Promise<ChatResponse> {
-    const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error('No Gemini API key available for direct fallback');
-    }
-
-    const { GoogleGenAI } = await import('@google/genai');
-    const ai = new GoogleGenAI({ apiKey });
-
-    const systemPrompt = `You are FlowMint AI, a witty, knowledgeable financial advisor for Indian Gen-Z and Millennials.
-Use Gen-Z lingo naturally (no cap, bet, vibe check, flex) but stay financially accurate.
-Be direct, actionable, and conversational. Keep responses under 150 words.
-Understand Indian financial products: SIP, PPF, FD, RD, UPI, EMI, CIBIL, NPS, ELSS, 80C, HRA.
-All amounts in ₹ (Indian Rupees).
-
-RESPOND ONLY with valid JSON:
-{"reply": "your response", "category": "savings|spending|credit|loans|investing|tax|insurance|general", "actionable": true/false, "followUp": "optional follow-up question"}`;
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: message,
-      config: {
-        systemInstruction: systemPrompt,
-        responseMimeType: 'application/json',
-      },
-    });
-
-    const rawText = response.text || '{}';
-    let parsed: any = {};
-    try {
-      parsed = JSON.parse(rawText);
-    } catch {
-      // If JSON parse fails, use the raw text as reply
-      parsed = { reply: rawText, category: 'general', actionable: false };
-    }
-
-    return {
-      reply: parsed.reply || rawText,
-      category: parsed.category || 'general',
-      actionable: parsed.actionable || false,
-      followUp: parsed.followUp || null,
-      provider: 'gemini-direct',
-      model: 'gemini-2.5-flash',
-    };
-  },
-
-  // ── Fallback ───────────────────────────────────────────
-
-  /**
-   * Fallback when AI service is completely unavailable.
-   * Pure math — no API call needed.
-   */
-  _fallbackWishPlan(request: WishPlanRequest): WishPlanResponse {
-    const income = request.monthlyIncome || 50000;
-    const expenses = request.monthlyExpenses || 30000;
-    const emis = request.existingEMIs || 0;
-    const surplus = income - expenses - emis;
-    const saveable = Math.round(surplus * 0.7);
-    const remaining = request.price - request.currentSavings;
-    const months = Math.max(1, Math.ceil(remaining / saveable));
-
-    return {
-      aiTip: `At ₹${saveable.toLocaleString()}/month savings rate, you can afford "${request.wishName}" in ~${months} months.`,
-      speedUpTip: 'Try cutting discretionary spending by 15% — food delivery and subscriptions are the easiest wins.',
-      monthsToAfford: months,
-      savingSteps: [
-        `Auto-save ₹${saveable.toLocaleString()}/month into a liquid fund on salary day`,
-        'Reduce food delivery orders by 2-3 per week',
-        'Audit subscriptions — cancel or switch to annual plans',
-      ],
-      fallback: true,
-    };
+    return apiCall<FinancialProfile>(`${API_BASE}/profile`);
   },
 };

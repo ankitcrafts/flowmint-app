@@ -5,10 +5,10 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import multer from 'multer';
 import dotenv from 'dotenv';
-import { authenticateToken, AuthRequest } from './middlewares/auth.ts';
-import { supabase } from './utils/supabase.ts';
-import { ManualFinancialParser } from './modules/upload/upload.service.ts';
-import { AnalyticsService } from './modules/analytics/analytics.service.ts';
+import { authenticateToken, AuthRequest } from './middlewares/auth.js';
+import { supabase } from './utils/supabase.js';
+import { ManualFinancialParser } from './modules/upload/upload.service.js';
+import { AnalyticsService } from './modules/analytics/analytics.service.js';
 
 dotenv.config();
 
@@ -129,15 +129,24 @@ app.patch('/api/credit/:id/autopay', authenticateToken, async (req: AuthRequest,
 app.get('/api/analytics', authenticateToken, async (req: AuthRequest, res: any) => {
   const userId = req.user?.id;
 
-  const [creditRes, loanRes] = await Promise.all([
+  if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+  const [creditRes, loanRes, profileRes] = await Promise.all([
     supabase.from('credit_accounts').select('*').eq('user_id', userId),
-    supabase.from('loan_accounts').select('*').eq('user_id', userId)
+    supabase.from('loan_accounts').select('*').eq('user_id', userId),
+    supabase.from('user_financial_profiles').select('monthly_income').eq('user_id', userId).maybeSingle()
   ]);
+
+  const queryError = creditRes.error || loanRes.error || profileRes.error;
+  if (queryError) return res.status(500).json({ error: 'Unable to load financial analytics' });
+  if (profileRes.data?.monthly_income == null) {
+    return res.status(409).json({ error: 'Complete financial setup before requesting analytics' });
+  }
 
   const analytics = AnalyticsService.calculateAnalytics(
     creditRes.data || [],
     loanRes.data || [],
-    50000 // Default income if profile not found, real implementation should fetch from user_financial_profiles
+    Number(profileRes.data.monthly_income)
   );
 
   res.json(analytics);

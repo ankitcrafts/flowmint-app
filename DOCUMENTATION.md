@@ -1,20 +1,23 @@
 # FlowMint Documentation
 
-> **Version:** 2.2 • **Last Updated:** 20 March 2026 • **Status:** MVP Phase 1 Complete + Tier 1 Data Integration
+> **Version:** V1 safety transition • **Last Updated:** 20 March 2026
+> **Product:** FlowMint — Your AI Financial Copilot.
+> Historical implementation and architecture notes below are retained for reference. Legacy payment, lending, credit, biometric, and authentication modules may appear in those notes but are not part of the active V1 navigation.
 
 ---
 
 ## 1. Project Overview
 
-**FlowMint** is a modern, cross-platform financial super app built with cutting-edge web technologies. It provides a unified financial command center where users can manage payments, credit health, expense tracking, savings goals, loan discovery, and AI-driven financial advisory — all wrapped in a premium "Cyber-Finance" aesthetic. The app runs as a responsive PWA and is optimized for native mobile (Android/iOS) via Capacitor.
+**FlowMint** is a cross-platform AI financial copilot for user-entered financial information. V1 supports planning, expense tracking, bills, goals, and AI guidance. It does not provide payments, wallets, lending, bank connections, or real-time bank balances. The app runs as a responsive PWA and is optimized for native mobile (Android/iOS) via Capacitor.
 
 ### Key Highlights
 
-- **15+ major components** built and functional (including Toast notifications & Skeleton loaders)
-- **83 API integration points** identified and mapped (37 integrated, 10 ongoing, 36 pending)
-- **AI-powered insights** via Groq (Llama 3.3) with Gemini 2.0 Flash fallback
-- **Core Data CRUD**: Real Supabase-backed transactions, expenses, bills, goals, payments
-- **Dual authentication** — Google OAuth + Mobile OTP with JWT sessions
+- **Server-delivered email OTP authentication** with SMTP delivery, hashed database verification, and Supabase sessions
+- **Google OAuth sign-in** through Supabase Auth on web, Android, and iOS; Google sessions persist across app restarts as an alternative to email OTP
+- **User-entered financial profile** used for financial planning and dashboard summaries
+- **AI requests proxied by the backend**; provider secrets are server-only
+- **Supabase-backed expense, bill-reminder, and savings-goal records**
+- **No V1 money movement or loan marketplace**; legacy source remains in the repository but is not routed
 - **Dark/Light theme** with CSS variable-based theming system
 - **PWA-ready** with auto-updating service worker
 
@@ -49,15 +52,15 @@
 | ------------------- | ------- | -------------------------------------------- |
 | Express.js          | 5.2.1   | API server — authentication & business logic |
 | Supabase JS         | 2.95.3  | Database client (PostgreSQL)                 |
-| jsonwebtoken        | 9.0.3   | JWT generation and verification              |
-| google-auth-library | 10.5.0  | Google ID Token verification (server-side)   |
+| jsonwebtoken        | 9.0.3  | Legacy authentication support                |
+| google-auth-library | 10.5.0 | Legacy Google sign-in support                |
 | cookie-parser       | 1.4.7   | Parse HTTPOnly auth cookies                  |
 | cors                | 2.8.6   | Cross-origin request handling                |
 | dotenv              | 17.3.1  | Environment variable management              |
 
 # FlowMint — Engineering & Technical Documentation
 
-> **Project:** FlowMint — Financial Super-App with AI Wealth Management  
+> **Project:** FlowMint — Your AI Financial Copilot
 > **Version:** 2.2  
 > **Last Updated:** 20 March 2026 — Tier 1 Data Integration, Toast/Skeleton Systems, 15 New CRUD Routes.
 
@@ -72,7 +75,7 @@
 | **Mobile**      | Capacitor 8+                                     | Native Android/iOS wrapper for web assets.                          |
 | **Backend**     | Node.js, Express.js (on Render)                  | Secure API proxy, auth mediation, and AI orchestration.             |
 | **Database**    | Supabase (Postgres)                              | Row-level secured (RLS) data persistence.                           |
-| **Auth**        | Supabase Auth + Google GSI + Native Cred Manager | Cross-platform identity (Google One Tap & Native Sign-In).          |
+| **Auth**        | Express SMTP + Supabase Postgres/Auth           | Server-sent email OTP, database verification, and Supabase sessions. |
 | **Security**    | Biometric Auth (Face ID/Fingerprint)             | Step-up authentication & cryptographic keys for local identities.   |
 | **AI (Core)**   | Groq (Llama 3.3 70B)                             | Primary LLM for ultra-low latency financial insights (Llama-first). |
 | **AI (Backup)** | Gemini 2.0 Flash                                 | Fallback LLM and high-context reasoning.                            |
@@ -86,8 +89,8 @@
 - Node.js (v20+)
 - npm (v10+)
 - Git
-- Google Cloud Project (for Auth)
-- Groq API Key (for Primary AI)
+- Supabase project with Email OTP and SMTP configured
+- Optional backend Groq and/or Gemini API key
 
 ### Installation
 
@@ -116,10 +119,9 @@
     ```env
     VITE_SUPABASE_URL=***
     VITE_SUPABASE_ANON_KEY=***
-    GROQ_API_KEY=***
-    GEMINI_API_KEY=***
-    JWT_SECRET=*** (Must match Supabase JWT Secret)
     ```
+
+    Configure the SMTP credentials (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, and `SMTP_FROM`) and `SUPABASE_SERVICE_ROLE_KEY` only in the backend environment. Apply `supabase/migrations/006_email_login_otp.sql` in the Supabase SQL Editor. Do not add server secrets to frontend variables.
 
 5.  **Run Development Server**:
     ```bash
@@ -132,28 +134,28 @@
 
 ### 1. Hybrid Cross-Platform (React + Capacitor)
 
-FlowMint uses a single codebase for Web and Android. The frontend detects the platform at runtime to toggle between Browser APIs (Google One Tap) and Native Plugins (Credential Manager).
+FlowMint uses a single codebase for Web and Android. V1 uses an Express SMTP email OTP flow on both web and native builds; Supabase Postgres stores OTP hashes, and Supabase Auth issues the app session after the backend verifies a code.
 
-### 2. Double-Shield Authentication
+### 2. Authentication
 
-- **Web**: Google One Tap → Response → Supabase Auth.
-- **Mobile**: Native Capacitor Plugin → Android Credential Manager → Token → Supabase Auth.
-- **Session Persistence**: JWTs are stored in HTTPOnly cookies (Web) and Secure Storage (Native).
-- **Biometric Enclaves**: Local keys generated via Web Crypto map to Face ID/Fingerprint hardware, overriding manual OTPs for step-up actions (Identity Vault).
+- The user enters a valid email address and requests a six-digit OTP from the Express backend.
+- The backend sends the OTP via configured SMTP and stores only its salted HMAC hash with a ten-minute expiry in Supabase Postgres.
+- The backend atomically verifies and consumes the OTP. It then creates or finds the Supabase Auth user and mints a one-time session exchange token.
+- The client exchanges the token for a Supabase session; Supabase remains required for app data access and Row Level Security.
+- The app uses the session's access token; protected backend routes verify that token with Supabase.
+- Never accept a request-body user ID as the authority for user-owned data.
+- Google sign-in starts a Supabase OAuth flow in the browser; mobile redirects return through the registered `com.flowmint.app://auth/callback` app URL on both Android and iOS.
+- Configure the Google Web OAuth client ID/secret in Supabase Auth's Google provider. They do not belong in frontend `.env` variables.
 
-### 3. AI Resilience Logic (The 15s Rule)
+### 3. AI Requests
 
-The backend implements a failure-proof AI chain:
-
-1.  **Groq (Llama 3.3 70B)**: Triggered first. Time limit: 15 seconds.
-2.  **Gemini 2.0 Flash**: Triggered if Groq fails or times out.
-3.  **Local Deterministic Engine**: Triggered if all AIs fail (Pure JSON math).
+The frontend sends AI requests to the authenticated Express backend. The backend loads the user's financial profile and expense records using the verified Supabase user ID, then calls an available provider. Provider keys are server-only. If AI is unavailable, the app reports the error instead of returning fabricated advice.
 
 ---
 
 ## 🔐 Security Standards
 
-- **JWT Signature Verification**: Every backend request verifies the JWT signature using `JWT_SECRET` to prevent token tampering.
+- **Supabase Session Verification**: Protected AI and data API requests verify the Supabase access token. Legacy Express JWT auth endpoints are disabled.
 - **Express Rate Limiting**: Global limit of 100 requests per 15 minutes to prevent DDoS and API credit exhaustion.
 - **Helmet.js Headers**: Implemented in production to set secure HTTP headers and strict **Content Security Policy (CSP)** whitelists (XSS, Clickjacking, MIME).
 - **Local Asset Bundling**: Tailwind CDN completely removed; styles are securely built via PostCSS to reduce XSS surface area.
@@ -314,45 +316,30 @@ flowmint---financial-super-app/
 ### Authentication Flow
 
 ```
-User Opens App
+User opens app
 │
-├─ supabase.auth.getSession() → Check existing session
-├─ supabase.auth.onAuthStateChange() → Subscribe to changes
+├─ Existing Supabase session? ─ Yes → load that user's profile
 │
-├─ IF NO SESSION → Auth.tsx
-│   ├─ Google Sign-In (Web)
-│   │   └─ GSI → ID Token → supabase.auth.signInWithIdToken()
-│   │
-│   ├─ Google Sign-In (Android)
-│   │   └─ Capacitor GoogleAuth Plugin → ID Token → supabase.auth.signInWithIdToken()
-│   │
-│   ├─ Mobile OTP
-│   │   └─ Phone Input → OTP Verify → POST /auth/mobile → JWT Cookie
-│   │   └─ Fallback: Direct Supabase query (when Express unavailable)
-│   │
-│   └─ Apple Sign-In (Mock — not yet implemented)
-│
-├─ IF SESSION EXISTS → Load App
-│   └─ supabase.from('profiles').select() → Hydrate user profile
-│   └─ Render Dashboard + Navigation
-│
-└─ LOGOUT
-    └─ POST /auth/logout → Clear cookie
-    └─ (Should also call supabase.auth.signOut())
+└─ No session → EmailOtpAuth.tsx
+    ├─ Enter email → Express sends a six-digit OTP via SMTP and saves its hash
+    ├─ Enter OTP → Express verifies and consumes the database record
+    ├─ Exchange one-time token → Supabase Auth creates the app session
+    └─ Collect user-entered financial profile if not yet saved
 ```
+
+> Legacy Google/mobile OTP, fallback authentication, and biometric onboarding source remains in the repository but is not used by V1.
 
 ### Data Flow
 
 ```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│   Frontend   │────▶│ Express API  │────▶│   Supabase   │
-│  (React/TS)  │◀────│  (Node.js)   │◀────│ (PostgreSQL) │
-└──────────────┘     └──────────────┘     └──────────────┘
-       │                                         │
-       ├─ supabase.auth.*  ─────────────────────▶│  (Direct Auth)
-       ├─ supabase.from('profiles')  ───────────▶│  (Direct DB)
-       │                                         │
-       └─ @google/genai ──────▶ Google Gemini API
+Frontend ── Supabase session ──▶ Supabase Auth
+   │                                │
+   ├─ RLS-scoped financial records ─┴──▶ Supabase
+   │
+   └─ Bearer token + AI request ──▶ Express backend
+                                      ├─ verifies Supabase session
+                                      ├─ loads this user's profile/expenses
+                                      └─ calls AI provider with server-only key
 ```
 
 ### Vite Proxy Configuration
@@ -361,8 +348,8 @@ In development, Vite proxies API requests to the Express backend:
 
 | Route Pattern | Target                  | Purpose                         |
 | ------------- | ----------------------- | ------------------------------- |
-| `/auth/*`     | `http://localhost:3000` | Authentication endpoints        |
-| `/api/*`      | `http://localhost:3000` | Future business logic endpoints |
+| `/auth/*`     | `http://localhost:3000` | Legacy endpoints return `410 Gone` |
+| `/api/*`      | `http://localhost:3000` | Authenticated backend API        |
 
 ---
 
@@ -379,11 +366,11 @@ In development, Vite proxies API requests to the Express backend:
 
 | Table                   | Purpose                              | Status        |
 | ----------------------- | ------------------------------------ | ------------- |
-| `transactions`          | All income/expense/transfer records  | ✅ Created     |
+| `transactions`          | User-entered income/expense records; transfer is legacy-only | ✅ Created |
 | `expenses`              | Detailed expense tracking            | ✅ Created     |
 | `bills`                 | Bill reminders with due dates        | ✅ Created     |
 | `goals`                 | Savings goals with AI plans          | ✅ Created     |
-| `payments`              | Payment history (UPI, bill payments) | ✅ Created     |
+| `payments`              | Legacy payment history; no V1 payment flow | ✅ Created |
 | `dashboard_summary`     | Aggregated SQL view (SECURITY INVOKER) | ✅ Created  |
 
 ### Future Tables
@@ -400,21 +387,18 @@ In development, Vite proxies API requests to the Express backend:
 
 ### Express Server Endpoints (`server/index.js`)
 
-| Method | Endpoint       | Auth   | Request Body       | Response                                       | Description                                      |
-| ------ | -------------- | ------ | ------------------ | ---------------------------------------------- | ------------------------------------------------ |
-| `POST` | `/auth/google` | —      | `{ credential }`   | Sets `access_token` cookie, returns `{ user }` | Verify Google ID token → upsert user → issue JWT |
-| `POST` | `/auth/mobile` | —      | `{ mobile, name }` | Sets `access_token` cookie, returns `{ user }` | Validate mobile → upsert user → issue JWT        |
-| `GET`  | `/auth/me`     | 🔒 JWT | —                  | `{ user }`                                     | Decode JWT cookie → return user profile          |
-| `POST` | `/auth/logout` | —      | —                  | `{ message }`                                  | Clear the `access_token` cookie                  |
+| Method | Endpoint | Auth | Description |
+| ------ | -------- | ---- | ----------- |
+| `POST` | `/auth/email-otp/send` | — | Sends six-digit code through backend SMTP and stores its hash in Supabase Postgres. |
+| `POST` | `/auth/email-otp/verify` | — | Atomically consumes the OTP, then returns a one-time Supabase session-exchange token. |
 
 ### External APIs Used
 
 | API                 | Endpoint                                                            | Used In                    |
 | ------------------- | ------------------------------------------------------------------- | -------------------------- |
-| Google GSI          | `https://accounts.google.com/gsi/client`                            | Auth.tsx                   |
-| Nominatim Geocoding | `https://nominatim.openstreetmap.org/reverse?lat=&lon=&format=json` | InitialSetup.tsx           |
-| DiceBear Avatars    | `https://api.dicebear.com/7.x/avataaars/svg?seed=`                  | Auth.tsx, InitialSetup.tsx |
-| Google Gemini AI    | via `@google/genai` SDK                                             | geminiService.ts           |
+| Express + SMTP | `/auth/email-otp/send`, `/auth/email-otp/verify` | EmailOtpAuth.tsx |
+| Google GSI / native identity modules | Legacy sources retained, not routed in V1 | Auth.tsx, plugins |
+| Gemini AI | Backend provider integration; key is server-only | server |
 
 > 📄 For the complete 83-API integration registry, see **`API_INTEGRATION_MAP.md`**.
 
@@ -431,13 +415,13 @@ In development, Vite proxies API requests to the Express backend:
 | `GET`   | `/api/expenses/summary`| 🔒 JWT | Monthly/category aggregation                             |
 | `GET`   | `/api/bills`          | 🔒 JWT | Bills with status filter (paid/unpaid/overdue)            |
 | `POST`  | `/api/bills`          | 🔒 JWT | Create bill                                               |
-| `PATCH` | `/api/bills/:id/pay`  | 🔒 JWT | Mark paid + auto-create payment & transaction             |
+| `PATCH` | `/api/bills/:id/pay`  | 🔒 JWT | Record the user's external bill status; no payment or transaction is created |
 | `GET`   | `/api/goals`          | 🔒 JWT | Fetch all goals                                           |
 | `POST`  | `/api/goals`          | 🔒 JWT | Create goal with validation                               |
 | `PATCH` | `/api/goals/:id`      | 🔒 JWT | Update progress / AI plan / status                        |
 | `DELETE`| `/api/goals/:id`      | 🔒 JWT | Delete goal                                               |
-| `GET`   | `/api/payments`       | 🔒 JWT | Fetch payment history                                     |
-| `POST`  | `/api/payments`       | 🔒 JWT | Record payment + auto-create transaction                  |
+| `GET`   | `/api/payments`       | — | Disabled; returns `410 Gone` |
+| `POST`  | `/api/payments`       | — | Disabled; returns `410 Gone` |
 
 ---
 
@@ -445,15 +429,11 @@ In development, Vite proxies API requests to the Express backend:
 
 | Variable                    | Scope    | Required | Description                                   |
 | --------------------------- | -------- | -------- | --------------------------------------------- |
-| `VITE_API_URL`              | Frontend | Yes      | Base URL for API server                       |
-| `GEMINI_API_KEY`            | Both¹    | Yes      | Google Gemini API key                         |
 | `VITE_SUPABASE_URL`         | Frontend | Yes      | Supabase project URL                          |
 | `VITE_SUPABASE_ANON_KEY`    | Frontend | Yes      | Supabase public anon key                      |
 | `SUPABASE_SERVICE_ROLE_KEY` | Backend  | Yes      | Supabase admin key (never expose to frontend) |
-| `GOOGLE_CLIENT_ID`          | Both     | Yes      | Google OAuth 2.0 client ID                    |
-| `JWT_SECRET`                | Backend  | Yes      | Secret key for signing JWTs                   |
-
-¹ _`GEMINI_API_KEY` is mapped to `process.env.GEMINI_API_KEY` via Vite's `define` config._
+| `GROQ_API_KEY`              | Backend  | Optional | Server-side AI provider key                    |
+| `GEMINI_API_KEY`            | Backend  | Optional | Server-side AI provider key; never a `VITE_` variable |
 
 ---
 
